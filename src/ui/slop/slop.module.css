@@ -52,6 +52,25 @@
   -webkit-background-clip: text;
   color: transparent;
 }
+/*
+ * The words carry the gradient themselves.
+ *
+ * `background-clip: text` paints the parent's background and clips it to the
+ * parent's glyphs — so the moment anything *moves* those glyphs relative to
+ * the h2's box, the paint and the letters stop lining up and the heading
+ * disappears. Which is exactly what happened the first time `Mirror`
+ * counter-flipped this span: the text was there, correctly readable, and
+ * completely invisible.
+ *
+ * Giving the span its own gradient makes the clip travel with the letters.
+ */
+.headingText {
+  background: var(--slop-grad);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
 /* Painted normally, so an emoji is an emoji and not a violet rectangle. */
 .headingEmoji {
   background: none;

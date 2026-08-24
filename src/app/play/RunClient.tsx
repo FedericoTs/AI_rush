@@ -17,6 +17,7 @@ import { PracticeEnd } from "./PracticeEnd";
 import { Handle } from "@/ui/Handle";
 import { Logo } from "@/ui/logo/Logo";
 import { MODIFIERS } from "@/engine/chaos/modifiers";
+import { ChaosProvider } from "@/engine/chaos/ChaosProvider";
 import { SECRET_FOUND } from "@/ui/slop/Slop";
 import { detectPassive } from "@/input/capabilities";
 import { Calibrate } from "./Calibrate";
@@ -529,15 +530,26 @@ function RunStage(props: {
           onAnimationEnd={() => setSettled(flash)}
           data-level={current.module.meta.id}
         >
-          <Body
-            onSolve={props.onSolve}
-            onFail={props.onFail}
-            rng={rng}
-            chaos={current.modifiers}
-            degraded={current.degraded}
-            input={input}
-            sfx={sfx}
-          />
+          {/*
+            * Everything the modifiers do happens out here.
+            *
+            * The level receives `chaos` so it can *know* what is on it — the
+            * prop has always been in `LevelProps` — but no level implements
+            * one, and the wrapper needs nothing from the level to work. When
+            * the deck deals none, ChaosProvider renders its children and
+            * nothing else.
+            */}
+          <ChaosProvider modifiers={current.modifiers} muted={muted}>
+            <Body
+              onSolve={props.onSolve}
+              onFail={props.onFail}
+              rng={rng}
+              chaos={current.modifiers}
+              degraded={current.degraded}
+              input={input}
+              sfx={sfx}
+            />
+          </ChaosProvider>
         </div>
 
         {/* Chrome, never the level. See FakeNotice. */}

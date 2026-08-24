@@ -13,8 +13,22 @@ import styles from "./slop.module.css";
  * though it shipped, with a design review, at a company with a Series B.
  */
 
+/*
+ * The data attributes below are how `ChaosProvider` finds things.
+ *
+ * A modifier composes over *any* level and no level implements one, so the
+ * wrapper has to locate the card, the primary button and the microcopy from the
+ * outside — and it cannot do that through CSS-module class names, which are
+ * hashed at build time. These are the stable handles. They are on the shared
+ * chrome rather than in `src/levels/**`, which is what keeps the sandbox rule
+ * intact: not one level knows a modifier exists.
+ */
 export function SlopCard({ children, plain = false }: { children: ReactNode; plain?: boolean }) {
-  return <div className={plain ? `${styles.card} ${styles.plain}` : styles.card}>{children}</div>;
+  return (
+    <div className={plain ? `${styles.card} ${styles.plain}` : styles.card} data-slop-card>
+      {children}
+    </div>
+  );
 }
 
 export function SlopBadge({ children }: { children: ReactNode }) {
@@ -43,16 +57,26 @@ export function SlopHeading({ children }: { children: ReactNode }) {
   const match = /^(.*?)(\s*[^\p{L}\p{N}\p{P}\s]+)$/u.exec(children);
   if (!match) return <h2 className={styles.heading}>{children}</h2>;
 
+  /*
+   * Both halves in a span, including the words.
+   *
+   * The `Mirror` modifier counter-flips leaf elements — an element whose text
+   * is its own — so that a mirrored layout still reads. An `<h2>` holding bare
+   * text *and* the emoji span is not a leaf, and the heading came out backwards
+   * on every card. Wrapping the words makes both halves leaves and costs
+   * nothing here: the gradient is inherited through `background-clip: text` on
+   * the parent either way.
+   */
   return (
     <h2 className={styles.heading}>
-      {match[1]}
+      <span className={styles.headingText}>{match[1]}</span>
       <span className={styles.headingEmoji}>{match[2]}</span>
     </h2>
   );
 }
 
 export function SlopMicrocopy({ children }: { children: ReactNode }) {
-  return <p className={styles.sub}>{children}</p>;
+  return <p className={styles.sub} data-slop-microcopy>{children}</p>;
 }
 
 export function SlopHint({ children }: { children: ReactNode }) {
@@ -67,7 +91,7 @@ export function SlopCta({
   children, onClick, disabled,
 }: { children: ReactNode; onClick?: () => void; disabled?: boolean }) {
   return (
-    <button className={styles.cta} onClick={onClick} disabled={disabled} type="button">
+    <button className={styles.cta} onClick={onClick} disabled={disabled} type="button" data-slop-cta>
       {children}
     </button>
   );

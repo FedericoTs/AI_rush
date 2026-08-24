@@ -1,0 +1,282 @@
+/*
+ * The twelve modifiers, as CSS on a wrapper.
+ *
+ * Selected by `[data-chaos~="id"]`, which is how two can compose without either
+ * knowing about the other — `~=` matches one word of a space-separated list, so
+ * `data-chaos="rainbow shrink"` picks up both rules and the transforms and
+ * filters stack on different layers rather than overwriting each other.
+ *
+ * Three layers, and the split is load-bearing:
+ *
+ *   .root      filters and the fixed overlays. Never transformed, so the
+ *              confetti and the popup keep their own coordinate space.
+ *   .drifter   the modifier's own motion — drift, shrink, rotate, mirror.
+ *   .stage     the player's correction under drift, and nothing else.
+ *
+ * One element cannot carry an animated transform and a live user-set one at the
+ * same time; the second would replace the first. Hence two.
+ */
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.drifter,
+.stage {
+  display: flex;
+  flex-direction: column;
+  /* A named origin so scale and rotate agree about what they turn around. */
+  transform-origin: 50% 40%;
+}
+
+.stage {
+  transform: translate(var(--chaos-nudge-x, 0px), var(--chaos-nudge-y, 0px));
+}
+
+/*
+ * Why the geometric modifiers use `translate` / `scale` / `rotate` rather than
+ * `transform`.
+ *
+ * Two modifiers compose at a time, and three of them are geometry. Written as
+ * `transform`, the second rule to match simply replaces the first — `Rotate`
+ * would silently cancel `Drift`, and which one survived would depend on
+ * source order. The individual transform properties are separate declarations
+ * that the browser multiplies together, so composition is automatic and there
+ * is exactly one pair left to special-case by hand.
+ */
+
+/* ─── drift ──────────────────────────────────────────────────
+   The card wanders off and has to be dragged back. Slow enough to ignore for
+   a while, which is what makes noticing it the moment. */
+.root[data-chaos~="drift"] .drifter {
+  animation: wander 19s ease-in-out infinite alternate;
+}
+@keyframes wander {
+  0%   { translate: 0 0; }
+  25%  { translate: -9% 4%; }
+  50%  { translate: 7% -6%; }
+  75%  { translate: -5% -3%; }
+  100% { translate: 11% 5%; }
+}
+.root[data-chaos~="drift"] { touch-action: none; cursor: grab; }
+.root[data-chaos~="drift"] [data-slop-card] { cursor: auto; }
+
+/* ─── shrink ─────────────────────────────────────────────────
+   Down to 60% over twenty seconds and back. Never below: a level whose
+   controls fall under a fingertip is unplayable rather than hard, and the
+   touch targets here are already at the minimum. */
+.root[data-chaos~="shrink"] .drifter {
+  animation: dwindle 20s ease-in-out infinite alternate;
+}
+@keyframes dwindle {
+  from { scale: 1; }
+  to   { scale: 0.6; }
+}
+
+/* ─── rotate ─────────────────────────────────────────────────
+   A static fifteen degrees, so it is exempt from the reduced-motion cut
+   below — it is the level's layout, not motion.
+
+   The scale is not decoration. A card as wide as the viewport, turned fifteen
+   degrees, needs about 20% more width than it has, and the first screenshot of
+   this working had L30's primary button hanging off the right edge. Tilted is
+   the joke; unreachable is a bug. It goes on `.stage` because that layer uses
+   `transform` while the rotation uses the `rotate` property, so the two
+   compose instead of overwriting each other — and it keeps the drift nudge in
+   the same declaration rather than cancelling it. */
+.root[data-chaos~="rotate"] .drifter { rotate: 15deg; }
+.root[data-chaos~="rotate"] .stage {
+  transform: translate(var(--chaos-nudge-x, 0px), var(--chaos-nudge-y, 0px)) scale(0.82);
+}
+
+/* ─── mirror ─────────────────────────────────────────────────
+   Layout flipped, text not: a player reaches the wrong way for a button they
+   can still read. Mirrored *text* would be a legibility problem rather than a
+   motor one, and `LEVELS.md` is explicit that this is the layout-only version
+   of L31. */
+.root[data-chaos~="mirror"] .drifter { scale: -1 1; }
+
+/*
+ * Counter-flipped at the leaves, and only at the leaves.
+ *
+ * The obvious rule — counter-flip every text-bearing tag — flips nested text
+ * *twice* and lands it back where it started. The first working screenshot of
+ * this showed exactly that: the heading read correctly and the step labels
+ * inside their buttons, and the placeholder inside its label, all came out
+ * backwards, because each of them had a flipped ancestor.
+ *
+ * `:not(:has(*))` is a real leaf selector, and a leaf is precisely an element
+ * whose text is its own. Every glyph gets flipped exactly once.
+ *
+ * The known gap: an element holding both text and a child element — `<p>see
+ * <b>this</b></p>` — is not a leaf, so its own words stay mirrored while the
+ * bold flips back. Rare in the slop kit, and the alternative is worse: no CSS
+ * selector can reach a text node's parent without also reaching its
+ * element-bearing ancestors.
+ */
+.root[data-chaos~="mirror"] .drifter *:not(:has(*)) {
+  /* A transform does not apply to a non-replaced *inline* box, so a bare
+     `<span>` of text silently ignores the counter-flip and comes out
+     backwards — which is why the first fix worked on buttons and flex items
+     and nowhere else. Blockifying the leaf is what makes the rule true for
+     all of them; it wraps its own text exactly as before, it simply can no
+     longer be split across lines by its parent. */
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* The one pair that genuinely collides: both want `scale`. */
+.root[data-chaos~="mirror"][data-chaos~="shrink"] .drifter {
+  animation: dwindleMirrored 20s ease-in-out infinite alternate;
+}
+@keyframes dwindleMirrored {
+  from { scale: -1 1; }
+  to   { scale: -0.6 0.6; }
+}
+
+/* ─── rainbow ────────────────────────────────────────────────
+   0.4 Hz — one rotation every 2.5 seconds — and not one hertz faster. This is
+   the photosensitivity limit from GAME_DESIGN.md's honesty clause, and it
+   lives here in the rule rather than in a note somewhere.
+
+   On the root, because it is a filter: it composes with every transform below
+   it without either having to know about the other. */
+.root[data-chaos~="rainbow"] {
+  animation: hue 2.5s linear infinite;
+}
+@keyframes hue {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(360deg); }
+}
+
+/* ─── comic ──────────────────────────────────────────────────
+   Every font becomes Comic Sans, with a stack for the platforms that do not
+   ship it. Letter-spacing wobbles per element via nth-child, which is the
+   "randomizes" from the spec without needing a random number. */
+.root[data-chaos~="comic"] .drifter,
+.root[data-chaos~="comic"] .drifter * {
+  font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", "Segoe Print", cursive !important;
+}
+.root[data-chaos~="comic"] .drifter :nth-child(3n) { letter-spacing: 0.06em; }
+.root[data-chaos~="comic"] .drifter :nth-child(3n + 1) { letter-spacing: -0.02em; }
+.root[data-chaos~="comic"] .drifter :nth-child(5n) { letter-spacing: 0.11em; }
+
+/*
+ * ─── lag ────────────────────────────────────────────────────
+ *
+ * The screen answers late. Deliberately **not** an input delay.
+ *
+ * The obvious build — an overlay that swallows pointer events and re-fires
+ * them 350ms later — breaks every drag level in the game: a synthetic pointer
+ * stream is not a real one, re-dispatched events do not focus a field or type
+ * into it, and L32 already writes the rule down for the level-strength version
+ * of this idea ("Nothing is dropped, ever"). A modifier that can make a level
+ * unwinnable is worse than no modifier.
+ *
+ * So every visual response is delayed instead: hover, focus rings, pressed
+ * states, colour changes, anything the level animates. The hands stop
+ * believing the screen, which is the whole experience of the real thing, and
+ * not one event is lost.
+ */
+.root[data-chaos~="lag"] .drifter * {
+  transition-property: transform, opacity, background-color, color, border-color, box-shadow, filter !important;
+  transition-duration: 40ms !important;
+  transition-delay: 350ms !important;
+}
+
+/*
+ * ─── slippery ───────────────────────────────────────────────
+ *
+ * Things that move overshoot and settle. Same reasoning as `lag`: adding
+ * inertia to a drag means owning the drag, and the drag belongs to the level.
+ * An overshooting easing on whatever the level already transforms gets the
+ * feel from the outside and cannot desynchronise a level from its own
+ * control — the *value* stays exact, only the pixels wobble.
+ */
+.root[data-chaos~="slippery"] .drifter * {
+  transition-property: transform, left, top !important;
+  transition-duration: 260ms !important;
+  transition-timing-function: cubic-bezier(0.34, 1.8, 0.64, 1) !important;
+}
+
+/* ─── confetti ───────────────────────────────────────────────
+   Particle rain over about a sixth of the viewport. `pointer-events: none`
+   is the load-bearing declaration in this block: confetti that ate a click
+   would be a broken level rather than an obscured one. */
+.confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+.confetti i {
+  position: absolute;
+  top: -12px;
+  width: 7px;
+  height: 11px;
+  border-radius: 2px;
+  opacity: 0.85;
+  background: hsl(calc(var(--i) * 37deg) 85% 62%);
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes fall {
+  from { transform: translateY(0) rotate(0deg); }
+  to   { transform: translateY(120vh) rotate(540deg); }
+}
+
+/* ─── popups ─────────────────────────────────────────────────
+   Bottom-left, away from the CTA, which lives at the bottom of the card and
+   is the one thing a popup must never cover. */
+.popup {
+  position: absolute;
+  left: 0.4rem;
+  bottom: 0.4rem;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 15rem;
+  padding: 0.5rem 0.55rem;
+  border-radius: 10px;
+  background: #fff;
+  color: #14181f;
+  font-size: 0.72rem;
+  box-shadow: 0 12px 28px -12px rgba(0, 0, 0, 0.55);
+}
+.popup button {
+  border: none;
+  background: none;
+  color: #8b95a5;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.15rem 0.2rem;
+  cursor: pointer;
+}
+.popup button:hover { color: #14181f; }
+
+/*
+ * ─── the honesty clause ─────────────────────────────────────
+ *
+ * Everything that moves stops. `Mirror` and `Rotate` stay, deliberately: they
+ * are static layout, they are the difficulty the run dealt, and removing them
+ * would quietly hand a different game to anyone with the setting on.
+ *
+ * `Lag` and `Slippery` stay too — a delayed hover state is not motion, and
+ * they are what makes those two modifiers exist at all.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .root[data-chaos],
+  .root[data-chaos] .drifter,
+  .confetti i {
+    animation: none !important;
+  }
+  .confetti { display: none; }
+  /* The animations are off, so the static half of each has to be restated or
+     `Mirror` and `Shrink` would simply vanish for these players. */
+  .root[data-chaos~="mirror"] .drifter { scale: -1 1; }
+}

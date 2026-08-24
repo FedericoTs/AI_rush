@@ -39,9 +39,8 @@ reproduction. 98 unit tests, 10 e2e.
 - [x] `engine/deck.ts` — seeded deal, every constraint from `GAME_DESIGN.md` §5
 - [x] `engine/coupling/` — the graph engine and its ordering solver
 - [x] `engine/chaos/modifiers.ts` — specs, mercy flags, schedule
-- [ ] `engine/chaos/ChaosProvider` — the CSS-variable wrapper that *renders*
-      the effects. Deferred to Phase 5 with the levels that need it; the
-      schedule is built and tested, nothing draws it yet
+- [x] `engine/chaos/ChaosProvider` — the wrapper that *renders* the effects.
+      Shipped in Phase 5, as planned
 - [x] `input/` — pointer, keyboard, motion, audioIn, camera, haptics + detection
 - [x] `input/__mocks__/scripted.ts` — recorded traces for motion/audio/camera
 - [x] `engine/sfx.ts` — WebAudio, gesture unlock, plus a silent test double
@@ -167,9 +166,10 @@ a complete run, and neither one's version is the broken one.
 **Exit:** eight consecutive runs with no repeated level; modifiers active from
 2:00 without a single broken composition.
 
-The content half is done: 48 written, 48 built. The chaos half is not — the
-modifiers are specified, scheduled and dealt, and no `ChaosProvider` draws them,
-so a run announces "Drifting · Comic Sans" and then behaves identically.
+Both halves are done: 48 written and built, and all twelve modifiers now
+actually draw. What is left in this phase is the exit criterion itself — eight
+consecutive runs, watched by a person, with no repeated level and no broken
+composition. That is a playtest, not a build.
 
 - [x] **The coupled dependency-graph evaluator.** `propagate`, `evict`,
       `redistribute` and `writeback`, plus the ordering solver. `relayout`
@@ -187,10 +187,16 @@ so a run announces "Drifting · Comic Sans" and then behaves identically.
       (`src/levels/coupled.test.ts`). Each proves its *own* honest solve, because
       each has a different one — a topological order where the graph is acyclic,
       and measured convergence where it is not
-- [ ] All 12 chaos modifiers + the incompatibility matrix — the specs, the
-      schedule and the deal are built; **nothing renders them yet**
-- [ ] Automated composition test: every (level × modifier) pair renders,
-      remains solvable, and doesn't violate `incompatibleModifiers`
+- [x] All 12 chaos modifiers + the incompatibility matrix. Every effect is CSS
+      on a wrapper or a listener outside the level, reached through three data
+      attributes on the shared chrome — no level implements one and none knows
+      one exists. `Lag` and `Slippery` are deliberately **feedback** effects
+      rather than input effects: intercepting a pointer stream to delay it
+      breaks every drag level, and a modifier that can make a level unwinnable
+      is worse than no modifier
+- [x] Automated composition test: all 588 (level × modifier) pairs render, no
+      level loses a control under a wrapper, and the incompatibility matrix is
+      checked against the three pairings `LEVELS.md` names by hand
 
 ---
 
