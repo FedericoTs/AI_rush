@@ -18,9 +18,25 @@ and a half before the player realises, and an index that gave away the bit
 would sell that for nothing. Anything a shipped level's index row says has to
 be true of the interface at first glance and useless as a hint.
 
-**Shipped so far (28).** L01–L06, L09–L12, L16, L18, L22–L25, L27, L28,
-L31–L34, L36, L37, L41, L42, L47, plus **L49 · Careers**, which is not in the
-numbered catalogue below because it is the secret. Everything else in this file
+**Shipped so far (34).** L01–L06, L09–L14, L16, L18–L20, L22–L28, L31–L37,
+L41, L42, L47, plus **L49 · Careers**, which is not in the numbered catalogue
+below because it is the secret.
+
+**Sensors, and what happens when you say no.** Six levels read a gyroscope, a
+microphone, a camera or three fingers. A browser hands none of those over
+outside a user gesture, so a run now opens with one calibration screen — asked
+once, remembered, skipped entirely in Mercy Mode, and never blocking anything.
+
+Every one of them ships a fallback that is *the same level*: same par, same
+rule, one number of difference. L13 and L14 share their mechanics between both
+paths in one function, so the two cannot drift apart in difficulty without the
+tests noticing. Two of the fallbacks are better than the originals and that is
+fine — L19 becomes an ASCII face whose eyes you click, and L35 stops measuring
+anything and simply trusts you.
+
+L26 is the exception and deliberately so: `navigator.vibrate` does not exist on
+any iOS Safari, so its flash-and-audio delivery is the *majority* path rather
+than a fallback. It requires only a pointer and has nothing to degrade to. Everything else in this file
 is written and unbuilt — `src/levels/registry.ts` is the authority, and the
 front page counts it live rather than trusting this line.
 

@@ -40,7 +40,14 @@ const HONEST_LEVEL_EARLIEST_SEC = 120;
 const MAX_COUPLED_PER_RUN = 2;
 /** Permission fatigue is real fatigue, and it isn't funny. */
 const MAX_PERMISSION_LEVELS_PER_RUN = 1;
-const PERMISSION_CAPS: readonly InputCapability[] = ["audioIn", "camera"];
+/**
+ * Motion is here with the microphone and the camera because iOS asks for it
+ * like a permission and players read it like one. Including it does two jobs:
+ * Mercy Mode's promise to remove "every level that needs a microphone, camera
+ * or motion" becomes literally true, and no run ever asks you to stand up
+ * twice.
+ */
+const PERMISSION_CAPS: readonly InputCapability[] = ["audioIn", "camera", "motion"];
 
 export type CapabilitySet = ReadonlySet<InputCapability>;
 

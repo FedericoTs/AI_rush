@@ -9,18 +9,24 @@ import { L09 } from "./L09AlmostThere";
 import { L10 } from "./L10ScrollToAccept";
 import { L11 } from "./L11ChooseASecurePassword";
 import { L12 } from "./L12EnterYourPhoneNumber";
+import { L13 } from "./L13ConfirmWithAGesture";
+import { L14 } from "./L14PleaseConfirmVerbally";
 import { L16 } from "./L16BackspaceUnavailable";
 import { L18 } from "./L18DragToUnlock";
+import { L19 } from "./L19UploadAPhotoOfYourself";
+import { L20 } from "./L20ConfirmYoureNearby";
 import { L22 } from "./L22LoadingYourDashboard";
 import { L23 } from "./L23AiIsGeneratingYourCode";
 import { L24 } from "./L24SelectYourPlan";
 import { L25 } from "./L25TwoCursors";
+import { L26 } from "./L26EmergencyVerification";
 import { L27 } from "./L27ConfirmYourAddress";
 import { L28 } from "./L28AreYouStillThere";
 import { L31 } from "./L31Mirror";
 import { L32 } from "./L32NetworkConditions";
 import { L33 } from "./L33ThisPageIsRotating";
 import { L34 } from "./L34LevelFailedToGenerate";
+import { L35 } from "./L35PleaseStandUp";
 import { L36 } from "./L36SignIn";
 import { L37 } from "./L37SetYourSecurityPin";
 import { L41 } from "./L41RankYourPriorities";
@@ -34,8 +40,9 @@ import { L49 } from "./L49Careers";
  * dragging in React components.
  */
 export const REGISTRY: readonly LevelModule[] = [
-  L01, L02, L03, L04, L05, L06, L09, L10, L11, L12, L16, L18, L22, L23, L24,
-  L25, L27, L28, L31, L32, L33, L34, L36, L37, L41, L42, L47, L49,
+  L01, L02, L03, L04, L05, L06, L09, L10, L11, L12, L13, L14, L16, L18, L19,
+  L20, L22, L23, L24, L25, L26, L27, L28, L31, L32, L33, L34, L35, L36, L37,
+  L41, L42, L47, L49,
 ];
 
 export const BY_ID = new Map(REGISTRY.map((m) => [m.meta.id, m]));

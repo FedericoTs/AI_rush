@@ -1,0 +1,87 @@
+/*
+ * The one honest screen in front of the run.
+ *
+ * Workbench chrome, not slop: this is the game talking to the player about
+ * their microphone, and it is the last place in the product that should look
+ * like it might be lying.
+ */
+.shell {
+  width: 100%;
+  max-width: 520px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.75rem;
+}
+
+.wait { width: 100%; height: 1px; }
+
+.card {
+  width: 100%;
+  border: 1px solid var(--chrome-line);
+  border-radius: 14px;
+  background: var(--chrome-2);
+  padding: 1.2rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hazard);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.body { margin: 0; font-size: 0.85rem; color: var(--chrome-dim); line-height: 1.55; }
+
+.facts { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.35rem; }
+.facts li {
+  font-size: 0.74rem;
+  color: var(--chrome-dim);
+  line-height: 1.5;
+  padding-left: 0.9rem;
+  position: relative;
+}
+.facts li::before {
+  content: "·";
+  position: absolute;
+  left: 0.2rem;
+  color: var(--good);
+  font-weight: 700;
+}
+
+.row { display: flex; gap: 0.5rem; margin-top: 0.2rem; }
+.row button { flex: 1; border-radius: 11px; padding: 0.75rem; font-size: 0.85rem; font-weight: 700; }
+
+.decline {
+  border: 1px solid var(--chrome-line);
+  background: none;
+  color: var(--chrome-dim);
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+.decline:hover { color: var(--chrome-ink); border-color: var(--chrome-dim); }
+
+.allow { border: none; background: var(--good); color: #04140f; }
+.allow:disabled, .decline:disabled { opacity: 0.5; }
+
+.fine {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: #4d5866;
+  line-height: 1.55;
+}

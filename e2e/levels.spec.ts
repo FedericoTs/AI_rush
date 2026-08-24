@@ -1,4 +1,7 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
+/* These three are *about* the screen, so they need a page that has not already
+   answered it — the fixture answers it for everything else. */
+import { test as rawTest } from "@playwright/test";
 import { CATALOG } from "../src/levels/catalog";
 
 /** What a first-time player can reach. Locked levels are earned or found. */
@@ -294,4 +297,89 @@ test("an unlocked run posts no score of its own — sharing is not pay-to-win", 
   await expect(
     page.getByText(/A locked level is worth exactly what its tier is worth/),
   ).toBeVisible();
+});
+
+/*
+ * Sensors, and the promise that a run survives every permission denied.
+ *
+ * Playwright grants nothing by default, so this is the exact shape of a
+ * player who taps "No sensors": every level still reachable, every fallback a
+ * real level rather than an apology.
+ */
+const SENSORS = CATALOG.filter((m) => m.family === "sensor");
+
+rawTest("calibration asks once, before the clock, and never blocks a run", async ({ page }) => {
+  await page.goto("/play");
+
+  await expect(page.getByText("Before the clock starts")).toBeVisible();
+  /* The clock must not be running behind it — five minutes draining behind a
+     permission prompt would be the cruellest bug in the game. */
+  await expect(page.getByTestId("clock")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "No sensors" }).click();
+  await expect(page.getByTestId("clock")).toBeVisible();
+
+  /* Asked once. A game that re-asks on every run is a website. */
+  await page.goto("/play");
+  await expect(page.getByTestId("clock")).toBeVisible();
+  await expect(page.getByText("Before the clock starts")).toHaveCount(0);
+});
+
+rawTest("mercy mode never sees the screen at all", async ({ page }) => {
+  await page.goto("/play?mercy=1");
+  await expect(page.getByTestId("clock")).toBeVisible();
+  await expect(page.getByText("Before the clock starts")).toHaveCount(0);
+});
+
+rawTest("practice opens straight into the level, no questions", async ({ page }) => {
+  await page.goto("/levels/L01");
+  await expect(page.locator('[data-level="L01"]')).toBeVisible();
+  await expect(page.getByText("Before the clock starts")).toHaveCount(0);
+});
+
+/*
+ * The hard rule from GAME_DESIGN P5: deny everything and still get a complete,
+ * fair five minutes. Every sensor level has to render something playable with
+ * no permissions at all.
+ */
+for (const level of SENSORS) {
+  test(`${level.id} is playable with every permission denied`, async ({ page }) => {
+    await page.goto(`/levels/${level.id}`);
+    await expect(page.locator(`[data-level="${level.id}"]`)).toBeVisible();
+    /* Not a dead end, not an apology — something to actually do. */
+    await expect(page.locator(`[data-level="${level.id}"] button, [data-level="${level.id}"] input`).first())
+      .toBeVisible();
+  });
+}
+
+test("L35's fallback trusts you, and says so", async ({ page }) => {
+  await page.goto("/levels/L35");
+  await expect(page.getByText(/Please stand up anyway. We trust you/)).toBeVisible();
+  await expect(page.getByRole("checkbox")).toBeDisabled();
+
+  /* Six seconds of honour system, then it believes whatever you tick. */
+  await expect(page.getByRole("checkbox")).toBeEnabled({ timeout: 9_000 });
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.getByTestId("final-score")).toHaveText("1/1");
+});
+
+test("L19's fallback is an ASCII face with clickable eyes", async ({ page }) => {
+  await page.goto("/levels/L19");
+  for (let i = 0; i < 7; i++) {
+    await page.getByLabel(i % 2 ? "Blink the right eye" : "Blink the left eye").click();
+  }
+  await expect(page.getByTestId("final-score")).toHaveText("1/1");
+});
+
+/* Which delivery this browser gets is the browser's business — Chrome exposes
+   a no-op navigator.vibrate, Safari exposes nothing. What matters is that the
+   level says which one you got and is playable either way. */
+test("L26 tells you how the pattern was delivered, whichever way it was", async ({ page }) => {
+  await page.goto("/levels/L26");
+  await expect(
+    page.getByText(/Your device buzzed it|flashed and beeped it instead/),
+  ).toBeVisible();
+  await expect(page.getByTestId("l26-pad")).toBeVisible();
+  await expect(page.getByTestId("l26-stage")).toBeVisible();
 });

@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 /**
  * Challenges, avatars, and the live counters.
@@ -13,13 +14,20 @@ const RIVAL = "@a_rival";
 const TARGET = 4000;
 
 async function skipToEnd(page: Page) {
-  for (let i = 0; i < 20; i++) {
+  await expect(page.getByTestId("clock")).toBeVisible();
+  for (let i = 0; i < 40; i++) {
     const skip = page.getByRole("button", { name: "SKIP THIS LEVEL" });
     if ((await skip.count()) === 0) break;
+    const before = await page.locator("[data-level]").getAttribute("data-level");
     await skip.click();
-    await page.waitForTimeout(70);
+    /* Wait for the level to actually change, not for a guess at how long that
+       takes — a deck is fourteen levels and several of them mount timers. */
+    await Promise.race([
+      page.locator(`[data-level]:not([data-level="${before}"])`).waitFor({ timeout: 4_000 }),
+      page.getByTestId("final-score").waitFor({ timeout: 4_000 }),
+    ]).catch(() => {});
   }
-  await expect(page.getByTestId("final-score")).toBeVisible();
+  await expect(page.getByTestId("final-score")).toBeVisible({ timeout: 10_000 });
 }
 
 test("a challenge link shows who you are chasing", async ({ page }) => {

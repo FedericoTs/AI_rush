@@ -1,0 +1,63 @@
+.ask { margin: 0 0 0.8rem; font-size: 0.78rem; color: #4b5563; line-height: 1.45; }
+
+/*
+ * The panel that flashes.
+ *
+ * On a device that can vibrate this is decoration; on every iPhone it is the
+ * delivery mechanism, so it has to be unmissable without being a strobe — one
+ * pulse per beat, and beats are at least 160ms with 220ms between them.
+ */
+.stage {
+  border: 1px solid var(--slop-line);
+  border-radius: 14px;
+  background: var(--slop-soft);
+  padding: 1.4rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 60ms linear, border-color 60ms linear;
+}
+.stageFlash { background: #fde68a; border-color: #f59e0b; }
+
+.pad {
+  width: 7rem;
+  height: 7rem;
+  border-radius: 50%;
+  border: 2px solid var(--slop-1);
+  background: #fff;
+  color: var(--slop-1);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  touch-action: none;
+  user-select: none;
+}
+.pad:active:not(:disabled) { background: #ede9fe; transform: scale(0.97); }
+.pad:disabled { opacity: 0.45; }
+
+.row { display: flex; align-items: center; gap: 0.7rem; margin-top: 0.7rem; }
+
+/* The shape of the pattern, without its rhythm. Length is not a spoiler; the
+   timing is the level, and this shows only how many beats are left. */
+.progress { display: flex; gap: 0.25rem; align-items: center; flex: 1; }
+.beat { width: 0.5rem; height: 0.5rem; border-radius: 3px; background: var(--slop-line); }
+.long { width: 1.1rem; }
+.beatDone { background: #059669; }
+
+.replay {
+  border: 1px solid var(--slop-line);
+  background: #fff;
+  color: #6b7280;
+  border-radius: 9px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+.replay:disabled { opacity: 0.4; }
+
+.note { margin: 0.7rem 0 0; font-size: 0.68rem; color: #9ca3af; line-height: 1.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage { transition: none; }
+  .pad:active:not(:disabled) { transform: none; }
+}

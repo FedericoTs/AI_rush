@@ -129,20 +129,28 @@ makes sense to someone who has never seen the game.
 
 ---
 
-## Phase 4 — Sensors
-**Exit:** a phone player and a desktop player can play the same seed, both get
-a complete run, and neither one's experience feels like the broken version.
+## Phase 4 — Sensors ✅
+**Exit met:** a phone player and a desktop player play the same seed, both get
+a complete run, and neither one's version is the broken one.
 
-- [ ] Calibration / Level 0, with the full permission choreography
-- [ ] **L13** Confirm With A Gesture (gyro) + desktop fallback
-- [ ] **L14** Please Confirm Verbally (mic) + dead-mic detection + fallback
-- [ ] **L19** Upload A Photo Of Yourself (camera) + ASCII-face fallback
-- [ ] **L26** Emergency Verification (haptics) — **build the flash/audio
-      fallback first**, it is the iOS-majority path
-- [ ] **L35** Please Stand Up (accelerometer) + honour-system fallback
-- [ ] **L20** Confirm You're Nearby (multi-touch) + desktop three-input variant
-- [ ] Deny-everything test: a run with all permissions refused must be complete,
-      fair, and never nag. Automated in Playwright.
+- [x] Calibration, with the full permission choreography — asked once before
+      the clock starts, remembered, skipped in Mercy Mode, never blocking
+- [x] **L13** Confirm With A Gesture (gyro) + the on-screen phone you tilt with
+      a mouse. Both paths run the *same* physics function
+- [x] **L14** Please Confirm Verbally (mic) + dead-mic detection at four
+      seconds of silence + the hold-a-falling-slider fallback
+- [x] **L19** Upload A Photo Of Yourself (camera) + ASCII-face fallback. A
+      brightness-delta counter, never face detection — a finger over the lens
+      works and finding that out is the point
+- [x] **L26** Emergency Verification (haptics) — flash/audio built first and
+      treated as primary, because it is the iOS-majority path
+- [x] **L35** Please Stand Up (accelerometer) + the honour system, which is the
+      better version
+- [x] **L20** Confirm You're Nearby (multi-touch) + the desktop three-input
+      variant
+- [x] Deny-everything test, automated: Playwright grants no permissions, so the
+      whole suite runs as a player who declined. Every sensor level is asserted
+      individually playable in that state
 
 ---
 

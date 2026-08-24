@@ -9,8 +9,7 @@
  */
 
 import { create } from "zustand";
-import type { CapabilitySet } from "@/input/capabilities";
-import { dealDeck, practiceDeck } from "./deck";
+import { dealDeck, practiceDeck, type CapabilitySet } from "./deck";
 import type { UnlockState } from "./unlocks";
 import type { DealtLevel, LevelModule, LevelResult } from "./types";
 import { comboFor, scoreLevel, RUN_DURATION_MS } from "./scoring";
@@ -41,6 +40,14 @@ export interface RunState {
 
   /** A hand-picked deck. Nothing is submitted and nothing reaches the board. */
   practice: boolean;
+
+  /**
+   * How many levels have been entered, and which entry has already been
+   * resolved. Together they make `onSolve` idempotent within one level —
+   * see `solve()`.
+   */
+  entries: number;
+  resolvedEntry: number;
 
   breakdown: LevelResult[];
   /** Append-only. What the server rescores from (BACKEND.md §4). */
@@ -84,6 +91,8 @@ const BLANK = {
   remainingMs: RUN_DURATION_MS,
   durationMs: RUN_DURATION_MS,
   practice: false,
+  entries: 0,
+  resolvedEntry: -1,
   breakdown: [] as LevelResult[],
   events: [] as RunEvent[],
   killedBy: null as string | null,
@@ -116,6 +125,7 @@ export const useRun = create<RunState>((set, get) => ({
     if (s.phase !== "playing") return;
     set({
       fails: 0,
+      entries: s.entries + 1,
       levelStartMs: s.elapsedMs,
       killedBy: current.module.meta.title,
       events: [
@@ -125,10 +135,22 @@ export const useRun = create<RunState>((set, get) => ({
     });
   },
 
+  /**
+   * Resolve the current level.
+   *
+   * `LevelProps.onSolve` has always promised that repeats are ignored, and
+   * until a level actually sent one that promise was untested and untrue: a
+   * second call scored the *next* level in the deck for free. Levels that run
+   * their mechanic on a timer really do send repeats — several ticks can queue
+   * inside one React batch, all of them seeing a stale "already finished"
+   * flag — so the guard belongs here, where it can be exact, rather than in
+   * every level that might need it.
+   */
   solve() {
     const s = get();
     const current = s.deck[s.index];
     if (!current) return;
+    if (s.resolvedEntry === s.entries) return;
 
     const solveMs = Math.round(Math.max(0, s.elapsedMs - s.levelStartMs));
     const streak = s.streak + 1;
@@ -142,6 +164,7 @@ export const useRun = create<RunState>((set, get) => ({
     }).total;
 
     set({
+      resolvedEntry: s.entries,
       score: s.score + points,
       streak,
       solved: s.solved + 1,
@@ -183,7 +206,9 @@ export const useRun = create<RunState>((set, get) => ({
     const s = get();
     const current = s.deck[s.index];
     if (!current) return;
+    if (s.resolvedEntry === s.entries) return;
     set({
+      resolvedEntry: s.entries,
       streak: 0,
       skipped: s.skipped + 1,
       index: s.index + 1,

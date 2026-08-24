@@ -18,6 +18,7 @@ import { Handle } from "@/ui/Handle";
 import { MODIFIERS } from "@/engine/chaos/modifiers";
 import { SECRET_FOUND } from "@/ui/slop/Slop";
 import { detectPassive } from "@/input/capabilities";
+import { Calibrate } from "./Calibrate";
 import { useInput } from "@/input/useInput";
 import { REGISTRY } from "@/levels/registry";
 import s from "./play.module.css";
@@ -59,7 +60,17 @@ export function RunClient({
    */
   practice?: readonly string[] | null;
 }) {
-  const capabilities = useMemo(() => detectPassive(), []);
+  /*
+   * Null until calibration answers.
+   *
+   * `detectPassive()` never returns motion, microphone or camera — a browser
+   * hands none of those over outside a user gesture — so without this the six
+   * sensor levels could only ever render their fallbacks. Practice skips the
+   * screen: a training room should open when you click it.
+   */
+  const [capabilities, setCapabilities] = useState<ReadonlySet<InputCapability> | null>(
+    () => (practice ? detectPassive() : null),
+  );
   const sfx = useMemo(() => createSfx(), []);
   const mine = useUnlocks();
 
@@ -123,6 +134,7 @@ export function RunClient({
   const unlockSig = `${unlocks.credits}:${unlocks.secret ? 1 : 0}`;
 
   useEffect(() => {
+    if (!capabilities) return;
     const [credits, secret] = unlockSig.split(":");
     startRun({
       seed, registry: REGISTRY, capabilities, mercy, only, durationMs,
@@ -143,7 +155,7 @@ export function RunClient({
      never posted. A leaderboard is not allowed to stand between a player and
      five minutes of interfaces. */
   useEffect(() => {
-    if (only) return; // practice is never filed
+    if (only || !capabilities) return; // practice is never filed
     let cancelled = false;
     void fetch("/api/run/start", {
       method: "POST",
@@ -167,6 +179,7 @@ export function RunClient({
   /* One clock for the whole run. Started on mount, never paused — not for
      permission prompts, not for popups. */
   useEffect(() => {
+    if (!capabilities) return;
     const c = new GameClock({ durationMs });
     clock.current = c;
     /* The clock ticks every frame; the HUD shows m:ss. Re-rendering the whole
@@ -188,7 +201,7 @@ export function RunClient({
       c.stop();
       clock.current = null;
     };
-  }, [sfx, setRemaining, durationMs]);
+  }, [sfx, setRemaining, durationMs, capabilities]);
 
   /*
    * Stable identities, deliberately.
@@ -249,6 +262,14 @@ export function RunClient({
       return !m;
     });
   }, [sfx]);
+
+  if (!capabilities) {
+    return (
+      <div className={s.shell}>
+        <Calibrate mercy={mercy} onDone={setCapabilities} />
+      </div>
+    );
+  }
 
   const current = deck[index] ?? null;
   const combo = comboFor(streak);

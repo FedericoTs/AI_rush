@@ -1,0 +1,77 @@
+.pad {
+  position: relative;
+  height: 13rem;
+  border: 1px solid var(--slop-line);
+  border-radius: 12px;
+  background: var(--slop-soft);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The whole panel is the sensor, so the browser must not treat a drag on it
+     as a scroll — on a phone that would eat the second and third finger. */
+  touch-action: none;
+  user-select: none;
+}
+
+.padLabel {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  color: #cbd5e1;
+}
+
+/*
+ * The popup. 200px wide, centred on the touch.
+ *
+ * That width is the level: a finger in the middle gets a popup entirely on
+ * screen and entirely in the way, a finger in a corner pushes most of it past
+ * the edge where it cannot intercept anything. Nothing says so.
+ */
+.popup {
+  position: absolute;
+  width: 200px;
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+  background: #fff;
+  border: 1px solid var(--slop-line);
+  box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.45);
+  font-size: 0.7rem;
+  color: #374151;
+  line-height: 1.4;
+}
+
+.keys { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
+.key {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  border: 1px solid var(--slop-line);
+  border-radius: 7px;
+  padding: 0.35rem 0.55rem;
+  background: #fff;
+  color: #6b7280;
+}
+.keyOn { border-color: #059669; background: #ecfdf5; color: #065f46; font-weight: 600; }
+
+.status { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; }
+.dots { display: flex; gap: 0.3rem; }
+.dot {
+  width: 0.6rem; height: 0.6rem; border-radius: 50%;
+  background: var(--slop-line);
+  transition: background 120ms ease-out;
+}
+.dotOn { background: #059669; }
+.timer {
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--slop-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.track { height: 4px; border-radius: 2px; background: var(--slop-line); overflow: hidden; margin-top: 0.35rem; }
+.fill { height: 100%; background: #059669; transition: width 60ms linear; }
+
+.note { margin: 0.7rem 0 0; font-size: 0.68rem; color: #9ca3af; line-height: 1.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dot, .fill { transition: none; }
+}

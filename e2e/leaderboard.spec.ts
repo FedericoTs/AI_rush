@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 /**
  * The endgame, against the real database.
@@ -10,15 +11,30 @@ import { expect, test, type Page } from "@playwright/test";
 
 const handle = () => `e2e_${Math.random().toString(36).slice(2, 10)}`;
 
+/**
+ * Skip every level until the tally.
+ *
+ * Waits for the level under the button to actually change rather than for a
+ * fixed number of milliseconds. A deck is fourteen levels and some of them
+ * mount timers, so a flat 60ms wait was occasionally clicking a button that
+ * had already been replaced — which is a flaky test rather than a real one.
+ */
 async function skipToTally(page: Page) {
   await page.goto("/play?seed=E2E001");
-  for (let i = 0; i < 20; i++) {
+  await expect(page.getByTestId("clock")).toBeVisible();
+
+  for (let i = 0; i < 40; i++) {
     const skip = page.getByRole("button", { name: "SKIP THIS LEVEL" });
     if ((await skip.count()) === 0) break;
+    const before = await page.locator("[data-level]").getAttribute("data-level");
     await skip.click();
-    await page.waitForTimeout(60);
+    /* Either the next level mounted, or the run ended. Both are progress. */
+    await Promise.race([
+      page.locator(`[data-level]:not([data-level="${before}"])`).waitFor({ timeout: 4_000 }),
+      page.getByTestId("final-score").waitFor({ timeout: 4_000 }),
+    ]).catch(() => {});
   }
-  await expect(page.getByTestId("final-score")).toBeVisible();
+  await expect(page.getByTestId("final-score")).toBeVisible({ timeout: 10_000 });
 }
 
 test("a run reaches the tally and offers to claim a place", async ({ page }) => {

@@ -1,0 +1,92 @@
+.ask { margin: 0 0 0.7rem; font-size: 0.78rem; color: #4b5563; line-height: 1.45; }
+
+.tray {
+  position: relative;
+  height: 4.6rem;
+  border: 1px solid var(--slop-line);
+  border-radius: 12px;
+  background: var(--slop-soft);
+  overflow: hidden;
+  /* The lip: a visible rim, so "rest against it" is a thing you can see. */
+  box-shadow: inset 0 -6px 0 -2px #e5e7eb, inset 0 6px 0 -2px #e5e7eb;
+}
+.danger { border-color: #fca5a5; background: #fef2f2; }
+
+.slot {
+  position: absolute;
+  top: 50%;
+  width: 1.9rem;
+  height: 2.3rem;
+  margin-left: -0.95rem;
+  transform: translateY(-50%);
+  border: 1px dashed #cbd5e1;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  color: var(--slop-ink);
+}
+.slotFull { border-style: solid; border-color: #34d399; background: #ecfdf5; font-weight: 700; }
+
+.digit {
+  position: absolute;
+  top: 50%;
+  width: 1.7rem;
+  height: 2.1rem;
+  margin-left: -0.85rem;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #94a3b8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--slop-ink);
+}
+
+/* The spirit-level bubble. Purely an indicator; the readout is the instrument. */
+.bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 10px;
+  height: 5px;
+  margin-left: -5px;
+  border-radius: 3px;
+  background: #cbd5e1;
+}
+.bubbleLevel { background: #10b981; }
+
+.readout {
+  margin-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--slop-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.note { margin: 0.6rem 0 0; font-size: 0.68rem; color: #9ca3af; line-height: 1.45; }
+
+/* ─── the fallback's device ──────────────────────────────── */
+.phoneWrap { margin-top: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.phone {
+  width: 3.2rem;
+  height: 5.4rem;
+  border-radius: 10px;
+  border: 2px solid #475569;
+  background: #1e293b;
+  padding: 4px;
+  transition: transform 60ms linear;
+}
+.phoneScreen { display: block; width: 100%; height: 100%; border-radius: 5px; background: #334155; }
+.dial { width: 100%; accent-color: var(--slop-1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .phone { transition: none; }
+}

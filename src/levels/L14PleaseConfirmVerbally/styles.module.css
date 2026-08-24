@@ -1,0 +1,68 @@
+.meterWrap { display: flex; gap: 0.9rem; align-items: stretch; }
+
+.meter {
+  position: relative;
+  width: 3.2rem;
+  height: 9rem;
+  border: 1px solid var(--slop-line);
+  border-radius: 10px;
+  background: var(--slop-soft);
+  overflow: hidden;
+}
+
+/* The safe band, drawn exactly where it is. The level never lies about this. */
+.band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(16, 185, 129, 0.16);
+  border-top: 1px solid #10b981;
+  border-bottom: 1px solid #10b981;
+}
+
+.fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #93c5fd, #3b82f6);
+  transition: height 60ms linear;
+}
+.fillOk { background: linear-gradient(180deg, #6ee7b7, #059669); }
+
+.side { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.2rem; }
+.holdLabel {
+  font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--slop-dim);
+}
+.hold {
+  font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700;
+  color: var(--slop-ink); font-variant-numeric: tabular-nums; line-height: 1;
+}
+.holdTrack { height: 4px; border-radius: 2px; background: var(--slop-line); overflow: hidden; margin-top: 0.2rem; }
+.holdFill { height: 100%; background: #059669; transition: width 60ms linear; }
+.of { font-family: var(--font-mono); font-size: 0.6rem; color: #9ca3af; }
+
+.slider { width: 100%; margin-top: 0.9rem; accent-color: var(--slop-1); }
+
+.note { margin: 0.7rem 0 0; font-size: 0.68rem; color: #9ca3af; line-height: 1.45; }
+
+/*
+ * The dead-mic notice.
+ *
+ * Sits above the card rather than inside it, because it is the chrome talking,
+ * not the interface — and it says the failure was ours. A player holding a hum
+ * at a meter that cannot move must never be left thinking that is their fault.
+ */
+.toast {
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--good);
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  background: #0d1a16;
+  color: var(--chrome-ink);
+  font-size: 0.74rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill, .holdFill { transition: none; }
+}
