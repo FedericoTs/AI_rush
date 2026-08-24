@@ -71,6 +71,27 @@ test("the front page shows live counters", async ({ page }) => {
   await expect(page.getByText("on the board")).toBeVisible();
 });
 
+/*
+ * The board is on the front page whether or not anyone is on it. Hiding it
+ * while empty is backwards: an empty leaderboard with your name obviously
+ * missing from the top is a better invitation than no leaderboard at all.
+ */
+test("the front page always shows the board, empty or not", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Survivors")).toBeVisible();
+  await expect(page.getByRole("link", { name: /full board/ })).toBeVisible();
+
+  const realRows = await page.locator("a[href*='/play?seed=']").count();
+  if (realRows > 0) {
+    await expect(page.getByText(/Tap anyone to play their exact run/)).toBeVisible();
+  } else {
+    /* Placeholder ranks, so the shape of the thing is visible from the start. */
+    await expect(page.getByText(/That top row has your name on it/)).toBeVisible();
+    await expect(page.getByText("#1", { exact: true })).toBeVisible();
+    await expect(page.getByText("#3", { exact: true })).toBeVisible();
+  }
+});
+
 test("the board offers a beat-it link on every row", async ({ page }) => {
   await page.goto("/board");
   /* A zero-score row offers nothing to chase and deliberately has no link, so

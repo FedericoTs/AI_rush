@@ -37,3 +37,17 @@
 .miniRank { font-family: var(--font-mono); font-size: 0.72rem; color: var(--chrome-dim); font-variant-numeric: tabular-nums; }
 .miniScore { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
 .boardFoot { margin: 0; font-size: 0.68rem; color: #63707e; font-family: var(--font-mono); }
+
+/* An empty board still shows its shape. Placeholder rows read as "your name
+   goes here", which a blank space does not. */
+.miniEmpty { cursor: default; }
+.miniEmpty:hover { background: var(--chrome-2); }
+.miniWaiting { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.miniAvatar {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  border: 1px dashed var(--chrome-line); background: transparent;
+}
+.miniDash {
+  height: 7px; width: 5.5rem; border-radius: 4px; background: var(--chrome-line); opacity: 0.5;
+}
+.miniEmpty .miniRank, .miniEmpty .miniScore { color: #3d4854; }

@@ -13,19 +13,29 @@ import { headers } from "next/headers";
  */
 
 /*
- * These are defaults, not secrets, and env vars override both.
+ * Credentials, and where they are allowed to apply.
  *
  * A Supabase *publishable* key is meant to be public — in a conventional
  * Supabase app it ships inside the browser bundle. Everything it can reach is
  * bounded by the policy layer, and here that layer allows exactly five things:
- * open a run, submit one (against a server-side ceiling), claim one with its
+ * open a run, submit one against a server-side ceiling, claim one with its
  * secret, read the public board, and file a level idea. No table is directly
- * readable or writable. Publishing this key changes nothing about what anyone
- * can do.
+ * readable or writable, so publishing this key changes nothing about what
+ * anyone can do.
+ *
+ * The baked-in default applies ONLY on Vercel. Off Vercel — a laptop, CI, a
+ * test run — there is no database unless someone sets the variables on
+ * purpose. That is not paranoia about the key: it is that end-to-end tests
+ * were quietly writing rows onto the live leaderboard, and a real player's
+ * board should never be somebody's test fixture.
  */
-const URL_ = process.env.SUPABASE_URL ?? "https://zamiayilppjufozhuxev.supabase.co";
+const ON_VERCEL = process.env.VERCEL === "1";
+
+const URL_ =
+  process.env.SUPABASE_URL ?? (ON_VERCEL ? "https://zamiayilppjufozhuxev.supabase.co" : undefined);
 const KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_SMJQPfZRBM9jTRQULEPDhA_tE4Mr219";
+  process.env.SUPABASE_PUBLISHABLE_KEY ??
+  (ON_VERCEL ? "sb_publishable_SMJQPfZRBM9jTRQULEPDhA_tE4Mr219" : undefined);
 
 export const dbConfigured = Boolean(URL_ && KEY);
 

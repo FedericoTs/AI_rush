@@ -50,32 +50,55 @@ export default async function Home() {
           </div>
         </div>
 
-        {top.length > 0 && (
-          <div className={s.boardBlock}>
-            <div className={s.boardHead}>
-              <span>Survivors</span>
-              <Link href="/board">full board →</Link>
-            </div>
-            <div className={s.mini}>
-              {top.map((r) => (
-                <Link
-                  key={`${r.handle}-${r.rank}`}
-                  className={s.miniRow}
-                  href={
-                    r.score > 0
-                      ? { pathname: "/play", query: { seed: r.seed, vs: r.handle, target: r.score } }
-                      : { pathname: "/play", query: { seed: r.seed } }
-                  }
-                >
-                  <span className={s.miniRank}>#{r.rank}</span>
-                  <Handle handle={r.handle} size={22} link={false} />
-                  <span className={s.miniScore}>{r.score.toLocaleString()}</span>
-                </Link>
-              ))}
-            </div>
-            <p className={s.boardFoot}>Tap anyone to play their exact run and try to beat it.</p>
+        {/*
+          * The board is always here, empty or not.
+          *
+          * Hiding it while nobody has played is exactly backwards: an empty
+          * leaderboard with your name obviously missing from the top of it is
+          * a better invitation than no leaderboard at all, and it shows the
+          * shape of what pressing START leads to.
+          */}
+        <div className={s.boardBlock}>
+          <div className={s.boardHead}>
+            <span>Survivors</span>
+            <Link href="/board">full board →</Link>
           </div>
-        )}
+
+          <div className={s.mini}>
+            {top.length > 0
+              ? top.map((r) => (
+                  <Link
+                    key={`${r.handle}-${r.rank}`}
+                    className={s.miniRow}
+                    href={
+                      r.score > 0
+                        ? { pathname: "/play", query: { seed: r.seed, vs: r.handle, target: r.score } }
+                        : { pathname: "/play", query: { seed: r.seed } }
+                    }
+                  >
+                    <span className={s.miniRank}>#{r.rank}</span>
+                    <Handle handle={r.handle} size={22} link={false} />
+                    <span className={s.miniScore}>{r.score.toLocaleString()}</span>
+                  </Link>
+                ))
+              : [1, 2, 3].map((rank) => (
+                  <div className={`${s.miniRow} ${s.miniEmpty}`} key={rank} aria-hidden="true">
+                    <span className={s.miniRank}>#{rank}</span>
+                    <span className={s.miniWaiting}>
+                      <span className={s.miniAvatar} />
+                      <span className={s.miniDash} />
+                    </span>
+                    <span className={s.miniScore}>—</span>
+                  </div>
+                ))}
+          </div>
+
+          <p className={s.boardFoot}>
+            {top.length > 0
+              ? "Tap anyone to play their exact run and try to beat it."
+              : "Nobody has survived yet. That top row has your name on it."}
+          </p>
+        </div>
 
         <p className={s.warn}>
           Contains flashing colour and sudden sound. Sound can be muted from the bar once a run
