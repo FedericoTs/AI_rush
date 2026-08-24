@@ -1,0 +1,1035 @@
+<title>AI Rush Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+:root{
+  /* app chrome — the honest part */
+  --chrome:#0B0E13; --chrome-2:#141922; --chrome-line:#232B37;
+  --chrome-ink:#E9EEF4; --chrome-dim:#8593A5;
+  --hazard:#FF4A2B; --good:#28C08A;
+
+  /* the slop — deliberately, expensively deranged */
+  --slop-bg:#FFFFFF; --slop-ink:#111827; --slop-dim:#6B7280;
+  --slop-line:#E5E7EB; --slop-soft:#F9FAFB;
+  --slop-1:#7C3AED; --slop-2:#2563EB; --slop-3:#DB2777;
+  --slop-grad:linear-gradient(135deg,#7C3AED 0%,#2563EB 50%,#DB2777 100%);
+
+  --f:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --m:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;background:var(--chrome);color:var(--chrome-ink);
+  font-family:var(--f);font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+  display:flex;flex-direction:column;align-items:center;
+  padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+:focus-visible{outline:2px solid var(--hazard);outline-offset:2px}
+button{font:inherit;cursor:pointer}
+
+.app{width:100%;max-width:520px;flex:1;display:flex;flex-direction:column;min-height:0}
+
+/* ─── chrome bar ─────────────────────────────────────────── */
+.hud{
+  display:flex;align-items:center;gap:.5rem;padding:.55rem .75rem;
+  border-bottom:1px solid var(--chrome-line);background:var(--chrome);
+  position:sticky;top:0;z-index:20;
+}
+.hud-mark{font-weight:800;font-size:.78rem;letter-spacing:-.01em}
+.hud-mark i{font-style:normal;color:var(--hazard)}
+.hud-sp{flex:1}
+.hud-stat{font-family:var(--m);font-variant-numeric:tabular-nums;font-size:.72rem;color:var(--chrome-dim)}
+.hud-stat b{color:var(--chrome-ink);font-weight:500}
+.hud-clock{font-family:var(--m);font-variant-numeric:tabular-nums;font-size:1rem;font-weight:500}
+.hud-clock.low{color:var(--hazard)}
+.hud-btn{
+  background:none;border:1px solid var(--chrome-line);color:var(--chrome-dim);
+  border-radius:4px;padding:.2rem .4rem;font-size:.68rem;font-family:var(--m);line-height:1
+}
+.hud-btn:hover{color:var(--chrome-ink);border-color:var(--chrome-dim)}
+.combo{
+  font-family:var(--m);font-size:.72rem;color:var(--good);font-weight:500;
+  opacity:0;transition:opacity .2s
+}
+.combo.on{opacity:1}
+
+/* ─── stage ──────────────────────────────────────────────── */
+.stage{flex:1;display:flex;flex-direction:column;padding:.75rem;min-height:0;overflow-y:auto}
+.stage::-webkit-scrollbar{width:0}
+
+/* ─── the slop card ──────────────────────────────────────── */
+.card{
+  background:var(--slop-bg);color:var(--slop-ink);
+  border-radius:18px;padding:1.1rem;position:relative;overflow:hidden;
+  box-shadow:0 10px 40px -12px rgba(124,58,237,.45),0 2px 8px rgba(0,0,0,.3);
+}
+.card::before{
+  content:"";position:absolute;inset:0;border-radius:18px;padding:1.5px;
+  background:var(--slop-grad);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
+}
+.badge{
+  display:inline-block;font-size:.58rem;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:#fff;background:var(--slop-grad);
+  padding:.22rem .5rem;border-radius:6px;margin-bottom:.6rem
+}
+.card h2{
+  margin:0 0 .3rem;font-size:1.22rem;font-weight:800;letter-spacing:-.025em;line-height:1.15;
+  background:var(--slop-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.card .sub{margin:0 0 1rem;font-size:.82rem;color:var(--slop-dim);line-height:1.45}
+.card .foot{
+  margin-top:1rem;padding-top:.7rem;border-top:1px solid var(--slop-line);
+  display:flex;gap:.7rem;flex-wrap:wrap;font-size:.58rem;color:#C3C8D0
+}
+.err{
+  margin-top:.7rem;font-size:.76rem;color:#DC2626;background:#FEF2F2;
+  border:1px solid #FECACA;border-radius:8px;padding:.45rem .6rem;font-weight:500
+}
+.hint{margin-top:.6rem;font-size:.68rem;color:#9CA3AF;line-height:1.45}
+
+.cta{
+  width:100%;border:none;border-radius:12px;padding:.8rem;margin-top:.9rem;
+  background:var(--slop-grad);color:#fff;font-weight:700;font-size:.92rem;
+  letter-spacing:-.01em;box-shadow:0 4px 14px -4px rgba(124,58,237,.6)
+}
+.cta:disabled{opacity:.4;box-shadow:none}
+.cta:active:not(:disabled){transform:translateY(1px)}
+
+.skiprow{display:flex;gap:.5rem;margin-top:.6rem;align-items:center}
+.skip{
+  flex:1;background:none;border:1px solid var(--chrome-line);color:var(--chrome-dim);
+  border-radius:10px;padding:.5rem;font-size:.74rem;font-family:var(--m)
+}
+.skip:hover{color:var(--hazard);border-color:var(--hazard)}
+.skipnote{font-size:.6rem;color:#4B5563;font-family:var(--m)}
+
+/* ─── L11 runner ─────────────────────────────────────────── */
+.pw-field{
+  display:flex;align-items:center;gap:.5rem;border:1.5px solid var(--slop-line);
+  border-radius:10px;padding:.6rem .7rem;background:var(--slop-soft);
+}
+.pw-val{
+  font-family:var(--m);font-size:1.15rem;font-weight:500;letter-spacing:.22em;
+  flex:1;min-width:0;color:var(--slop-ink)
+}
+.pw-val .ghost{color:#D1D5DB}
+.pw-meter{height:5px;border-radius:3px;background:var(--slop-line);margin-top:.55rem;overflow:hidden}
+.pw-meter i{display:block;height:100%;background:var(--slop-grad);width:0;transition:width .2s}
+.runner{
+  margin-top:.8rem;border:1px solid var(--slop-line);border-radius:12px;
+  background:linear-gradient(180deg,#FBFAFF 0%,#F4F2FE 100%);overflow:hidden;
+  touch-action:manipulation;user-select:none;position:relative
+}
+.runner canvas{display:block;width:100%;height:auto}
+.runner-tip{
+  position:absolute;left:8px;bottom:6px;font-family:var(--m);font-size:.56rem;color:#B9B2E0
+}
+
+/* ─── L12 faders ─────────────────────────────────────────── */
+.tel{
+  display:flex;gap:0;justify-content:space-between;align-items:flex-end;
+  background:var(--slop-soft);border:1px solid var(--slop-line);border-radius:12px;
+  padding:.7rem .35rem .5rem;touch-action:none;user-select:none
+}
+.fader{flex:1;display:flex;flex-direction:column;align-items:center;gap:.35rem;min-width:0}
+.fader-track{
+  width:100%;max-width:26px;height:120px;border-radius:7px;background:#EAE7F6;
+  position:relative;border:1px solid #DDD8F0;cursor:grab
+}
+.fader-track:active{cursor:grabbing}
+.fader-fill{position:absolute;left:0;right:0;bottom:0;border-radius:0 0 6px 6px;background:var(--slop-grad);opacity:.28}
+.fader-knob{
+  position:absolute;left:-3px;right:-3px;height:16px;border-radius:5px;
+  background:linear-gradient(180deg,#fff,#E7E2F7);border:1px solid #B9AEE8;
+  box-shadow:0 1px 3px rgba(80,50,160,.28)
+}
+.fader-track.inv .fader-knob{border-color:#F0A0C0}
+.fader-digit{
+  font-family:var(--m);font-size:.9rem;font-weight:700;font-variant-numeric:tabular-nums;
+  color:var(--slop-ink)
+}
+.fader-idx{font-family:var(--m);font-size:.5rem;color:#B6BCC7}
+.fader.ok .fader-digit{color:var(--good)}
+.tel-target{
+  font-family:var(--m);font-size:1rem;font-weight:500;letter-spacing:.06em;
+  text-align:center;margin-bottom:.7rem;color:var(--slop-ink)
+}
+.tel-target b{color:var(--slop-1)}
+.tel-read{
+  font-family:var(--m);font-size:.98rem;text-align:center;margin-top:.6rem;
+  letter-spacing:.06em;color:var(--slop-dim);font-variant-numeric:tabular-nums
+}
+
+/* ─── L37 dials ──────────────────────────────────────────── */
+.pin{display:flex;gap:.55rem;justify-content:center;touch-action:none;user-select:none}
+.dial{flex:1;max-width:74px;display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.dial-body{
+  width:100%;height:112px;border-radius:11px;position:relative;overflow:hidden;cursor:grab;
+  background:linear-gradient(90deg,#8A6B2E 0%,#E9CE8E 18%,#FBF1D6 34%,#E3C384 52%,#B08A3E 74%,#7A5C22 100%);
+  box-shadow:inset 0 2px 5px rgba(255,255,255,.55),inset 0 -3px 7px rgba(60,40,0,.42),0 2px 5px rgba(0,0,0,.22);
+  border:1px solid #6E521C
+}
+.dial-body:active{cursor:grabbing}
+.dial-reel{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center}
+.dial-n{
+  height:37.333px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--m);font-size:1.35rem;font-weight:700;color:#4A3510;
+  text-shadow:0 1px 0 rgba(255,255,255,.5);font-variant-numeric:tabular-nums
+}
+.dial-win{
+  position:absolute;left:0;right:0;top:37.333px;height:37.333px;pointer-events:none;
+  border-top:1px solid rgba(60,40,0,.4);border-bottom:1px solid rgba(60,40,0,.4);
+  box-shadow:inset 0 0 12px rgba(60,40,0,.3)
+}
+.dial-shade{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(40,28,5,.5),transparent 32%,transparent 68%,rgba(40,28,5,.5))
+}
+.dial-lbl{font-family:var(--m);font-size:.52rem;color:#9CA3AF}
+.dial-btns{display:flex;gap:.25rem;width:100%}
+.dial-btns button{
+  flex:1;border:1px solid var(--slop-line);background:#fff;border-radius:6px;
+  padding:.18rem;font-size:.7rem;line-height:1;color:var(--slop-dim)
+}
+.dial-btns button:active{background:var(--slop-soft)}
+.pin-target{
+  font-family:var(--m);font-size:1.5rem;font-weight:700;letter-spacing:.5em;
+  text-align:center;color:var(--slop-1);margin-bottom:.9rem;text-indent:.5em
+}
+
+/* ─── title / tally ──────────────────────────────────────── */
+.screen{flex:1;display:flex;flex-direction:column;justify-content:center;padding:1.2rem;gap:.9rem}
+.screen h1{
+  margin:0;font-size:clamp(2.6rem,15vw,4.2rem);font-weight:800;letter-spacing:-.05em;line-height:.85
+}
+.screen h1 i{font-style:normal;color:var(--hazard);display:block}
+.screen p{margin:0;color:var(--chrome-dim);font-size:.88rem;max-width:34ch}
+.warn{font-size:.68rem;color:#6B7280;font-family:var(--m);line-height:1.5}
+
+.dlg{
+  background:var(--slop-bg);color:var(--slop-ink);border-radius:16px;padding:1.1rem;
+  box-shadow:0 12px 40px -14px rgba(124,58,237,.5)
+}
+.dlg h3{margin:0 0 .3rem;font-size:1.05rem;font-weight:800;letter-spacing:-.02em}
+.dlg p{margin:0 0 .9rem;font-size:.8rem;color:var(--slop-dim)}
+.dlg-row{display:flex;gap:.6rem}
+.dlg-row button{flex:1;border-radius:10px;padding:.7rem;font-weight:700;font-size:.85rem;border:none}
+.btn-cancel{background:#10B981;color:#fff}
+.btn-continue{background:#EF4444;color:#fff}
+
+.tally-score{
+  font-size:clamp(3rem,17vw,4.6rem);font-weight:800;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums;font-family:var(--m)
+}
+.tally-rows{display:grid;gap:1px;background:var(--chrome-line);border:1px solid var(--chrome-line);border-radius:10px;overflow:hidden}
+.tally-row{background:var(--chrome-2);padding:.5rem .7rem;display:flex;justify-content:space-between;font-size:.78rem}
+.tally-row span:first-child{color:var(--chrome-dim)}
+.tally-row span:last-child{font-family:var(--m);font-variant-numeric:tabular-nums}
+.tally-row.death span:last-child{color:var(--hazard)}
+
+.flash{
+  position:fixed;inset:0;pointer-events:none;z-index:50;opacity:0;
+  background:var(--hazard);mix-blend-mode:screen
+}
+.flash.go{animation:fl .3s ease-out}
+@keyframes fl{0%{opacity:.4}100%{opacity:0}}
+.shake{animation:sh .3s}
+@keyframes sh{
+  0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important}
+}
+</style>
+
+<div class="app">
+  <div class="hud" id="hud" hidden>
+    <div class="hud-mark">AI&nbsp;<i>RUSH</i></div>
+    <div class="combo" id="combo">×1</div>
+    <div class="hud-sp"></div>
+    <div class="hud-stat">SCORE <b id="score">0</b></div>
+    <div class="hud-clock" id="clock">5:00</div>
+    <button class="hud-btn" id="mute" title="Mute">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</div>
+<div class="flash" id="flash"></div>
+
+<script>
+"use strict";
+(function(){
+
+/* ══════════════════════════════════════════════════════════
+   ENGINE
+   ══════════════════════════════════════════════════════════ */
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+var TIER = { annoying:100, cursed:250, unhinged:500, forbidden:1000 };
+var COMBO_STEPS = [[8,3],[5,2],[3,1.5],[2,1.2],[1,1]];
+
+function comboFor(streak){
+  for (var i=0;i<COMBO_STEPS.length;i++) if (streak >= COMBO_STEPS[i][0]) return COMBO_STEPS[i][1];
+  return 1;
+}
+
+function scoreLevel(meta, solveMs, fails, combo){
+  var base = TIER[meta.tier];
+  var speed = Math.floor(base * Math.max(0, 1 - solveMs/(meta.parSeconds*1000)) * 0.5);
+  var first = fails === 0 ? 100 : 0;
+  return { total: Math.round((base + speed + first) * combo), base:base, speed:speed, first:first };
+}
+
+/* ─── sfx ─────────────────────────────────────────────────── */
+var Sfx = (function(){
+  var ctx = null, muted = false;
+  function ac(){
+    if (!ctx) { try { ctx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){ return null; } }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur, type, vol, delay){
+    if (muted) return;
+    var c = ac(); if (!c) return;
+    var t0 = c.currentTime + (delay||0);
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type||"square"; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime((vol||.06), t0+.008);
+    g.gain.exponentialRampToValueAtTime(.0001, t0+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0+dur+.02);
+  }
+  return {
+    unlock: ac,
+    setMuted: function(m){ muted = m; },
+    isMuted: function(){ return muted; },
+    click:   function(){ tone(320,.05,"square",.05); },
+    pick:    function(n){ tone(440 + n*70,.09,"square",.06); },
+    solve:   function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,.16,"square",.07,i*.07); }); },
+    fail:    function(){ [330,262,196,147].forEach(function(f,i){ tone(f,.2,"sawtooth",.06,i*.08); }); },
+    skip:    function(){ tone(180,.22,"sawtooth",.05); },
+    thud:    function(){ tone(90,.12,"sine",.09); },
+    tally:   function(){ tone(880,.03,"square",.03); }
+  };
+})();
+
+/* ─── slop microcopy, seeded ──────────────────────────────── */
+var SLOP_SUB = [
+  "Great! Let's get you verified — it only takes a moment. ✨",
+  "Almost there! Just a couple more steps to secure your account. 🔒",
+  "We use AI-powered validation to keep your data safe. 🚀",
+  "This helps us personalize your experience. Thanks for your patience! 💜"
+];
+
+/* ══════════════════════════════════════════════════════════
+   LEVEL L11 — Choose A Secure Password 🦖
+   ══════════════════════════════════════════════════════════ */
+
+var L11 = {
+  meta:{ id:"L11", slug:"choose-a-secure-password", title:"Choose A Secure Password 🦖",
+         tier:"cursed", parSeconds:25, family:"motor" },
+  mount:function(root, api){
+    var TARGET = "SUNSET7";
+    var NEIGH = { S:"AWDXZ", U:"YIHJ", N:"BMHJ", E:"WRSD", T:"RYFG", "7":"68YU" };
+    var got = 0, dead = false, raf = 0, last = 0;
+
+    root.innerHTML =
+      '<div class="card">' +
+        '<div class="badge">Step 2 of 2 · AI-Powered</div>' +
+        '<h2>Choose A Secure Password 🦖</h2>' +
+        '<p class="sub">' + api.slopSub + '</p>' +
+        '<div class="pw-field">' +
+          '<span class="pw-val" id="pwv"></span>' +
+          '<span style="font-size:.72rem;color:#9CA3AF" id="pws">Weak</span>' +
+        '</div>' +
+        '<div class="pw-meter"><i id="pwm"></i></div>' +
+        '<div class="runner"><canvas id="cv" width="600" height="220"></canvas>' +
+          '<div class="runner-tip">tap / space to jump</div></div>' +
+        '<p class="hint">Password tips: collect the characters shown above, in order. ' +
+        'Avoid characters that are not in your password. 💡</p>' +
+        '<div class="foot"><span>Privacy</span><span>Terms</span><span>Careers</span><span>Careers</span></div>' +
+      '</div>';
+
+    var pwv = root.querySelector("#pwv"), pwm = root.querySelector("#pwm"), pws = root.querySelector("#pws");
+    var cv = root.querySelector("#cv"), ctx = cv.getContext("2d");
+
+    function paintField(){
+      var s = "";
+      for (var i=0;i<TARGET.length;i++)
+        s += i < got ? TARGET[i] : '<span class="ghost">' + TARGET[i] + "</span>";
+      pwv.innerHTML = s;
+      pwm.style.width = (got/TARGET.length*100) + "%";
+      pws.textContent = ["Weak","Weak","Fair","Fair","Good","Good","Strong","Perfect! ✨"][got];
+    }
+    paintField();
+
+    /* ── world ── */
+    var W = 600, H = 220, GROUND = 180;
+    var SPEED = 268, GRAV = 2000, JUMP = -620;
+    var dino = { x:64, y:GROUND-32, w:26, h:32, vy:0, air:false };
+    var items = [], nextSpawn = 0.9, flashT = 0, run = 0;
+
+    function needed(){ return TARGET[got]; }
+
+    function spawn(){
+      var tail = items.length ? items[items.length-1] : null;
+      if (tail && tail.x > W - 300) return;   /* never spawn an unjumpable pair */
+      var r = api.rng();
+      if (r < 0.35){
+        items.push({ t:"cactus", x:W+30, y:GROUND-36, w:16, h:36 });
+      } else {
+        var want = needed(), ch;
+        if (api.rng() < 0.60) ch = want;
+        else { var pool = NEIGH[want] || "QWERTY"; ch = pool[Math.floor(api.rng()*pool.length)]; }
+        items.push({ t:"letter", x:W+30, y:60, w:30, h:30, ch:ch });
+      }
+    }
+
+    function reset(why){
+      got = 0; paintField();
+      items.length = 0; nextSpawn = 1.1; run = 0;
+      dino.y = GROUND-32; dino.vy = 0; dino.air = false;
+      flashT = .55; api.fail(why); Sfx.fail();
+    }
+
+    function jump(){
+      if (!dino.air){ dino.vy = JUMP; dino.air = true; Sfx.thud(); }
+    }
+
+    function step(dt){
+      run += dt;
+      nextSpawn -= dt;
+      if (nextSpawn <= 0){ spawn(); nextSpawn = 1.05 + api.rng()*0.35; }
+
+      dino.vy += GRAV*dt;
+      dino.y += dino.vy*dt;
+      if (dino.y >= GROUND-dino.h){ dino.y = GROUND-dino.h; dino.vy = 0; dino.air = false; }
+
+      for (var i=items.length-1;i>=0;i--){
+        var it = items[i];
+        it.x -= SPEED*dt;
+        if (it.x + it.w < -10){ items.splice(i,1); continue; }
+        var hit = dino.x < it.x+it.w && dino.x+dino.w > it.x &&
+                  dino.y < it.y+it.h && dino.y+dino.h > it.y;
+        if (!hit) continue;
+        if (it.t === "cactus"){ reset("cactus"); return; }
+        items.splice(i,1);
+        if (it.ch === needed()){
+          got++; Sfx.pick(got); paintField();
+          if (got === TARGET.length){ dead = true; api.solve(); return; }
+        } else { reset("wrong-letter"); return; }
+      }
+      if (flashT > 0) flashT -= dt;
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+
+      if (flashT > 0){
+        ctx.fillStyle = "rgba(239,68,68," + (flashT*0.34) + ")";
+        ctx.fillRect(0,0,W,H);
+      }
+
+      /* ground */
+      ctx.strokeStyle = "#C9C2EC"; ctx.lineWidth = 2;
+      ctx.setLineDash([9,7]); ctx.lineDashOffset = -(run*SPEED) % 16;
+      ctx.beginPath(); ctx.moveTo(0,GROUND+1); ctx.lineTo(W,GROUND+1); ctx.stroke();
+      ctx.setLineDash([]);
+
+      /* the creature */
+      var bob = dino.air ? 0 : (Math.floor(run*11)%2);
+      ctx.fillStyle = "#6D28D9";
+      ctx.fillRect(dino.x, dino.y+bob, dino.w, dino.h-8);
+      ctx.fillRect(dino.x+dino.w-4, dino.y+bob+3, 9, 11);          // snout
+      ctx.fillRect(dino.x-7, dino.y+bob+9, 8, 7);                   // tail
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(dino.x+dino.w+1, dino.y+bob+6, 3, 3);            // eye
+      ctx.fillStyle = "#6D28D9";
+      if (!dino.air){
+        var f = Math.floor(run*11)%2;
+        ctx.fillRect(dino.x+4, dino.y+dino.h-8+bob, 6, 8-f*2);
+        ctx.fillRect(dino.x+14, dino.y+dino.h-8+bob, 6, 6+f*2);
+      } else {
+        ctx.fillRect(dino.x+4, dino.y+dino.h-8, 6, 7);
+        ctx.fillRect(dino.x+15, dino.y+dino.h-8, 6, 7);
+      }
+
+      /* items */
+      for (var i=0;i<items.length;i++){
+        var it = items[i];
+        if (it.t === "cactus"){
+          ctx.fillStyle = "#4C1D95";
+          ctx.fillRect(it.x+5, it.y, 7, it.h);
+          ctx.fillRect(it.x, it.y+11, 5, 4); ctx.fillRect(it.x, it.y+11, 3, 12);
+          ctx.fillRect(it.x+12, it.y+6, 5, 4); ctx.fillRect(it.x+14, it.y+6, 3, 14);
+        } else {
+          var ok = it.ch === needed();
+          ctx.fillStyle = "#FFFFFF";
+          ctx.strokeStyle = ok ? "#7C3AED" : "#D6CFF0";
+          ctx.lineWidth = 2;
+          roundRect(ctx, it.x, it.y, it.w, it.h, 6); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = ok ? "#5B21B6" : "#A79BD4";
+          ctx.font = "700 17px ui-monospace,monospace";
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(it.ch, it.x+it.w/2, it.y+it.h/2+1);
+        }
+      }
+
+      /* next-char reminder */
+      ctx.fillStyle = "#B9B2E0";
+      ctx.font = "600 11px ui-monospace,monospace";
+      ctx.textAlign = "right"; ctx.textBaseline = "top";
+      ctx.fillText("NEXT: " + needed(), W-10, 8);
+    }
+
+    function roundRect(c,x,y,w,h,r){
+      c.beginPath();
+      c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+      c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+    }
+
+    function loop(t){
+      if (dead) return;
+      if (!last) last = t;
+      var dt = Math.min(0.05, (t-last)/1000); last = t;
+      step(dt);
+      if (!dead) { draw(); raf = requestAnimationFrame(loop); }
+    }
+    raf = requestAnimationFrame(loop);
+
+    function onKey(e){
+      if (e.code === "Space" || e.code === "ArrowUp"){ e.preventDefault(); jump(); }
+    }
+    function onTap(e){ e.preventDefault(); jump(); }
+    window.addEventListener("keydown", onKey);
+    cv.parentNode.addEventListener("pointerdown", onTap);
+
+    return function(){
+      dead = true; cancelAnimationFrame(raf);
+      window.removeEventListener("keydown", onKey);
+    };
+  }
+};
+
+/* ══════════════════════════════════════════════════════════
+   LEVEL L12 — Enter Your Phone Number
+   ══════════════════════════════════════════════════════════ */
+
+var L12 = {
+  meta:{ id:"L12", slug:"enter-your-phone-number", title:"Enter Your Phone Number",
+         tier:"cursed", parSeconds:25, family:"coupled" },
+  mount:function(root, api){
+    var TARGET = [4,1,5,5,5,5,0,1,9,2];
+    var INVERTED = 3;      // the 4th fader reads upside down
+    var MOMENTUM = 6;      // the 7th coasts past where you let go
+    /* `fine` holds continuous positions; `vals` is what the form reads.
+       Keeping the fraction is what stops a slow, careful drag from dodging
+       the coupling entirely — the remainder accumulates either way. */
+    var fine = [], vals = [], i;
+    for (i=0;i<10;i++){ var v = Math.floor(api.rng()*10); fine.push(v); vals.push(v); }
+
+    var fmt = function(a){
+      return "(" + a.slice(0,3).join("") + ") " + a.slice(3,6).join("") + "-" + a.slice(6).join("");
+    };
+
+    var faders = "";
+    for (i=0;i<10;i++){
+      faders +=
+        '<div class="fader" data-i="'+i+'">' +
+          '<div class="fader-digit">0</div>' +
+          '<div class="fader-track'+(i===INVERTED?' inv':'')+'">' +
+            '<div class="fader-fill"></div><div class="fader-knob"></div>' +
+          '</div>' +
+          '<div class="fader-idx">'+(i+1)+'</div>' +
+        '</div>';
+    }
+
+    root.innerHTML =
+      '<div class="card">' +
+        '<div class="badge">Verification · Enterprise-Grade</div>' +
+        '<h2>Enter Your Phone Number</h2>' +
+        '<p class="sub">' + api.slopSub + '</p>' +
+        '<div class="tel-target">Enter: <b>' + fmt(TARGET) + '</b></div>' +
+        '<div class="tel" id="tel">' + faders + '</div>' +
+        '<div class="tel-read" id="read"></div>' +
+        '<button class="cta" id="go">Send Verification Code</button>' +
+        '<div class="err" id="err" hidden></div>' +
+        '<p class="hint">Drag a fader to set its digit. Faders are placed close together for your convenience. 📱</p>' +
+        '<div class="foot"><span>Privacy</span><span>Terms</span><span>Careers</span><span>Careers</span></div>' +
+      '</div>';
+
+    var tel = root.querySelector("#tel"), read = root.querySelector("#read");
+    var err = root.querySelector("#err"), go = root.querySelector("#go");
+    var nodes = [].slice.call(tel.querySelectorAll(".fader"));
+    var coast = null, raf = 0;
+
+    function clamp(v){ return Math.max(0, Math.min(9, v)); }
+
+    /* The coupling: moving fader i drags fader i-1 by half the delta.
+       Interference propagates LEFT, so the honest solve is right-to-left —
+       each fader you set only disturbs ones you haven't reached yet. */
+    function setVal(i, v, delta){
+      fine[i] = clamp(v);
+      if (delta && i > 0) fine[i-1] = clamp(fine[i-1] + delta/2);
+      for (var k=0;k<10;k++) vals[k] = Math.round(fine[k]);
+      paint();
+    }
+
+    function paint(){
+      for (var i=0;i<10;i++){
+        var n = nodes[i], v = vals[i];
+        var pct = v/9;
+        var shown = (i === INVERTED) ? (1-pct) : pct;   // the inverted one lies about its own position
+        n.querySelector(".fader-digit").textContent = v;
+        n.querySelector(".fader-fill").style.height = (shown*100) + "%";
+        n.querySelector(".fader-knob").style.bottom = "calc(" + (shown*100) + "% - 8px)";
+        n.classList.toggle("ok", v === TARGET[i]);
+      }
+      read.textContent = fmt(vals);
+    }
+    paint();
+
+    /* ── dragging ── */
+    var drag = null;
+    function valueFromY(track, clientY, i){
+      var r = track.getBoundingClientRect();
+      var p = 1 - (clientY - r.top) / r.height;
+      if (i === INVERTED) p = 1 - p;
+      return clamp(p*9);
+    }
+
+    tel.addEventListener("pointerdown", function(e){
+      var f = e.target.closest(".fader"); if (!f) return;
+      var i = +f.dataset.i, track = f.querySelector(".fader-track");
+      e.preventDefault();
+      track.setPointerCapture(e.pointerId);
+      var raw = valueFromY(track, e.clientY, i);
+      drag = { i:i, track:track, last:raw, vlast:0 };
+      setVal(i, raw, raw - fine[i]);
+      Sfx.click();
+    });
+
+    tel.addEventListener("pointermove", function(e){
+      if (!drag) return;
+      e.preventDefault();
+      var raw = valueFromY(drag.track, e.clientY, drag.i);
+      var d = raw - drag.last;
+      drag.vlast = d;
+      drag.last = raw;
+      setVal(drag.i, raw, d);
+    });
+
+    function release(){
+      if (!drag) return;
+      var d = drag;
+      drag = null;
+      if (d.i === MOMENTUM && Math.abs(d.vlast) > 0.12){
+        /* fader 7 keeps going after you let go, and drags its neighbour with it */
+        var v = vals[d.i], vel = d.vlast * 9;
+        coast = { i:d.i, v:v, vel:vel };
+        if (!raf) raf = requestAnimationFrame(coastStep);
+      }
+    }
+    tel.addEventListener("pointerup", release);
+    tel.addEventListener("pointercancel", release);
+
+    var lastT = 0;
+    function coastStep(t){
+      raf = 0;
+      if (!coast) return;
+      if (!lastT) lastT = t;
+      var dt = Math.min(0.05, (t-lastT)/1000); lastT = t;
+      var before = fine[coast.i];
+      var next = clamp(coast.v + coast.vel*dt*3.2);
+      coast.v = next;
+      coast.vel *= 0.88;
+      setVal(coast.i, next, next - before);   /* it drags its neighbour on the way out too */
+      if (Math.abs(coast.vel) < 0.25 || next <= 0 || next >= 9){ coast = null; lastT = 0; return; }
+      raf = requestAnimationFrame(coastStep);
+    }
+
+    /* keyboard: same coupling, exact steps — slower but computable */
+    function onKey(e){
+      var f = document.activeElement && document.activeElement.closest &&
+              document.activeElement.closest(".fader");
+      if (!f) return;
+      var i = +f.dataset.i, d = 0;
+      if (e.key === "ArrowUp") d = 1; else if (e.key === "ArrowDown") d = -1; else return;
+      e.preventDefault();
+      if (i === INVERTED) d = -d;
+      setVal(i, Math.round(fine[i])+d, d);
+      Sfx.click();
+    }
+    nodes.forEach(function(n){ n.tabIndex = 0; });
+    root.addEventListener("keydown", onKey);
+
+    go.addEventListener("click", function(){
+      var bad = -1;
+      for (var i=0;i<10;i++) if (vals[i] !== TARGET[i]) { bad = i; break; }
+      if (bad < 0){ api.solve(); return; }
+      err.hidden = false;
+      err.textContent = 'We’ve sent a code to ' + fmt(vals) + ' — is that right?';
+      /* the three faders around the error re-randomise */
+      for (var j=Math.max(0,bad-1); j<=Math.min(9,bad+1); j++){
+        fine[j] = Math.floor(api.rng()*10); vals[j] = fine[j];
+      }
+      paint();
+      api.fail("wrong-number"); Sfx.fail();
+    });
+
+    return function(){
+      root.removeEventListener("keydown", onKey);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }
+};
+
+/* ══════════════════════════════════════════════════════════
+   LEVEL L37 — Set Your Security PIN
+   ══════════════════════════════════════════════════════════ */
+
+var L37 = {
+  meta:{ id:"L37", slug:"set-your-security-pin", title:"Set Your Security PIN",
+         tier:"cursed", parSeconds:30, family:"coupled" },
+  mount:function(root, api){
+    var TARGET = [4,7,2,9];
+    var vals = [0,0,0,0];
+
+    function reseed(){
+      for (var i=0;i<4;i++) vals[i] = Math.floor(api.rng()*10);
+      /* never hand the player a free win */
+      if (vals.join("") === TARGET.join("")) vals[0] = (vals[0]+3)%10;
+    }
+    reseed();
+
+    var dials = "";
+    for (var i=0;i<4;i++){
+      dials +=
+        '<div class="dial" data-i="'+i+'">' +
+          '<div class="dial-body" tabindex="0">' +
+            '<div class="dial-reel"></div>' +
+            '<div class="dial-shade"></div><div class="dial-win"></div>' +
+          '</div>' +
+          '<div class="dial-btns"><button data-d="-1">−</button><button data-d="1">+</button></div>' +
+          '<div class="dial-lbl">DIAL '+(i+1)+'</div>' +
+        '</div>';
+    }
+
+    root.innerHTML =
+      '<div class="card">' +
+        '<div class="badge">Security · SOC2 (pending)</div>' +
+        '<h2>Set Your Security PIN 🔒</h2>' +
+        '<p class="sub">' + api.slopSub + '</p>' +
+        '<div class="pin-target">' + TARGET.join("") + '</div>' +
+        '<div class="pin" id="pin">' + dials + '</div>' +
+        '<button class="cta" id="go">Confirm PIN</button>' +
+        '<div class="err" id="err" hidden></div>' +
+        '<p class="hint">Drag a dial or use + / − to turn it. The dials are precision-machined and ' +
+        'interlock for extra security. 🔧</p>' +
+        '<div class="foot"><span>Privacy</span><span>Terms</span><span>Careers</span><span>Careers</span></div>' +
+      '</div>';
+
+    var pin = root.querySelector("#pin"), err = root.querySelector("#err");
+    var nodes = [].slice.call(pin.querySelectorAll(".dial"));
+
+    /* the gear train: turning dial i by d turns every dial to its right by d.
+       so the honest solve is strictly LEFT to RIGHT. */
+    function turn(i, d){
+      if (!d) return;
+      for (var j=i;j<4;j++) vals[j] = ((vals[j] + d) % 10 + 10) % 10;
+      paint();
+      Sfx.click();
+    }
+
+    function paint(){
+      for (var i=0;i<4;i++){
+        var v = vals[i];
+        var reel = nodes[i].querySelector(".dial-reel");
+        reel.innerHTML =
+          '<div class="dial-n">' + ((v+9)%10) + "</div>" +
+          '<div class="dial-n">' + v + "</div>" +
+          '<div class="dial-n">' + ((v+1)%10) + "</div>";
+        nodes[i].querySelector(".dial-body").style.boxShadow =
+          v === TARGET[i]
+            ? "inset 0 2px 5px rgba(255,255,255,.55),inset 0 -3px 7px rgba(60,40,0,.42),0 0 0 2px #28C08A"
+            : "";
+      }
+    }
+    paint();
+
+    /* drag to turn */
+    var drag = null;
+    pin.addEventListener("pointerdown", function(e){
+      var body = e.target.closest(".dial-body"); if (!body) return;
+      var d = e.target.closest(".dial");
+      e.preventDefault();
+      body.setPointerCapture(e.pointerId);
+      drag = { i:+d.dataset.i, y:e.clientY, acc:0 };
+    });
+    pin.addEventListener("pointermove", function(e){
+      if (!drag) return;
+      e.preventDefault();
+      drag.acc += (drag.y - e.clientY);   /* drag up = increment */
+      drag.y = e.clientY;
+      while (Math.abs(drag.acc) >= 18){
+        var step = drag.acc > 0 ? 1 : -1;
+        drag.acc -= step*18;
+        turn(drag.i, step);
+      }
+    });
+    function up(){ drag = null; }
+    pin.addEventListener("pointerup", up);
+    pin.addEventListener("pointercancel", up);
+
+    pin.addEventListener("click", function(e){
+      var b = e.target.closest("button[data-d]"); if (!b) return;
+      turn(+b.closest(".dial").dataset.i, +b.dataset.d);
+    });
+
+    pin.addEventListener("keydown", function(e){
+      var d = e.target.closest(".dial"); if (!d) return;
+      if (e.key === "ArrowUp") { e.preventDefault(); turn(+d.dataset.i, 1); }
+      else if (e.key === "ArrowDown") { e.preventDefault(); turn(+d.dataset.i, -1); }
+    });
+
+    root.querySelector("#go").addEventListener("click", function(){
+      if (vals.join("") === TARGET.join("")){ api.solve(); return; }
+      err.hidden = false;
+      err.textContent = "Incorrect. For your security, the dials have been re-seeded. 🔒";
+      reseed(); paint();
+      api.fail("wrong-pin"); Sfx.fail();
+    });
+
+    return function(){};
+  }
+};
+
+/* ══════════════════════════════════════════════════════════
+   SHELL
+   ══════════════════════════════════════════════════════════ */
+
+var DECK = [L11, L12, L37];
+var RUN_SECONDS = 300;
+
+var stage = document.getElementById("stage");
+var hud   = document.getElementById("hud");
+var elClock = document.getElementById("clock");
+var elScore = document.getElementById("score");
+var elCombo = document.getElementById("combo");
+var elMute  = document.getElementById("mute");
+var flash   = document.getElementById("flash");
+
+var S = null, teardown = null, raf = 0;
+
+function fmtClock(s){
+  var m = Math.floor(s/60), r = Math.floor(s%60);
+  return m + ":" + (r<10?"0":"") + r;
+}
+function bang(){ flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go"); }
+function shake(){ var c = stage.querySelector(".card"); if (!c) return;
+  c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake"); }
+
+elMute.addEventListener("click", function(){
+  Sfx.setMuted(!Sfx.isMuted());
+  elMute.textContent = Sfx.isMuted() ? "🔇" : "🔊";
+});
+
+/* ─── title ───────────────────────────────────────────────── */
+function title(){
+  hud.hidden = true;
+  stage.innerHTML =
+    '<div class="screen">' +
+      '<h1>AI<i>RUSH</i></h1>' +
+      '<p><b>Prototype slice.</b> Three levels, a real five-minute clock, real scoring. ' +
+      'Solve or skip — the clock does not stop either way.</p>' +
+      '<p class="warn">Contains flashing colour and sudden sound. Sound can be muted from the bar once a run starts.</p>' +
+      '<div class="dlg">' +
+        '<h3>Ready to get started? ✨</h3>' +
+        '<p>We just need a moment to verify a few things. This should be quick!</p>' +
+        '<div class="dlg-row">' +
+          '<button class="btn-cancel" id="tCancel">Cancel</button>' +
+          '<button class="btn-continue" id="tGo">⚠ Continue</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  stage.querySelector("#tCancel").addEventListener("click", function(){
+    Sfx.unlock(); Sfx.fail();
+    var d = stage.querySelector(".dlg p");
+    d.textContent = "No problem! Let's try that again. 😊";
+    var row = stage.querySelector(".dlg-row");
+    row.insertBefore(row.lastElementChild, row.firstElementChild);
+    setTimeout(function(){ row.insertBefore(row.lastElementChild, row.firstElementChild); }, 420);
+  });
+  stage.querySelector("#tGo").addEventListener("click", start);
+}
+
+/* ─── run ─────────────────────────────────────────────────── */
+function start(){
+  Sfx.unlock(); Sfx.click();
+  var seed = (Date.now() ^ 0x9E3779B9) >>> 0;
+  var rng = mulberry32(seed);
+  S = {
+    seed:seed, rng:rng,
+    order: DECK.slice(),
+    idx:0, score:0, streak:0, solved:0, skipped:0, bestCombo:1,
+    left:RUN_SECONDS, t0:performance.now(), lastTick:performance.now(),
+    levelStart:0, fails:0, killedBy:null, lowPinged:false, breakdown:[]
+  };
+  hud.hidden = false;
+  elMute.textContent = Sfx.isMuted() ? "🔇" : "🔊";
+  tickLoop();
+  present();
+}
+
+function tickLoop(){
+  raf = requestAnimationFrame(function loop(t){
+    if (!S) return;
+    var dt = (t - S.lastTick)/1000; S.lastTick = t;
+    S.left -= dt;
+    if (S.left <= 0){ S.left = 0; paintHud(); return finish(true); }
+    if (S.left <= 30 && !S.lowPinged){ S.lowPinged = true; }
+    paintHud();
+    raf = requestAnimationFrame(loop);
+  });
+}
+
+function paintHud(){
+  elClock.textContent = fmtClock(S.left);
+  elClock.classList.toggle("low", S.left <= 30);
+  elScore.textContent = S.score.toLocaleString();
+  var c = comboFor(S.streak);
+  elCombo.textContent = "×" + c;
+  elCombo.classList.toggle("on", c > 1);
+}
+
+function present(){
+  if (teardown) { try { teardown(); } catch(e){} teardown = null; }
+  if (S.idx >= S.order.length) return finish(false);
+
+  var mod = S.order[S.idx];
+  S.levelStart = performance.now();
+  S.fails = 0;
+  S.killedBy = mod.meta.title;
+
+  stage.innerHTML = '<div id="lvroot"></div>' +
+    '<div class="skiprow">' +
+      '<button class="skip" id="skipBtn">SKIP THIS LEVEL</button>' +
+      '<span class="skipnote">−10s · combo → ×1</span>' +
+    '</div>';
+
+  var root = stage.querySelector("#lvroot");
+  var api = {
+    rng: S.rng,
+    slopSub: SLOP_SUB[Math.floor(S.rng()*SLOP_SUB.length)],
+    solve: function(){ onSolve(mod); },
+    fail:  function(){ S.fails++; bang(); shake(); }
+  };
+  teardown = mod.mount(root, api) || null;
+
+  stage.querySelector("#skipBtn").addEventListener("click", function(){
+    Sfx.skip();
+    S.left = Math.max(0, S.left - 10);
+    S.streak = 0; S.skipped++;
+    S.breakdown.push({ id:mod.meta.id, title:mod.meta.title, pts:0, skipped:true });
+    S.idx++;
+    paintHud();
+    if (S.left <= 0) return finish(true);
+    present();
+  });
+}
+
+function onSolve(mod){
+  var ms = performance.now() - S.levelStart;
+  S.streak++;
+  var combo = comboFor(S.streak);
+  if (combo > S.bestCombo) S.bestCombo = combo;
+  var sc = scoreLevel(mod.meta, ms, S.fails, combo);
+  S.score += sc.total;
+  S.solved++;
+  S.breakdown.push({
+    id:mod.meta.id, title:mod.meta.title, pts:sc.total,
+    ms:ms, fails:S.fails, combo:combo
+  });
+  Sfx.solve();
+  S.idx++;
+  paintHud();
+  present();
+}
+
+/* ─── tally ───────────────────────────────────────────────── */
+function finish(timeout){
+  if (teardown){ try { teardown(); } catch(e){} teardown = null; }
+  cancelAnimationFrame(raf);
+  var final = S.score, killed = timeout ? S.killedBy : null;
+  var solved = S.solved, skipped = S.skipped, best = S.bestCombo;
+  var rows = S.breakdown.slice();
+  var elapsed = RUN_SECONDS - S.left;
+  S = null;
+
+  stage.innerHTML =
+    '<div class="screen">' +
+      '<div style="font-family:var(--m);font-size:.66rem;letter-spacing:.18em;color:var(--hazard)">' +
+        (timeout ? "TIME" : "DECK CLEARED") + '</div>' +
+      '<div class="tally-score" id="ts">0</div>' +
+      '<div class="tally-rows" id="tr"></div>' +
+      '<button class="cta" id="again" style="background:#fff;color:#0B0E13;box-shadow:none">Run it again</button>' +
+      '<p class="warn">No leaderboard here — that is Phase 3. This slice exists to answer one ' +
+      'question: are these three levels fun?</p>' +
+    '</div>';
+
+  var tr = stage.querySelector("#tr");
+  function row(a,b,cls){
+    tr.insertAdjacentHTML("beforeend",
+      '<div class="tally-row '+(cls||"")+'"><span>'+a+'</span><span>'+b+'</span></div>');
+  }
+  rows.forEach(function(r){
+    row(r.id + " · " + r.title,
+        r.skipped ? "skipped" : (r.pts.toLocaleString() + "  ×" + r.combo));
+  });
+  row("Levels solved", solved + " / " + rows.length);
+  row("Skipped", String(skipped));
+  row("Best combo", "×" + best);
+  row("Elapsed", fmtClock(elapsed));
+  if (killed) row("Cause of death", '"' + killed + '"', "death");
+
+  /* slot-machine count-up: overshoot into absurdity, then snap to the truth */
+  var el = stage.querySelector("#ts"), t0 = performance.now(), DUR = 1700;
+  (function count(t){
+    var p = Math.min(1, (t - t0)/DUR);
+    var v;
+    if (p < 0.62){
+      var q = p/0.62;
+      v = Math.floor(q * (final*1.6 + 9000) + q*q*90000);
+      if (Math.random() < 0.5) Sfx.tally();
+    } else {
+      var q2 = (p-0.62)/0.38;
+      var over = final*1.6 + 9000 + 90000;
+      v = Math.floor(over + (final - over) * (1 - Math.pow(1-q2, 3)));
+    }
+    el.textContent = v.toLocaleString();
+    if (p < 1) requestAnimationFrame(count);
+    else { el.textContent = final.toLocaleString(); Sfx.solve(); }
+  })(performance.now());
+
+  stage.querySelector("#again").addEventListener("click", function(){ Sfx.click(); title(); });
+}
+
+title();
+})();
+</script>
