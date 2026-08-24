@@ -26,8 +26,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 400 });
     }
 
-    const events = (body.events ?? []).slice(0, 400);
-    const durationMs = Math.max(0, Math.min(600_000, Number(body.durationMs) || 0));
+    /*
+     * Sanitise every number on the way in.
+     *
+     * Half the columns downstream are integers and the run clock is a float,
+     * so a fractional millisecond anywhere in this payload loses the whole run
+     * to a cast error — silently, at the last step, after someone has already
+     * played for five minutes. Rounding at the client is not enough: this is
+     * the boundary, and it is the only place that sees everything.
+     */
+    const whole = (v: unknown, max: number) =>
+      Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
+
+    const events: RunEvent[] = (body.events ?? []).slice(0, 400).map((e) => ({
+      seq: whole(e.seq, 100_000),
+      kind: e.kind,
+      levelId: String(e.levelId ?? "").slice(0, 16),
+      atMs: whole(e.atMs, 900_000),
+      ...(e.solveMs === undefined || e.solveMs === null
+        ? {}
+        : { solveMs: whole(e.solveMs, 900_000) }),
+    }));
+    const durationMs = whole(body.durationMs, 600_000);
 
     /* The deck comes from our own registry, keyed by the ids the log mentions.
        Nothing about tier or par is taken from the client. */

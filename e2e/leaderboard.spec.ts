@@ -67,6 +67,37 @@ test("the board page renders and links back into a run", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Mercy" })).toBeVisible();
 });
 
+/*
+ * The run clock is a float and half the columns downstream are integers. A
+ * fractional millisecond anywhere in this payload used to lose the entire run
+ * to a cast error — silently, at the last step, after five minutes of play.
+ */
+test("a run with fractional milliseconds still lands", async ({ request }) => {
+  const started = await request.post("/api/run/start", {
+    data: { seed: "FRACT1", caps: "", mercy: false },
+  });
+  const { runId, runSecret, offline } = (await started.json()) as {
+    runId?: string; runSecret?: string; offline?: boolean;
+  };
+  if (offline || !runId) test.skip(true, "leaderboard not configured for this build");
+
+  const res = await request.post("/api/run/finish", {
+    data: {
+      runId,
+      runSecret,
+      durationMs: 120000.7777,
+      events: [
+        { seq: 1, kind: "enter", levelId: "L01", atMs: 0.4 },
+        { seq: 2, kind: "solve", levelId: "L01", atMs: 4033.5999999, solveMs: 4033.5999999 },
+      ],
+    },
+  });
+  const body = (await res.json()) as { ok?: boolean; offline?: boolean; score?: number };
+  expect(body.offline).toBeUndefined();
+  expect(body.ok).toBe(true);
+  expect(body.score).toBeGreaterThan(0);
+});
+
 test("the share card renders as a real image", async ({ request }) => {
   const res = await request.get("/api/og");
   expect(res.status()).toBe(200);

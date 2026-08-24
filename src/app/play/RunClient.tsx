@@ -108,7 +108,7 @@ export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
           score={score}
           breakdown={breakdown}
           killedBy={killedBy}
-          elapsed={Math.max(elapsedMs, RUN_DURATION_MS - remaining)}
+          elapsed={Math.round(Math.max(elapsedMs, RUN_DURATION_MS - remaining))}
           seedText={encodeSeed(seed, capabilityMarks(capabilities))}
           mercy={mercy}
           events={events}
