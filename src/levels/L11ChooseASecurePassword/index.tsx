@@ -40,6 +40,20 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
+  /*
+   * The loop starts once and runs until unmount.
+   *
+   * Depending on the callback props directly means any change in their
+   * identity restarts the game — which is how this level ended up resetting
+   * sixty times a second. The engine keeps them stable now, but a game loop
+   * should not be able to break because a parent re-rendered, so the latest
+   * ones are read through a ref and the effect owns nothing but the canvas.
+   */
+  const cbs = useRef({ onSolve, onFail, sfx, rng });
+  useEffect(() => {
+    cbs.current = { onSolve, onFail, sfx, rng };
+  });
+
   /* Frame state lives in refs. Sixty re-renders a second is not a game loop. */
   const got = useRef(0);
   const done = useRef(false);
@@ -54,6 +68,7 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
+    const { rng } = cbs.current;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = W * dpr;
     canvas.height = H * dpr;
@@ -70,15 +85,15 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
       elapsed.current = 0;
       dino.current = { x: 64, y: GROUND - 32, w: 26, h: 32, vy: 0, airborne: false };
       flash.current = 0.55;
-      onFail(reason);
-      sfx.fail();
+      cbs.current.onFail(reason);
+      cbs.current.sfx.fail();
     };
 
     const jump = () => {
       if (done.current || dino.current.airborne) return;
       dino.current.vy = JUMP;
       dino.current.airborne = true;
-      sfx.thud();
+      cbs.current.sfx.thud();
     };
 
     const spawn = () => {
@@ -121,8 +136,8 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
         if (it.char === needed()) {
           got.current++;
           setCollected(got.current);
-          sfx.pick(got.current);
-          if (got.current === TARGET.length) { done.current = true; onSolve(); }
+          cbs.current.sfx.pick(got.current);
+          if (got.current === TARGET.length) { done.current = true; cbs.current.onSolve(); }
         } else {
           return reset("wrong-letter");
         }
@@ -208,6 +223,8 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
 
     let raf = 0;
     let last = 0;
+    let startedAt = 0;
+    let publishedSecond = -1;
     const loop = (t: number) => {
       if (done.current) return;
       if (!last) last = t;
@@ -216,6 +233,21 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
       step(dt);
       if (done.current) return;
       draw();
+      /*
+       * Seconds since this loop started, which is not the same as seconds of
+       * gameplay: `elapsed` resets every time the dino dies, so it cannot tell
+       * a normal death from the loop being torn down and rebuilt. Uptime only
+       * ever returns to zero if the effect re-ran, which is precisely the
+       * regression that made this level unplayable.
+       *
+       * One attribute write per second, not per frame.
+       */
+      if (!startedAt) startedAt = t;
+      const upSecond = Math.floor((t - startedAt) / 1000);
+      if (upSecond !== publishedSecond) {
+        publishedSecond = upSecond;
+        canvas.dataset.uptime = String(upSecond);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -234,7 +266,7 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
       window.removeEventListener("keydown", onKey);
       stage?.removeEventListener("pointerdown", onTap);
     };
-  }, [onSolve, onFail, rng, sfx]);
+  }, []);
 
   return (
     <SlopCard>

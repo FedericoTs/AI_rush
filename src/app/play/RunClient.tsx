@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameClock, formatClock } from "@/engine/clock";
 import { comboFor, RUN_DURATION_MS, SKIP_PENALTY_MS } from "@/engine/scoring";
 import { capabilityMarks } from "@/engine/deck";
@@ -85,7 +85,15 @@ export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
   useEffect(() => {
     const c = new GameClock({ durationMs: RUN_DURATION_MS });
     clock.current = c;
+    /* The clock ticks every frame; the HUD shows m:ss. Re-rendering the whole
+       run sixty times a second to redraw the same string is pure waste, and it
+       is what made a canvas level unplayable. Only the second boundary is a
+       state change worth having. */
+    let lastSecond = -1;
     const offTick = c.onTick((ms) => {
+      const second = Math.ceil(ms / 1000);
+      if (second === lastSecond) return;
+      lastSecond = second;
       setLocalRemaining(ms);
       setRemaining(ms);
     });
@@ -97,6 +105,40 @@ export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
       clock.current = null;
     };
   }, [sfx, setRemaining]);
+
+  /*
+   * Stable identities, deliberately.
+   *
+   * A level receives these as props, and a canvas level keeps its game loop in
+   * an effect keyed on them. Recreating them each render tears that loop down
+   * and rebuilds it — which, combined with a clock that used to re-render this
+   * component every frame, reset the runner sixty times a second.
+   */
+  const handleSolve = useCallback(() => {
+    sfx.solve();
+    solve();
+  }, [sfx, solve]);
+
+  const handleFail = useCallback(
+    (reason?: string) => {
+      setFlash((n) => n + 1);
+      fail(reason);
+    },
+    [fail],
+  );
+
+  const handleSkip = useCallback(() => {
+    sfx.skip();
+    clock.current?.penalize(SKIP_PENALTY_MS);
+    skip();
+  }, [sfx, skip]);
+
+  const handleToggleMute = useCallback(() => {
+    setMuted((m) => {
+      sfx.setMuted(!m);
+      return !m;
+    });
+  }, [sfx]);
 
   const current = deck[index] ?? null;
   const combo = comboFor(streak);
@@ -133,24 +175,10 @@ export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
       flash={flash}
       capabilities={capabilities}
       sfx={sfx}
-      onSolve={() => {
-        sfx.solve();
-        solve();
-      }}
-      onFail={(reason) => {
-        setFlash((n) => n + 1);
-        fail(reason);
-      }}
-      onSkip={() => {
-        sfx.skip();
-        clock.current?.penalize(SKIP_PENALTY_MS);
-        skip();
-      }}
-      onToggleMute={() => {
-        const next = !muted;
-        setMuted(next);
-        sfx.setMuted(next);
-      }}
+      onSolve={handleSolve}
+      onFail={handleFail}
+      onSkip={handleSkip}
+      onToggleMute={handleToggleMute}
     />
   );
 }
@@ -173,6 +201,13 @@ function RunStage(props: {
   const { current, seed, remaining, score, combo, muted, flash, capabilities, sfx } = props;
   const input = useInput(current.module.meta.requires, capabilities);
   const rng = useMemo(() => streamFor(seed, current.module.meta.id), [seed, current]);
+
+  /* Shake by adding a class and letting the animation itself take it away
+     again, rather than by remounting the level underneath it. Driven by the
+     animation's own end event, so there is no timer to drift and no state set
+     from an effect. */
+  const [settled, setSettled] = useState(0);
+  const shaking = flash > settled;
 
   const Body =
     current.degraded && current.module.Fallback ? current.module.Fallback : current.module.Component;
@@ -205,7 +240,21 @@ function RunStage(props: {
           </div>
         )}
 
-        <div className={flash > 0 ? s.shake : undefined} key={flash} data-level={current.module.meta.id}>
+        {/*
+          * No key here, deliberately.
+          *
+          * Keying this on the fail counter re-triggered the shake animation by
+          * remounting the level — which threw away everything the level had
+          * just done. L37 re-seeded its dials a second time, L02's "Invalid
+          * code" message was wiped before anyone could read it, and L11's game
+          * loop restarted on every death. Failing is supposed to reset a level
+          * on the level's own terms, not destroy it.
+          */}
+        <div
+          className={shaking ? s.shake : undefined}
+          onAnimationEnd={() => setSettled(flash)}
+          data-level={current.module.meta.id}
+        >
           <Body
             onSolve={props.onSolve}
             onFail={props.onFail}
