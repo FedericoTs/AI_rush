@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo_Black, Inter, JetBrains_Mono } from "next/font/google";
 import { siteUrl } from "@/lib/site";
+import { ServiceWorker } from "@/ui/ServiceWorker";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -41,6 +42,9 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: ["/api/og"],
   },
+  /* Installed on iOS, this is what stops the status bar from being an opaque
+     white strip above a very dark game. */
+  appleWebApp: { capable: true, title: "AI Rush", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
@@ -55,7 +59,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${mono.variable} ${display.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

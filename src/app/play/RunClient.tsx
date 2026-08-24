@@ -23,6 +23,7 @@ import { Calibrate } from "./Calibrate";
 import { useInput } from "@/input/useInput";
 import { REGISTRY } from "@/levels/registry";
 import { ObserverBar, ObserverExport } from "./Observer";
+import { useWakeLock } from "@/ui/useWakeLock";
 import {
   downloadSession, sessionFilename,
   type Mark, type MarkKind, type PlaytestSession,
@@ -122,6 +123,12 @@ export function RunClient({
   const clock = useRef<GameClock | null>(null);
   const events = useRun((r) => r.events);
   const elapsedMs = useRun((r) => r.elapsedMs);
+
+  /* Held for exactly as long as the clock is running. Several levels have long
+     stretches with no touch — watching a progress bar, standing up, talking at
+     the microphone — and a phone that locks after thirty idle seconds turns
+     those into a lost run. */
+  useWakeLock(phase === "playing");
 
   /* The observer's marks. Kept here rather than in the store because they are
      not part of the run: the server never sees them, they do not affect the

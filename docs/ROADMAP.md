@@ -236,14 +236,28 @@ Do this in two steps, and stop after the first if it isn't funny.
 **Exit:** installed from a home screen on iOS and Android, fullscreen, no
 notch collisions, wake lock holding for a full 5 minutes.
 
-- [ ] PWA: manifest, service worker, offline level caching, wake lock
-- [ ] Orientation lock + safe-area insets audited on every level
-- [ ] Capacitor wrapper; swap in `@capacitor/haptics` and `@capacitor/motion`
-      at the adapter seam — **zero changes in `src/levels/`** (this is the test
-      of whether Phase 1 was done right)
+See `docs/MOBILE.md` for what to run and what to check by hand.
+
+- [x] PWA: manifest, service worker, offline page, wake lock held for exactly
+      as long as the clock runs. Icons are *rendered* from the 16×16 grid at
+      integer multiples rather than committed as PNGs, so no size can drift
+      from the mark. The worker never touches `/api/**` and never leaves the
+      origin, and `ENABLED` in `ServiceWorker.tsx` is the one-commit undo — a
+      released worker outlives the deploy that removes its file
+- [x] Orientation lock + safe-area insets. `body` pads three sides and not the
+      top: installed on iOS the status bar sits *over* the page, so the run's
+      HUD and the masthead carry the inset themselves and reach up behind the
+      phone's clock, while every other shell adds it to its own padding
+- [x] Capacitor seam; `@capacitor/haptics` and `@capacitor/motion` swap in at
+      `src/input/native.ts` with **zero changes in `src/levels/`**, and
+      `src/input/native.test.ts` asserts the contract survives the swap. The
+      plugins are deliberately not dependencies of this repository — a website
+      should not need a mobile SDK to type-check
+- [ ] `npx cap add ios|android` and the first real device build — **needs a
+      machine with Xcode / Android Studio**
 - [ ] Native audio session — the "big sounds" work without autoplay fights
 - [ ] Store listings, screenshots, the trailer (which is L11 and L35, in that
-      order)
+      order) — **needs developer accounts**
 
 ---
 

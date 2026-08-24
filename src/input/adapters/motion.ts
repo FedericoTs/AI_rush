@@ -1,7 +1,17 @@
+import { nativeBridge } from "../native";
 import type { Adapter, MotionSample } from "./types";
 
 const ZERO: MotionSample = { beta: 0, gamma: 0, alpha: 0, magnitude: 0 };
 
+/**
+ * Tilt and shake.
+ *
+ * In a browser this is `deviceorientation` + `devicemotion`, which need a
+ * permission prompt on iOS and are throttled to 60Hz at best. A native shell
+ * registers a bridge instead (`src/input/native.ts`) and this uses that — same
+ * `MotionSample`, same subscribe/current/destroy contract, so nothing
+ * downstream and nothing in `src/levels/**` can tell which one it got.
+ */
 export function createMotionAdapter(): Adapter<MotionSample> {
   const subs = new Set<(v: MotionSample) => void>();
   let last: MotionSample = ZERO;
@@ -10,6 +20,19 @@ export function createMotionAdapter(): Adapter<MotionSample> {
     last = next;
     for (const cb of subs) cb(next);
   };
+
+  const native = nativeBridge().motion;
+  if (native) {
+    const off = native.subscribe(push);
+    return {
+      subscribe: (cb) => (subs.add(cb), () => subs.delete(cb)),
+      current: () => last,
+      destroy() {
+        off();
+        subs.clear();
+      },
+    };
+  }
 
   const onOrient = (e: Event) => {
     const ev = e as DeviceOrientationEvent;

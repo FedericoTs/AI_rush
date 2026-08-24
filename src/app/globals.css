@@ -64,6 +64,20 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /*
+   * Three sides here, and the top deliberately left off.
+   *
+   * Installed to a home screen, `apple-mobile-web-app-status-bar-style:
+   * black-translucent` puts the status bar *over* the page rather than above
+   * it, so the document starts under the notch. Padding the body would push
+   * every page down — including the two that have their own bar at the top,
+   * where the right answer is the opposite: the run's HUD and the front page's
+   * masthead carry the inset themselves so their background reaches *up*
+   * behind the phone's clock instead of starting below it.
+   *
+   * Every other page's `.shell` adds `env(safe-area-inset-top)` to its own top
+   * padding. Anything new with content at y=0 needs to do the same.
+   */
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 

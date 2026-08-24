@@ -1,7 +1,15 @@
 .shell { width: 100%; max-width: 520px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
+/*
+ * The bar is sticky at the top, which on an installed iOS app means it is the
+ * thing sitting under the notch — `black-translucent` puts the status bar over
+ * the page rather than above it. So the padding carries the inset and the
+ * bar's own background extends up behind the clock and the battery, instead of
+ * the run's clock being half-hidden by the phone's.
+ */
 .hud {
-  display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.75rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: calc(0.55rem + env(safe-area-inset-top)) 0.75rem 0.55rem;
   border-bottom: 1px solid var(--chrome-line); background: var(--chrome);
   position: sticky; top: 0; z-index: 20;
 }
