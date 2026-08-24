@@ -45,23 +45,42 @@ export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise
   return (await res.json()) as T;
 }
 
-export async function selectBoard(mercy: boolean, limit: number): Promise<BoardRow[]> {
+/**
+ * Ranked rows. The rank is computed in Postgres rather than inferred from
+ * array position, so a page showing any slice other than the very top still
+ * reports the truth.
+ */
+export async function boardTop(mercy: boolean, limit: number): Promise<RankedRow[]> {
   if (!dbConfigured) return [];
-  const qs = new URLSearchParams({
-    select: "handle,score,levels_solved,killed_by,seed,finished_at",
-    mercy_mode: `eq.${mercy}`,
-    order: "score.desc,finished_at.asc",
-    limit: String(limit),
-  });
-  const res = await fetch(`${URL_}/rest/v1/leaderboard?${qs}`, {
-    headers: { apikey: KEY!, Authorization: `Bearer ${KEY}` },
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  return (await res.json()) as BoardRow[];
+  try {
+    return await rpc<RankedRow[]>("board_top", { p_mercy: mercy, p_limit: limit });
+  } catch (err) {
+    console.error("[boardTop]", err);
+    return [];
+  }
 }
 
-export interface BoardRow {
+export interface LiveStats {
+  playingNow: number;
+  runsToday: number;
+  players: number;
+  topScore: number;
+}
+
+const NO_STATS: LiveStats = { playingNow: 0, runsToday: 0, players: 0, topScore: 0 };
+
+export async function liveStats(): Promise<LiveStats> {
+  if (!dbConfigured) return NO_STATS;
+  try {
+    return await rpc<LiveStats>("live_stats", {});
+  } catch (err) {
+    console.error("[liveStats]", err);
+    return NO_STATS;
+  }
+}
+
+export interface RankedRow {
+  rank: number;
   handle: string;
   score: number;
   levels_solved: number;

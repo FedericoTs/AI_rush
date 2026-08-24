@@ -84,3 +84,17 @@
 @media (prefers-reduced-motion: reduce) {
   .bMine, .shoved, .bStamp { animation: none !important; }
 }
+
+/* ─── head to head ──────────────────────────────────────── */
+.versus {
+  display: flex; align-items: center; gap: 0.7rem;
+  border: 1px solid var(--chrome-line); border-radius: 12px;
+  padding: 0.7rem 0.8rem; background: var(--chrome-2);
+}
+.won { border-color: var(--good); box-shadow: inset 3px 0 0 var(--good); }
+.lost { border-color: #3a2530; box-shadow: inset 3px 0 0 var(--hazard); }
+.versusText { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.versusText b { font-size: 0.88rem; }
+.won .versusText b { color: var(--good); }
+.lost .versusText b { color: var(--hazard); }
+.versusText span { font-size: 0.7rem; color: var(--chrome-dim); }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { dbConfigured, rpc, selectBoard, type BoardRow } from "@/lib/db";
+import { boardTop, dbConfigured, rpc, type RankedRow } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       });
       return NextResponse.json({ rows });
     }
-    const rows: BoardRow[] = await selectBoard(mercy, limit);
+    const rows: RankedRow[] = await boardTop(mercy, limit);
     return NextResponse.json({ rows });
   } catch (err) {
     console.error("[board]", err);

@@ -1,0 +1,36 @@
+.wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--chrome-dim);
+}
+
+.stat { display: inline-flex; align-items: center; gap: 0.35rem; }
+.stat b { color: var(--chrome-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--chrome-line);
+  flex: none;
+}
+
+.live .dot {
+  background: var(--good);
+  box-shadow: 0 0 0 0 rgba(40, 192, 138, 0.55);
+  animation: pulse 2.2s ease-out infinite;
+}
+.live b { color: var(--good); }
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(40, 192, 138, 0.5); }
+  70% { box-shadow: 0 0 0 7px rgba(40, 192, 138, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(40, 192, 138, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live .dot { animation: none; }
+}

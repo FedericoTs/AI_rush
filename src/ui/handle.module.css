@@ -1,0 +1,44 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.link:hover .name {
+  color: var(--chrome-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.avatar {
+  border-radius: 50%;
+  flex: none;
+  object-fit: cover;
+  background: var(--chrome-line);
+}
+
+/* Most handles will land here: typed, not verified, and often not a real
+   account. It has to look like a choice, not a missing image. */
+.fallback {
+  border-radius: 50%;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #2a3440, #1b232c);
+  border: 1px solid var(--chrome-line);
+  color: var(--chrome-dim);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}

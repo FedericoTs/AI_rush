@@ -8,7 +8,8 @@ import { encodeSeed, streamFor } from "@/engine/rng";
 import { createSfx, type SfxHandle } from "@/engine/sfx";
 import { currentLevel, useRun } from "@/engine/store";
 import type { DealtLevel, InputCapability } from "@/engine/types";
-import { Endgame } from "./Endgame";
+import { Endgame, type Challenge } from "./Endgame";
+import { Handle } from "@/ui/Handle";
 import { MODIFIERS } from "@/engine/chaos/modifiers";
 import { detectPassive } from "@/input/capabilities";
 import { useInput } from "@/input/useInput";
@@ -26,7 +27,15 @@ import s from "./play.module.css";
  * moves it, which is why a skip's ten seconds are charged here rather than
  * inside the reducer.
  */
-export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
+export function RunClient({
+  seed,
+  mercy,
+  challenge = null,
+}: {
+  seed: number;
+  mercy: boolean;
+  challenge?: Challenge | null;
+}) {
   const capabilities = useMemo(() => detectPassive(), []);
   const sfx = useMemo(() => createSfx(), []);
 
@@ -156,6 +165,7 @@ export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
           events={events}
           runId={run?.id ?? null}
           runSecret={run?.secret ?? null}
+          challenge={challenge}
         />
       </div>
     );
@@ -175,6 +185,7 @@ export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
       flash={flash}
       capabilities={capabilities}
       sfx={sfx}
+      challenge={challenge}
       onSolve={handleSolve}
       onFail={handleFail}
       onSkip={handleSkip}
@@ -193,12 +204,13 @@ function RunStage(props: {
   flash: number;
   capabilities: ReadonlySet<InputCapability>;
   sfx: SfxHandle;
+  challenge: Challenge | null;
   onSolve: () => void;
   onFail: (reason?: string) => void;
   onSkip: () => void;
   onToggleMute: () => void;
 }) {
-  const { current, seed, remaining, score, combo, muted, flash, capabilities, sfx } = props;
+  const { current, seed, remaining, score, combo, muted, flash, capabilities, sfx, challenge } = props;
   const input = useInput(current.module.meta.requires, capabilities);
   const rng = useMemo(() => streamFor(seed, current.module.meta.id), [seed, current]);
 
@@ -230,6 +242,8 @@ function RunStage(props: {
           {muted ? "🔇" : "🔊"}
         </button>
       </div>
+
+      {challenge && <GhostBar challenge={challenge} score={score} />}
 
       <div className={s.stage}>
         {current.modifiers.length > 0 && (
@@ -276,6 +290,35 @@ function RunStage(props: {
 
       <div key={`flash-${flash}`} className={`${s.flash} ${flash > 0 ? s.flashOn : ""}`} />
     </div>
+  );
+}
+
+/**
+ * Who you are chasing, and by how much.
+ *
+ * Deliberately just a number on a bar rather than a live opponent: there is no
+ * lobby, nobody has to be online, and the link works forever. Passing them
+ * mid-run is the moment worth building for.
+ */
+function GhostBar({ challenge, score }: { challenge: Challenge; score: number }) {
+  const gap = score - challenge.score;
+  const ahead = gap >= 0;
+  const progress = Math.min(100, (score / Math.max(1, challenge.score)) * 100);
+
+  return (
+    <>
+      <div className={s.ghost}>
+        <span className={s.ghostLabel}>Chasing</span>
+        <Handle handle={challenge.handle} size={20} link={false} />
+        <span className={s.ghostSp} />
+        <span className={`${s.ghostGap} ${ahead ? s.ahead : s.behind}`}>
+          {ahead ? `+${gap.toLocaleString()} ahead` : `${Math.abs(gap).toLocaleString()} to go`}
+        </span>
+      </div>
+      <div className={s.ghostTrack}>
+        <div className={s.ghostFill} style={{ width: `${progress}%` }} />
+      </div>
+    </>
   );
 }
 

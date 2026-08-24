@@ -19,9 +19,23 @@
 }
 .rank { font-family: var(--font-mono); font-size: 0.78rem; color: var(--chrome-dim); font-variant-numeric: tabular-nums; }
 .top .rank { color: var(--hazard); font-weight: 700; }
-.handle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.death { display: block; font-size: 0.66rem; color: #63707e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.handle { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.death { font-size: 0.64rem; color: #63707e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 2.1rem; }
 .score { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
 
 .empty { border: 1px dashed var(--chrome-line); border-radius: 12px; padding: 1.6rem 1rem; text-align: center; color: var(--chrome-dim); font-size: 0.85rem; line-height: 1.6; }
 .cta { display: block; text-align: center; text-decoration: none; border-radius: 12px; padding: 0.85rem; background: #fff; color: #0b0e13; font-weight: 700; font-size: 0.92rem; }
+
+.scoreCell { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; }
+.beat {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--chrome-dim);
+  text-decoration: none;
+  border: 1px solid var(--chrome-line);
+  border-radius: 3px;
+  padding: 0.1rem 0.32rem;
+}
+.beat:hover { color: var(--hazard); border-color: var(--hazard); }

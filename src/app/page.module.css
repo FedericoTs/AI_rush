@@ -9,10 +9,31 @@
 .dialog h2 { margin: 0 0 0.3rem; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; }
 .dialog p { margin: 0 0 0.9rem; font-size: 0.8rem; color: var(--slop-dim); }
 .row { display: flex; gap: 0.6rem; }
-.row a, .row button { flex: 1; border-radius: 10px; padding: 0.7rem; font-weight: 700; font-size: 0.85rem; border: none; text-align: center; text-decoration: none; }
+.row a { flex: 1; border-radius: 10px; padding: 0.75rem; font-weight: 700; font-size: 0.88rem; border: none; text-align: center; text-decoration: none; }
 .ghost { background: #f3f4f6; color: #6b7280; }
-.danger { background: #ef4444; color: #fff; }
+.danger { background: #ef4444; color: #fff; box-shadow: 0 4px 14px -4px rgba(239, 68, 68, 0.7); }
 .note { margin-top: 0.75rem; font-size: 0.78rem; color: #374151; background: #f3f4f6; border-radius: 6px; padding: 0.55rem 0.65rem; line-height: 1.45; }
 
 .mercy { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: var(--chrome-dim); }
 .mercy input { width: 1rem; height: 1rem; accent-color: var(--good); }
+
+/* ─── the board, on the front page ───────────────────────── */
+.boardBlock { display: flex; flex-direction: column; gap: 0.5rem; }
+.boardHead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--chrome-dim);
+}
+.boardHead a { color: var(--hazard); text-decoration: none; }
+.boardHead a:hover { text-decoration: underline; }
+
+.mini { display: grid; gap: 1px; background: var(--chrome-line); border: 1px solid var(--chrome-line); border-radius: 10px; overflow: hidden; }
+.miniRow {
+  background: var(--chrome-2); padding: 0.5rem 0.7rem; display: grid;
+  grid-template-columns: 2.2rem 1fr auto; align-items: center; gap: 0.6rem;
+  font-size: 0.85rem; text-decoration: none; color: inherit;
+}
+.miniRow:hover { background: #1b232c; }
+.miniRank { font-family: var(--font-mono); font-size: 0.72rem; color: var(--chrome-dim); font-variant-numeric: tabular-nums; }
+.miniScore { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+.boardFoot { margin: 0; font-size: 0.68rem; color: #63707e; font-family: var(--font-mono); }

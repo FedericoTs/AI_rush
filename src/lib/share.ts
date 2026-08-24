@@ -19,9 +19,21 @@ export function shareText(opts: {
   rank: number | null;
   url: string;
   pick: number;
+  /** Set when this run was somebody's challenge. */
+  rival?: { handle: string; score: number } | null;
 }): string {
-  const { score, solved, total, killedBy, rank, url, pick } = opts;
+  const { score, solved, total, killedBy, rank, url, pick, rival } = opts;
   const rankLine = rank ? `Rank #${rank.toLocaleString()}.` : "";
+
+  /* Two handles in one post is worth more than any score. It gives the other
+     person a reason to reply, and their replying is the whole loop. */
+  if (rival) {
+    return score > rival.score
+      ? `Beat ${rival.handle} by ${(score - rival.score).toLocaleString()} on their own AI Rush run.\n${
+          killedBy ? `"${killedBy}" got me in the end, but not before that.\n` : ""
+        }Your turn ↓\n${url}`
+      : `${rival.handle} still leads me by ${(rival.score - score).toLocaleString()} on this run.\nSame seed, same levels, same order. I have no excuses.\n${url}`;
+  }
 
   const variants = [
     `I survived ${solved} of ${total} AI-generated interfaces in 5 minutes.${killedBy ? `\nKilled by "${killedBy}".` : ""} ${rankLine}\nBeat my exact run ↓\n${url}`,

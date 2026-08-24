@@ -1,13 +1,23 @@
 import Link from "next/link";
+import { boardTop, liveStats } from "@/lib/db";
+import { Handle } from "@/ui/Handle";
+import { LiveDot } from "@/ui/LiveDot";
 import s from "./page.module.css";
+
+export const dynamic = "force-dynamic";
 
 /**
  * The landing page, which is already a joke: START is red and on the right.
  *
  * The full green-Cancel/red-Continue dialog belongs to L01 and is not run
  * here — the same bit twice inside thirty seconds blunts both.
+ *
+ * Under it, the top of the board. A name and a number someone could beat is a
+ * far better reason to press START than any amount of copy about the game.
  */
-export default function Home() {
+export default async function Home() {
+  const [top, stats] = await Promise.all([boardTop(false, 5), liveStats()]);
+
   return (
     <main className={s.shell}>
       <div className={s.screen}>
@@ -19,16 +29,14 @@ export default function Home() {
           forms and understood <strong>none of them</strong>. Solve or skip — the clock does not
           stop either way.
         </p>
-        <p className={s.warn}>
-          Contains flashing colour and sudden sound. Sound can be muted from the bar once a run
-          starts.
-        </p>
+
+        <LiveDot playingNow={stats.playingNow} runsToday={stats.runsToday} players={stats.players} />
 
         <div className={s.dialog}>
           <h2>Ready to get started? ✨</h2>
           <p>We just need a moment to verify a few things. This should be quick!</p>
           <div className={s.row}>
-            <Link className={`${s.row} ${s.ghost}`} href="/play?mercy=1">
+            <Link className={s.ghost} href="/play?mercy=1">
               Mercy mode
             </Link>
             <Link className={s.danger} href="/play">
@@ -41,6 +49,38 @@ export default function Home() {
             No mockery, no catch — it is the one part of this that is sincere.
           </div>
         </div>
+
+        {top.length > 0 && (
+          <div className={s.boardBlock}>
+            <div className={s.boardHead}>
+              <span>Survivors</span>
+              <Link href="/board">full board →</Link>
+            </div>
+            <div className={s.mini}>
+              {top.map((r) => (
+                <Link
+                  key={`${r.handle}-${r.rank}`}
+                  className={s.miniRow}
+                  href={
+                    r.score > 0
+                      ? { pathname: "/play", query: { seed: r.seed, vs: r.handle, target: r.score } }
+                      : { pathname: "/play", query: { seed: r.seed } }
+                  }
+                >
+                  <span className={s.miniRank}>#{r.rank}</span>
+                  <Handle handle={r.handle} size={22} link={false} />
+                  <span className={s.miniScore}>{r.score.toLocaleString()}</span>
+                </Link>
+              ))}
+            </div>
+            <p className={s.boardFoot}>Tap anyone to play their exact run and try to beat it.</p>
+          </div>
+        )}
+
+        <p className={s.warn}>
+          Contains flashing colour and sudden sound. Sound can be muted from the bar once a run
+          starts.
+        </p>
       </div>
     </main>
   );

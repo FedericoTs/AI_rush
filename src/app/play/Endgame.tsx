@@ -5,6 +5,7 @@ import { formatClock } from "@/engine/clock";
 import type { LevelResult } from "@/engine/types";
 import type { RunEvent } from "@/engine/scoring";
 import { causeOfDeath, shareText, verdict, xIntent } from "@/lib/share";
+import { Handle } from "@/ui/Handle";
 import s from "./endgame.module.css";
 
 interface BoardRow {
@@ -17,6 +18,12 @@ interface BoardRow {
 
 type Stage = "tally" | "claim" | "board";
 
+/** Someone whose exact run you are playing, and the number to beat. */
+export interface Challenge {
+  handle: string;
+  score: number;
+}
+
 export interface EndgameProps {
   score: number;
   breakdown: LevelResult[];
@@ -27,6 +34,7 @@ export interface EndgameProps {
   events: RunEvent[];
   runId: string | null;
   runSecret: string | null;
+  challenge?: Challenge | null;
 }
 
 /**
@@ -37,7 +45,10 @@ export interface EndgameProps {
  * before you have read your own score.
  */
 export function Endgame(props: EndgameProps) {
-  const { score, breakdown, killedBy, elapsed, seedText, mercy, events, runId, runSecret } = props;
+  const {
+    score, breakdown, killedBy, elapsed, seedText, mercy, events, runId, runSecret,
+    challenge = null,
+  } = props;
   const [stage, setStage] = useState<Stage>("tally");
   const [shown, setShown] = useState(0);
   const [handle, setHandle] = useState("@");
@@ -46,6 +57,7 @@ export function Endgame(props: EndgameProps) {
   const [rank, setRank] = useState<number | null>(null);
   const [rows, setRows] = useState<BoardRow[]>([]);
   const [myHandle, setMyHandle] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const submitted = useRef(false);
   /* The run has to land before it can be ranked. A player who skips straight
      through can reach the claim box before the submit round-trip returns, so
@@ -143,19 +155,47 @@ export function Endgame(props: EndgameProps) {
     setClaiming(false);
   }
 
-  const url = typeof window !== "undefined" ? `${window.location.origin}/play?seed=${seedText}` : "";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const url = origin ? `${origin}/play?seed=${seedText}` : "";
+  /* The challenge link carries the seed plus your name and number, so whoever
+     opens it plays your exact run with your score to chase. No lobby, nobody
+     has to be online, and it keeps working a year from now. */
+  const challengeUrl =
+    myHandle && origin
+      ? `${origin}/play?seed=${seedText}&vs=${encodeURIComponent(myHandle.replace(/^@+/, ""))}&target=${score}`
+      : url;
   const post = shareText({
     score,
     solved,
     total: breakdown.length,
     killedBy: causeOfDeath(breakdown, killedBy),
     rank,
-    url,
+    url: challengeUrl,
     pick: score,
+    rival: challenge,
   });
 
   return (
     <div className={s.wrap}>
+      {challenge && (
+        <div className={`${s.versus} ${score > challenge.score ? s.won : s.lost}`}>
+          <Handle handle={challenge.handle} size={30} link={false} />
+          <div className={s.versusText}>
+            {score > challenge.score ? (
+              <>
+                <b>You beat them by {(score - challenge.score).toLocaleString()}.</b>
+                <span>They scored {challenge.score.toLocaleString()} on this exact run.</span>
+              </>
+            ) : (
+              <>
+                <b>They still lead by {(challenge.score - score).toLocaleString()}.</b>
+                <span>Same seed, same levels, same order. No excuses available.</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={s.stamp}>{killedBy ? "TIME" : "DECK CLEARED"}</div>
       <div className={s.score} data-testid="final-score">{shown.toLocaleString()}</div>
       <div className={s.verdict}>{verdict(solved, breakdown.length)}</div>
@@ -221,7 +261,9 @@ export function Endgame(props: EndgameProps) {
                 return (
                   <div key={`${r.handle}-${i}`} className={`${s.bRow} ${mine ? s.bMine : s.shoved}`}>
                     <span className={s.bRank}>#{r.rank.toLocaleString()}</span>
-                    <span className={s.bHandle}>{r.handle}</span>
+                    <span className={s.bHandle}>
+                      <Handle handle={r.handle} size={24} link={!mine} />
+                    </span>
                     <span className={s.bScore}>{r.score.toLocaleString()}</span>
                   </div>
                 );
@@ -244,9 +286,12 @@ export function Endgame(props: EndgameProps) {
             </a>
             <button
               className={s.secondary}
-              onClick={() => void navigator.clipboard?.writeText(url)}
+              onClick={() => {
+                void navigator.clipboard?.writeText(challengeUrl);
+                setCopied(true);
+              }}
             >
-              Copy the link to this exact run
+              {copied ? "Copied — now go and taunt them" : "Challenge a friend to this exact run"}
             </button>
             <a className={s.secondary} href="/play">
               Run it again

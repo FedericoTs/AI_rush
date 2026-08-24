@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { selectBoard, dbConfigured } from "@/lib/db";
+import { boardTop, dbConfigured, liveStats } from "@/lib/db";
+import { Handle } from "@/ui/Handle";
+import { LiveDot } from "@/ui/LiveDot";
 import s from "./board.module.css";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "AI Rush · Leaderboard" };
+export const metadata = { title: "Leaderboard" };
 
 export default async function Board({
   searchParams,
@@ -12,7 +14,7 @@ export default async function Board({
 }) {
   const { mercy } = await searchParams;
   const isMercy = mercy === "1";
-  const rows = await selectBoard(isMercy, 50);
+  const [rows, stats] = await Promise.all([boardTop(isMercy, 50), liveStats()]);
 
   return (
     <main className={s.shell}>
@@ -26,6 +28,8 @@ export default async function Board({
           <Link href="/board?mercy=1" className={`${s.tab} ${isMercy ? s.tabOn : ""}`}>Mercy</Link>
         </div>
       </div>
+
+      <LiveDot playingNow={stats.playingNow} runsToday={stats.runsToday} players={stats.players} />
 
       <p className={s.lede}>
         {isMercy
@@ -41,14 +45,25 @@ export default async function Board({
         </div>
       ) : (
         <div className={s.board}>
-          {rows.map((r, i) => (
-            <div key={`${r.handle}-${i}`} className={`${s.row} ${i < 3 ? s.top : ""}`}>
-              <span className={s.rank}>#{(i + 1).toLocaleString()}</span>
+          {rows.map((r) => (
+            <div key={`${r.handle}-${r.rank}`} className={`${s.row} ${r.rank <= 3 ? s.top : ""}`}>
+              <span className={s.rank}>#{r.rank.toLocaleString()}</span>
               <span className={s.handle}>
-                {r.handle}
+                <Handle handle={r.handle} />
                 {r.killed_by && <span className={s.death}>killed by &ldquo;{r.killed_by}&rdquo;</span>}
               </span>
-              <span className={s.score}>{r.score.toLocaleString()}</span>
+              <span className={s.scoreCell}>
+                <span className={s.score}>{r.score.toLocaleString()}</span>
+                {/* Nothing to chase in a score of zero, so no invitation to try. */}
+                {r.score > 0 && (
+                  <Link
+                    className={s.beat}
+                    href={{ pathname: "/play", query: { seed: r.seed, vs: r.handle, target: r.score } }}
+                  >
+                    beat it
+                  </Link>
+                )}
+              </span>
             </div>
           ))}
         </div>
