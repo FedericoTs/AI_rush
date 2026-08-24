@@ -4,6 +4,7 @@ export const meta: LevelMeta = {
   id: "L01",
   slug: "continue-to-your-account",
   title: "Continue To Your Account",
+  parodies: "A confirm / cancel dialog",
   tier: "annoying",
   family: "meta",
   parSeconds: 10,

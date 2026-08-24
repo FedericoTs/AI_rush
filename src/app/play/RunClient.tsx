@@ -1,14 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameClock, formatClock } from "@/engine/clock";
 import { comboFor, RUN_DURATION_MS, SKIP_PENALTY_MS } from "@/engine/scoring";
-import { capabilityMarks } from "@/engine/deck";
+import { capabilityMarks, PRACTICE_DURATION_MS } from "@/engine/deck";
 import { encodeSeed, streamFor } from "@/engine/rng";
 import { createSfx, type SfxHandle } from "@/engine/sfx";
 import { currentLevel, useRun } from "@/engine/store";
 import type { DealtLevel, InputCapability } from "@/engine/types";
 import { Endgame, type Challenge } from "./Endgame";
+import { PracticeEnd } from "./PracticeEnd";
 import { Handle } from "@/ui/Handle";
 import { MODIFIERS } from "@/engine/chaos/modifiers";
 import { detectPassive } from "@/input/capabilities";
@@ -31,13 +33,21 @@ export function RunClient({
   seed,
   mercy,
   challenge = null,
+  practice = null,
 }: {
   seed: number;
   mercy: boolean;
   challenge?: Challenge | null;
+  /**
+   * Level ids to play instead of a dealt deck. Practice never opens a run
+   * server-side and never posts anything: a leaderboard you can farm one level
+   * at a time is not a leaderboard.
+   */
+  practice?: readonly string[] | null;
 }) {
   const capabilities = useMemo(() => detectPassive(), []);
   const sfx = useMemo(() => createSfx(), []);
+  const durationMs = practice ? PRACTICE_DURATION_MS : RUN_DURATION_MS;
 
   const startRun = useRun((r) => r.startRun);
   const setRemaining = useRun((r) => r.setRemaining);
@@ -52,7 +62,7 @@ export function RunClient({
   const fail = useRun((r) => r.fail);
   const skip = useRun((r) => r.skip);
 
-  const [remaining, setLocalRemaining] = useState(RUN_DURATION_MS);
+  const [remaining, setLocalRemaining] = useState(durationMs);
   const [muted, setMuted] = useState(false);
   const [flash, setFlash] = useState(0);
   const [run, setRun] = useState<{ id: string; secret: string } | null>(null);
@@ -60,15 +70,23 @@ export function RunClient({
   const events = useRun((r) => r.events);
   const elapsedMs = useRun((r) => r.elapsedMs);
 
+  /* The selection arrives as a fresh array on every render of the route, and a
+     run must not restart because an array changed identity. The list is short
+     and its contents are the whole meaning of it, so the joined string is the
+     honest dependency. */
+  const practiceKey = practice ? practice.join(",") : null;
+  const only = useMemo(() => (practiceKey === null ? undefined : practiceKey.split(",")), [practiceKey]);
+
   useEffect(() => {
-    startRun({ seed, registry: REGISTRY, capabilities, mercy });
-  }, [startRun, seed, capabilities, mercy]);
+    startRun({ seed, registry: REGISTRY, capabilities, mercy, only, durationMs });
+  }, [startRun, seed, capabilities, mercy, only, durationMs]);
 
   /* Open the run server-side in the background. If this fails — no database,
      offline, rate limited — the game is unaffected and the score is simply
      never posted. A leaderboard is not allowed to stand between a player and
      five minutes of interfaces. */
   useEffect(() => {
+    if (only) return; // practice is never filed
     let cancelled = false;
     void fetch("/api/run/start", {
       method: "POST",
@@ -87,12 +105,12 @@ export function RunClient({
     return () => {
       cancelled = true;
     };
-  }, [seed, capabilities, mercy]);
+  }, [seed, capabilities, mercy, only]);
 
   /* One clock for the whole run. Started on mount, never paused — not for
      permission prompts, not for popups. */
   useEffect(() => {
-    const c = new GameClock({ durationMs: RUN_DURATION_MS });
+    const c = new GameClock({ durationMs });
     clock.current = c;
     /* The clock ticks every frame; the HUD shows m:ss. Re-rendering the whole
        run sixty times a second to redraw the same string is pure waste, and it
@@ -113,7 +131,7 @@ export function RunClient({
       c.stop();
       clock.current = null;
     };
-  }, [sfx, setRemaining]);
+  }, [sfx, setRemaining, durationMs]);
 
   /*
    * Stable identities, deliberately.
@@ -136,11 +154,13 @@ export function RunClient({
     [fail],
   );
 
+  /* The ten seconds are a cost against a five-minute budget. Practice has no
+     budget worth defending, so charging them there would be noise. */
   const handleSkip = useCallback(() => {
     sfx.skip();
-    clock.current?.penalize(SKIP_PENALTY_MS);
+    if (!only) clock.current?.penalize(SKIP_PENALTY_MS);
     skip();
-  }, [sfx, skip]);
+  }, [sfx, skip, only]);
 
   const handleToggleMute = useCallback(() => {
     setMuted((m) => {
@@ -151,6 +171,18 @@ export function RunClient({
 
   const current = deck[index] ?? null;
   const combo = comboFor(streak);
+
+  if (phase === "tally" && only) {
+    return (
+      <div className={s.shell}>
+        <PracticeEnd
+          breakdown={breakdown}
+          elapsed={Math.round(Math.max(elapsedMs, durationMs - remaining))}
+          ids={only}
+        />
+      </div>
+    );
+  }
 
   if (phase === "tally") {
     return (
@@ -179,6 +211,7 @@ export function RunClient({
       current={current}
       seed={seed}
       remaining={remaining}
+      elapsed={durationMs - remaining}
       score={score}
       combo={combo}
       muted={muted}
@@ -186,6 +219,8 @@ export function RunClient({
       capabilities={capabilities}
       sfx={sfx}
       challenge={challenge}
+      practice={only !== undefined}
+      position={only ? `${index + 1}/${deck.length}` : null}
       onSolve={handleSolve}
       onFail={handleFail}
       onSkip={handleSkip}
@@ -198,6 +233,7 @@ function RunStage(props: {
   current: DealtLevel;
   seed: number;
   remaining: number;
+  elapsed: number;
   score: number;
   combo: number;
   muted: boolean;
@@ -205,12 +241,18 @@ function RunStage(props: {
   capabilities: ReadonlySet<InputCapability>;
   sfx: SfxHandle;
   challenge: Challenge | null;
+  practice: boolean;
+  /** "3/14" while practising, so the room says where you are in it. */
+  position: string | null;
   onSolve: () => void;
   onFail: (reason?: string) => void;
   onSkip: () => void;
   onToggleMute: () => void;
 }) {
-  const { current, seed, remaining, score, combo, muted, flash, capabilities, sfx, challenge } = props;
+  const {
+    current, seed, remaining, elapsed, score, combo, muted, flash, capabilities, sfx, challenge,
+    practice, position,
+  } = props;
   const input = useInput(current.module.meta.requires, capabilities);
   const rng = useMemo(() => streamFor(seed, current.module.meta.id), [seed, current]);
 
@@ -226,18 +268,41 @@ function RunStage(props: {
 
   return (
     <div className={s.shell}>
+      {/*
+        * Practice counts up, a run counts down.
+        *
+        * The countdown is the pressure, and the pressure is exactly what a
+        * training room is for removing. What is left is the only number
+        * practice can honestly offer: how long this is taking you.
+        */}
       <div className={s.hud}>
         <div className={s.mark}>
           AI&nbsp;<i>RUSH</i>
         </div>
-        {combo > 1 && <div className={s.combo}>×{combo}</div>}
+        {practice ? (
+          <span className={s.practiceTag} data-testid="practice-tag">
+            PRACTICE {position}
+          </span>
+        ) : (
+          combo > 1 && <div className={s.combo}>×{combo}</div>
+        )}
         <div className={s.spacer} />
-        <div className={s.stat}>
-          SCORE <b>{score.toLocaleString()}</b>
+        {!practice && (
+          <div className={s.stat}>
+            SCORE <b>{score.toLocaleString()}</b>
+          </div>
+        )}
+        <div
+          className={`${s.clock} ${!practice && remaining <= 30_000 ? s.low : ""}`}
+          data-testid="clock"
+        >
+          {formatClock(practice ? elapsed : remaining)}
         </div>
-        <div className={`${s.clock} ${remaining <= 30_000 ? s.low : ""}`} data-testid="clock">
-          {formatClock(remaining)}
-        </div>
+        {practice && (
+          <Link className={s.iconBtn} href="/levels" aria-label="Back to the level index">
+            ✕
+          </Link>
+        )}
         <button className={s.iconBtn} onClick={props.onToggleMute} aria-label={muted ? "Unmute" : "Mute"}>
           {muted ? "🔇" : "🔊"}
         </button>
@@ -284,7 +349,7 @@ function RunStage(props: {
           <button className={s.skip} onClick={props.onSkip}>
             SKIP THIS LEVEL
           </button>
-          <span className={s.skipNote}>−10s · combo → ×1</span>
+          <span className={s.skipNote}>{practice ? "free in here" : "−10s · combo → ×1"}</span>
         </div>
       </div>
 

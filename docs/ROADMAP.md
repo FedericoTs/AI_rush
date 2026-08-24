@@ -104,6 +104,11 @@ makes sense to someone who has never seen the game.
 - [x] **Level submission intake** — `/lab`, the table, and a Friday triage
       query. No gallery, no voting, no admin UI, as planned. Entry points on
       the endgame, the board and the front page (`COMMUNITY_LEVELS.md` §2)
+- [x] **The level index and the practice room** — `/levels` lists every shipped
+      level by what it *pretends* to be, never what it does; `/levels/L37`
+      plays one on its own, `/levels/all` plays the lot in order. The clock
+      counts up, chaos modifiers are off, and nothing is filed — a board you
+      could farm one level at a time would not be worth being on
 - [ ] PostHog events for the balance loop
 
 ---

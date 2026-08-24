@@ -4,6 +4,7 @@ export const meta: LevelMeta = {
   id: "L12",
   slug: "enter-your-phone-number",
   title: "Enter Your Phone Number",
+  parodies: "A phone number input",
   tier: "cursed",
   family: "coupled",
   parSeconds: 25,

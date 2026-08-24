@@ -186,6 +186,44 @@ function rollModifiers(
   return rng.shuffle(pool).slice(0, count);
 }
 
+/* ── practice ──────────────────────────────────────────────────────── */
+
+/**
+ * Practice gets half an hour rather than five minutes.
+ *
+ * The countdown is the whole tension of a real run and has no business in a
+ * room where you are trying to work out how a level works. This is not "no
+ * clock" — a run with no end never reaches a tally, and the elapsed time is
+ * the only honest thing practice has to tell you — it is a ceiling far enough
+ * away that nobody meets it.
+ */
+export const PRACTICE_DURATION_MS = 30 * 60 * 1000;
+
+export interface PracticeOptions {
+  registry: readonly LevelModule[];
+  /** Level ids, played in exactly this order. Unknown ids are dropped. */
+  ids: readonly string[];
+  capabilities: CapabilitySet;
+}
+
+/**
+ * A deck built by hand instead of dealt.
+ *
+ * No tier ramp, no seeded picks, no Honest Level roll, and deliberately no
+ * chaos modifiers: practice is for learning what a level actually does, and a
+ * level under a modifier is a different level. The seed still drives each
+ * level's own RNG, so a practice link reproduces exactly as a run link does.
+ */
+export function practiceDeck(opts: PracticeOptions): DealtLevel[] {
+  const byId = new Map(opts.registry.map((m) => [m.meta.id, m]));
+
+  return opts.ids.flatMap((id) => {
+    const mod = byId.get(id);
+    if (!mod) return [];
+    return [{ module: mod, degraded: missingCaps(mod, opts.capabilities).length > 0, modifiers: [] }];
+  });
+}
+
 export function capabilityMarks(caps: CapabilitySet): CapabilityMark[] {
   const marks: CapabilityMark[] = [];
   if (caps.has("motion")) marks.push("M");

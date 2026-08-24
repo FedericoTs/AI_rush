@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dealDeck, DECK_SIZE, HONEST_LEVEL_ID, type CapabilitySet } from "./deck";
+import { dealDeck, DECK_SIZE, HONEST_LEVEL_ID, practiceDeck, type CapabilitySet } from "./deck";
 import { MODIFIERS } from "./chaos/modifiers";
 import type { Family, InputCapability, LevelModule, Tier } from "./types";
 
@@ -16,8 +16,8 @@ function fake(
   const Component = () => null;
   return {
     meta: {
-      id, slug: id.toLowerCase(), title: id, tier, family,
-      parSeconds: 20, requires, incompatibleModifiers: [],
+      id, slug: id.toLowerCase(), title: id, parodies: `a fake ${family} interface`,
+      tier, family, parSeconds: 20, requires, incompatibleModifiers: [],
     },
     Component,
     ...(withFallback && requires.length ? { Fallback: Component } : {}),
@@ -213,5 +213,48 @@ describe("chaos schedule", () => {
         expect(new Set(d.modifiers).size).toBe(d.modifiers.length);
       }
     }
+  });
+});
+
+/**
+ * Practice.
+ *
+ * A hand-picked deck rather than a dealt one. Everything the dealer exists to
+ * do — tier ramps, family spacing, the Honest Level roll, chaos modifiers — is
+ * deliberately absent, because none of it is what someone wants when they are
+ * trying to work out how one particular level works.
+ */
+describe("practiceDeck", () => {
+  it("plays exactly what it was asked for, in the order it was asked", () => {
+    const deck = practiceDeck({ registry: REGISTRY, ids: ["U0", "A3", "C1"], capabilities: ALL });
+    expect(deck.map((d) => d.module.meta.id)).toEqual(["U0", "A3", "C1"]);
+  });
+
+  it("carries no modifiers — a level under chaos is a different level", () => {
+    const deck = practiceDeck({ registry: REGISTRY, ids: REGISTRY.map((m) => m.meta.id), capabilities: ALL });
+    for (const d of deck) expect(d.modifiers).toEqual([]);
+  });
+
+  /* Ids come off a URL, and a link to a level that was later renumbered should
+     still play the rest of what it names rather than 404 the whole room. */
+  it("drops ids it does not recognise instead of failing", () => {
+    const deck = practiceDeck({ registry: REGISTRY, ids: ["A0", "NOPE", "A1"], capabilities: ALL });
+    expect(deck.map((d) => d.module.meta.id)).toEqual(["A0", "A1"]);
+  });
+
+  it("allows the Honest Level to be practised directly", () => {
+    const deck = practiceDeck({ registry: REGISTRY, ids: [HONEST_LEVEL_ID], capabilities: ALL });
+    expect(deck).toHaveLength(1);
+    expect(deck[0]!.module.meta.id).toBe(HONEST_LEVEL_ID);
+  });
+
+  /* The degraded path is still the degraded path: practising a microphone
+     level on a device with no microphone must render the fallback, not the
+     level with a dead input. */
+  it("marks a level degraded when the device cannot meet it", () => {
+    const [ok] = practiceDeck({ registry: REGISTRY, ids: ["MIC"], capabilities: ALL });
+    const [poor] = practiceDeck({ registry: REGISTRY, ids: ["MIC"], capabilities: NONE });
+    expect(ok!.degraded).toBe(false);
+    expect(poor!.degraded).toBe(true);
   });
 });

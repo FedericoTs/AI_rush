@@ -27,3 +27,29 @@ export const CATALOG: readonly LevelMeta[] = [
 ];
 
 export const META_BY_ID = new Map(CATALOG.map((m) => [m.id, m]));
+
+/** Catalogue order, which is id order, which is roughly the order they were built. */
+export const ALL_LEVEL_IDS: readonly string[] = CATALOG.map((m) => m.id);
+
+/**
+ * Read a `?level=` selection off the URL.
+ *
+ * `all` is the whole catalogue in order; anything else is a comma-separated
+ * list of ids, kept in the order given so a hand-written link can build its
+ * own little run. Unknown ids are dropped rather than rejected — a stale link
+ * to a level that was renumbered should still play the rest of what it names.
+ *
+ * Returns null when there is no selection at all, which is what tells the play
+ * route to deal an ordinary five-minute run instead.
+ */
+export function parseLevelSelection(raw: string | undefined): string[] | null {
+  if (!raw) return null;
+  if (raw.toLowerCase() === "all") return [...ALL_LEVEL_IDS];
+
+  const ids = raw
+    .split(",")
+    .map((part) => part.trim().toUpperCase())
+    .filter((id, i, all) => META_BY_ID.has(id) && all.indexOf(id) === i);
+
+  return ids.length > 0 ? ids : null;
+}

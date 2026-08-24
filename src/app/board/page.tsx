@@ -72,6 +72,11 @@ export default async function Board({
       <Link className={s.cta} href="/play">
         Take your five minutes
       </Link>
+      {/* The most common thought at the bottom of a leaderboard is "I need to
+          practise that one level". This is where that thought happens. */}
+      <Link className={s.beatLink} href="/levels">
+        Or practise any level, one at a time →
+      </Link>
       <Link className={s.labLink} href="/lab">
         You think you can do worse? Design a level →
       </Link>

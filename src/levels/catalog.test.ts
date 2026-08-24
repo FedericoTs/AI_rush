@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dealDeck, DECK_SIZE } from "@/engine/deck";
-import { CATALOG } from "@/levels/catalog";
+import { CATALOG, parseLevelSelection } from "@/levels/catalog";
 import { REGISTRY } from "@/levels/registry";
 import type { InputCapability, Tier } from "@/engine/types";
 
@@ -77,5 +77,64 @@ describe("the catalogue as shipped", () => {
       }
     }
     expect(adjacent / pairs).toBeLessThan(0.06);
+  });
+});
+
+/**
+ * The level index and the practice links it hands out.
+ *
+ * Everything here is driven by a `?level=`/`/levels/:id` string that arrives
+ * from outside, so the parser is the boundary and gets tested like one.
+ */
+describe("level selection from a URL", () => {
+  it("returns null when nothing is selected, which is what deals an ordinary run", () => {
+    expect(parseLevelSelection(undefined)).toBeNull();
+    expect(parseLevelSelection("")).toBeNull();
+  });
+
+  it("expands `all` to the whole catalogue, in catalogue order", () => {
+    expect(parseLevelSelection("all")).toEqual(CATALOG.map((m) => m.id));
+    expect(parseLevelSelection("ALL")).toEqual(CATALOG.map((m) => m.id));
+  });
+
+  it("takes a single level", () => {
+    expect(parseLevelSelection("L37")).toEqual(["L37"]);
+    expect(parseLevelSelection("l37")).toEqual(["L37"]);
+  });
+
+  it("takes a hand-written list and keeps the order given", () => {
+    expect(parseLevelSelection("L37,L01, L11")).toEqual(["L37", "L01", "L11"]);
+  });
+
+  it("drops duplicates, because a deck must never repeat a level", () => {
+    expect(parseLevelSelection("L01,L01,L02")).toEqual(["L01", "L02"]);
+  });
+
+  /* A stale link to a level that was later renumbered should still play the
+     rest of what it names rather than 404 the whole room. */
+  it("drops ids that do not exist, and rejects a selection of only those", () => {
+    expect(parseLevelSelection("L01,L99")).toEqual(["L01"]);
+    expect(parseLevelSelection("L99")).toBeNull();
+    expect(parseLevelSelection("../../etc/passwd")).toBeNull();
+  });
+
+  it("names every id in the catalogue", () => {
+    for (const m of CATALOG) expect(parseLevelSelection(m.id)).toEqual([m.id]);
+  });
+});
+
+describe("what the index is allowed to show", () => {
+  /* The index shows only what a level pretends to be. The whole game is the
+     second and a half before you realise, and an index that gave away the
+     mechanic would sell that for nothing. */
+  it("gives every level a parodies line", () => {
+    for (const m of CATALOG) {
+      expect(m.parodies.length).toBeGreaterThan(3);
+      expect(m.parodies).not.toContain(m.title);
+    }
+  });
+
+  it("keeps titles unique, which is what lets a cause of death resolve to a level", () => {
+    expect(new Set(CATALOG.map((m) => m.title)).size).toBe(CATALOG.length);
   });
 });

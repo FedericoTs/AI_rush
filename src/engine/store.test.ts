@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useRun } from "./store";
-import { scoreRun, validateRun, type DeckEntry } from "./scoring";
+import { RUN_DURATION_MS, scoreRun, validateRun, type DeckEntry } from "./scoring";
+import { PRACTICE_DURATION_MS } from "./deck";
 import { REGISTRY } from "@/levels/registry";
 import type { InputCapability } from "./types";
 
@@ -194,5 +195,63 @@ describe("client score and server recompute", () => {
     useRun.getState().skip();
     const seqs = useRun.getState().events.map((e) => e.seq);
     expect(seqs).toEqual(seqs.map((_, i) => i + 1));
+  });
+});
+
+/**
+ * Practice.
+ *
+ * The store's job here is narrow but load-bearing: the deck is the one asked
+ * for, and elapsed time is measured against *this* run's clock rather than the
+ * five-minute constant. Getting the second one wrong sends every solveMs
+ * negative, which is invisible until a tally reads -4.2s.
+ */
+describe("a practice run", () => {
+  beforeEach(() => useRun.getState().reset());
+
+  const practice = (ids: string[], durationMs = PRACTICE_DURATION_MS) =>
+    useRun.getState().startRun({
+      seed: 1, registry: REGISTRY, capabilities: CAPS, only: ids, durationMs,
+    });
+
+  it("plays exactly the levels named, in order", () => {
+    practice(["L37", "L01"]);
+    expect(useRun.getState().deck.map((d) => d.module.meta.id)).toEqual(["L37", "L01"]);
+    expect(useRun.getState().practice).toBe(true);
+  });
+
+  it("is flagged as practice so nothing downstream tries to file it", () => {
+    start();
+    expect(useRun.getState().practice).toBe(false);
+    practice(["L01"]);
+    expect(useRun.getState().practice).toBe(true);
+  });
+
+  it("measures elapsed against its own clock, not the five-minute one", () => {
+    practice(["L01"]);
+    expect(useRun.getState().remainingMs).toBe(PRACTICE_DURATION_MS);
+
+    useRun.getState().setRemaining(PRACTICE_DURATION_MS - 7_000);
+    expect(useRun.getState().elapsedMs).toBe(7_000);
+
+    useRun.getState().solve();
+    expect(useRun.getState().breakdown[0]!.solveMs).toBe(7_000);
+  });
+
+  it("ends at the tally once the picked levels are done", () => {
+    practice(["L01", "L02"]);
+    useRun.getState().setRemaining(PRACTICE_DURATION_MS - 2_000);
+    useRun.getState().solve();
+    useRun.getState().solve();
+    expect(useRun.getState().phase).toBe("tally");
+    expect(useRun.getState().killedBy).toBeNull();
+  });
+
+  it("goes back to a full five minutes on the next ordinary run", () => {
+    practice(["L01"]);
+    useRun.getState().reset();
+    start();
+    expect(useRun.getState().durationMs).toBe(RUN_DURATION_MS);
+    expect(useRun.getState().practice).toBe(false);
   });
 });

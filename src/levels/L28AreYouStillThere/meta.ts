@@ -4,6 +4,7 @@ export const meta: LevelMeta = {
   id: "L28",
   slug: "are-you-still-there",
   title: "Are You Still There?",
+  parodies: "An idle-timeout modal",
   tier: "unhinged",
   family: "motor",
   parSeconds: 30,

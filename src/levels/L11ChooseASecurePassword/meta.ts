@@ -4,6 +4,7 @@ export const meta: LevelMeta = {
   id: "L11",
   slug: "choose-a-secure-password",
   title: "Choose A Secure Password 🦖",
+  parodies: "A password field with a strength meter",
   tier: "cursed",
   family: "motor",
   parSeconds: 25,

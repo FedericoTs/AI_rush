@@ -12,6 +12,19 @@ Format:
 
 > **NN · Title** — `tier` · inputs · par · *what real UI it parodies*
 
+That last field is not just documentation: it ships as `meta.parodies` and is
+**the only thing `/levels` shows about a level**. The whole game is the second
+and a half before the player realises, and an index that gave away the bit
+would sell that for nothing. Anything a shipped level's index row says has to
+be true of the interface at first glance and useless as a hint.
+
+**Playing one on its own.** Every shipped level is individually reachable:
+`/levels` is the index, `/levels/L37` is that level alone, `/levels/all` is the
+catalogue in order, and `/levels/L01,L11` is a hand-written pair. In there the
+clock counts *up*, chaos modifiers are off (a level under a modifier is a
+different level), and nothing is submitted — a leaderboard that could be farmed
+one level at a time would not be worth being on.
+
 **How this catalog is organized.** L01–L36 are grouped by tier. L37–L48 are
 grouped as the **coupled mechanisms** family, because they share an engine and
 were designed together — but tier is a property of a level, not of where it sits

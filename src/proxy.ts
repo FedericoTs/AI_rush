@@ -17,4 +17,7 @@ export function proxy(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-export const config = { matcher: "/play" };
+/* `/levels` itself is an index and needs no seed; `/levels/L37` is a practice
+   run and needs one exactly as much as `/play` does — levels seed their own
+   randomness from it, so without one every attempt would be the same attempt. */
+export const config = { matcher: ["/play", "/levels/:id"] };

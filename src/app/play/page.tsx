@@ -1,4 +1,5 @@
 import { decodeSeed } from "@/engine/rng";
+import { parseLevelSelection } from "@/levels/catalog";
 import { RunClient } from "./RunClient";
 
 /**
@@ -8,10 +9,20 @@ import { RunClient } from "./RunClient";
 export default async function Play({
   searchParams,
 }: {
-  searchParams: Promise<{ seed?: string; mercy?: string; vs?: string; target?: string }>;
+  searchParams: Promise<{
+    seed?: string;
+    mercy?: string;
+    vs?: string;
+    target?: string;
+    level?: string;
+  }>;
 }) {
   const params = await searchParams;
   const decoded = params.seed ? decodeSeed(params.seed) : null;
+
+  /* `?level=L37`, `?level=L01,L11` or `?level=all` turns this into practice:
+     a hand-picked deck, a clock that counts up, and nothing filed anywhere. */
+  const practice = parseLevelSelection(params.level);
 
   /* A challenge is just a seed with someone's name and number attached. No
      matchmaking, no lobby, no waiting for anyone to be online — the rival is
@@ -27,7 +38,10 @@ export default async function Play({
     <RunClient
       seed={decoded?.seed ?? 0}
       mercy={params.mercy === "1"}
-      challenge={challenge}
+      /* A practice run has no score to chase, so a rival attached to one is
+         meaningless — drop it rather than render a bar that can never resolve. */
+      challenge={practice ? null : challenge}
+      practice={practice}
     />
   );
 }

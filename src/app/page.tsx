@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CATALOG } from "@/levels/catalog";
 import { boardTop, liveStats } from "@/lib/db";
 import { Handle } from "@/ui/Handle";
 import { LiveDot } from "@/ui/LiveDot";
@@ -49,6 +50,13 @@ export default async function Home() {
             No mockery, no catch — it is the one part of this that is sincere.
           </div>
         </div>
+
+        {/* A run deals fourteen of these at random, which is right for a run
+            and useless for anyone who wants another go at the one that beat
+            them. The index is the other door, and it is not hidden. */}
+        <Link className={s.levelsLink} href="/levels">
+          All {CATALOG.length} levels — play any of them, no clock →
+        </Link>
 
         {/*
           * The board is always here, empty or not.

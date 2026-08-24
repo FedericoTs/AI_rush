@@ -4,6 +4,7 @@ export const meta: LevelMeta = {
   id: "L36",
   slug: "sign-in",
   title: "Sign In",
+  parodies: "A login form",
   tier: "forbidden",
   family: "meta",
   parSeconds: 20,

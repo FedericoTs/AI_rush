@@ -10,7 +10,7 @@
 
 import { create } from "zustand";
 import type { CapabilitySet } from "@/input/capabilities";
-import { dealDeck } from "./deck";
+import { dealDeck, practiceDeck } from "./deck";
 import type { DealtLevel, LevelModule, LevelResult } from "./types";
 import { comboFor, scoreLevel, RUN_DURATION_MS } from "./scoring";
 import type { RunEvent } from "./scoring";
@@ -35,13 +35,26 @@ export interface RunState {
   levelStartMs: number;
   elapsedMs: number;
   remainingMs: number;
+  /** How long this run gets. Five minutes normally, longer in practice. */
+  durationMs: number;
+
+  /** A hand-picked deck. Nothing is submitted and nothing reaches the board. */
+  practice: boolean;
 
   breakdown: LevelResult[];
   /** Append-only. What the server rescores from (BACKEND.md §4). */
   events: RunEvent[];
   killedBy: string | null;
 
-  startRun(opts: { seed: number; registry: readonly LevelModule[]; capabilities: CapabilitySet; mercy?: boolean }): void;
+  startRun(opts: {
+    seed: number;
+    registry: readonly LevelModule[];
+    capabilities: CapabilitySet;
+    mercy?: boolean;
+    /** Play exactly these levels, in this order, instead of dealing a deck. */
+    only?: readonly string[];
+    durationMs?: number;
+  }): void;
   enterLevel(): void;
   solve(): void;
   fail(reason?: string): void;
@@ -66,6 +79,8 @@ const BLANK = {
   levelStartMs: 0,
   elapsedMs: 0,
   remainingMs: RUN_DURATION_MS,
+  durationMs: RUN_DURATION_MS,
+  practice: false,
   breakdown: [] as LevelResult[],
   events: [] as RunEvent[],
   killedBy: null as string | null,
@@ -74,9 +89,20 @@ const BLANK = {
 export const useRun = create<RunState>((set, get) => ({
   ...BLANK,
 
-  startRun({ seed, registry, capabilities, mercy = false }) {
-    const deck = dealDeck({ seed, registry, capabilities, mercy });
-    set({ ...BLANK, phase: "playing", seed, mercy, deck });
+  startRun({ seed, registry, capabilities, mercy = false, only, durationMs = RUN_DURATION_MS }) {
+    const deck = only
+      ? practiceDeck({ registry, ids: only, capabilities })
+      : dealDeck({ seed, registry, capabilities, mercy });
+    set({
+      ...BLANK,
+      phase: "playing",
+      seed,
+      mercy,
+      deck,
+      practice: only !== undefined,
+      durationMs,
+      remainingMs: durationMs,
+    });
     get().enterLevel();
   },
 
@@ -172,8 +198,12 @@ export const useRun = create<RunState>((set, get) => ({
 
   setRemaining(ms) {
     /* Rounded on the way in. The clock is a float, the log is not: Postgres
-       stores at_ms as an integer and will not cast "4033.59" for anyone. */
-    set({ remainingMs: ms, elapsedMs: Math.round(RUN_DURATION_MS - ms) });
+       stores at_ms as an integer and will not cast "4033.59" for anyone.
+
+       Elapsed is measured against this run's own duration, not the five-minute
+       constant — a practice run has a longer clock, and reading its elapsed
+       time off the wrong total would put every solveMs into the negative. */
+    set({ remainingMs: ms, elapsedMs: Math.round(get().durationMs - ms) });
     if (ms <= 0 && get().phase === "playing") get().finish(true);
   },
 

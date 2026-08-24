@@ -5,6 +5,7 @@ import { formatClock } from "@/engine/clock";
 import type { LevelResult } from "@/engine/types";
 import type { RunEvent } from "@/engine/scoring";
 import { causeOfDeath, shareText, verdict, xIntent } from "@/lib/share";
+import { CATALOG } from "@/levels/catalog";
 import { Handle } from "@/ui/Handle";
 import s from "./endgame.module.css";
 
@@ -66,6 +67,16 @@ export function Endgame(props: EndgameProps) {
 
   const solved = breakdown.filter((b) => !b.skipped).length;
   const offline = !runId || !runSecret;
+
+  /*
+   * The level that beat you, as somewhere to go rather than a fact to accept.
+   *
+   * `killedBy` is a title because that is what reads well on a share card, so
+   * it has to be resolved back to an id here. Titles are unique in the
+   * catalogue; if that ever stops being true this quietly falls back to the
+   * whole index, which is a fine place to land anyway.
+   */
+  const nemesis = killedBy ? CATALOG.find((m) => m.title === killedBy) : undefined;
 
   /* Submit the log as soon as the run ends, while the player reads the tally.
      The score that reaches the board is the one the server recomputes. */
@@ -295,6 +306,11 @@ export function Endgame(props: EndgameProps) {
             </button>
             <a className={s.secondary} href="/play">
               Run it again
+            </a>
+            <a className={s.secondary} href={nemesis ? `/levels/${nemesis.id}` : "/levels"}>
+              {nemesis
+                ? `Practise "${nemesis.title}" with the clock off`
+                : "Practise any level with the clock off"}
             </a>
             {/* The ask lands here because this is peak motivation: thirty
                 seconds after an interface has just humiliated someone. */}

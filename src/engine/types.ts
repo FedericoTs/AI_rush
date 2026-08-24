@@ -24,6 +24,13 @@ export interface LevelMeta {
   id: string;
   slug: string;
   title: string;
+  /**
+   * The ordinary interface this one is wearing — the same question the Lab
+   * form asks submitters. It is the only thing the level index shows about a
+   * level, on purpose: what it pretends to be is not a spoiler, and what it
+   * actually does is.
+   */
+  parodies: string;
   tier: Tier;
   family: Family;
   parSeconds: number;

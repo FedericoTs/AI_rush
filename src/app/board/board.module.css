@@ -40,6 +40,14 @@
 }
 .beat:hover { color: var(--hazard); border-color: var(--hazard); }
 
+.beatLink {
+  display: block; text-align: center; text-decoration: none;
+  border: 1px solid var(--chrome-line); border-radius: 12px; padding: 0.7rem;
+  font-size: 0.78rem; color: var(--chrome-dim); font-family: var(--font-mono);
+  margin-top: -0.4rem;
+}
+.beatLink:hover { color: var(--chrome-ink); border-color: var(--chrome-dim); }
+
 .labLink {
   display: block; text-align: center; text-decoration: none;
   border: 1px dashed var(--chrome-line); border-radius: 12px; padding: 0.7rem;
