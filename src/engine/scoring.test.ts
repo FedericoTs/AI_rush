@@ -3,6 +3,7 @@ import {
   comboFor, scoreLevel, scoreRun, validateRun,
   RUN_DURATION_MS, TIER_BASE, type DeckEntry, type RunEvent,
 } from "./scoring";
+import { META_BY_ID } from "@/levels/catalog";
 
 describe("comboFor", () => {
   it("walks the ladder at 1/2/3/5/8 solves", () => {
@@ -122,9 +123,16 @@ describe("validateRun", () => {
     expect(validateRun(ok, deck, RUN_DURATION_MS + 60_000)).toBe("clock_overrun");
   });
 
-  it("rejects a solve nobody could have performed", () => {
+  /*
+   * This test used to assert that one solve nobody could have performed sank
+   * the whole run. It was wrong, and it kept a real bug pinned in place: a
+   * player who already knows a level genuinely does beat it in two clicks, and
+   * a twelve-level run was published as a zero because of it. A single fast
+   * solve is now accepted; see the incident tests at the bottom of this file.
+   */
+  it("tolerates one solve nobody could have performed", () => {
     const fast: RunEvent[] = [{ seq: 1, kind: "solve", levelId: "L01", atMs: 40, solveMs: 40 }];
-    expect(validateRun(fast, deck, 1000)).toBe("impossible_speed");
+    expect(validateRun(fast, deck, 1000)).toBeNull();
   });
 
   it("rejects events for levels that were never dealt", () => {
@@ -152,5 +160,110 @@ describe("validateRun", () => {
       { seq: 2, kind: "solve", levelId: "L01", atMs: 9_000, solveMs: 4_000 },
     ];
     expect(validateRun(twice, deck, 10_000)).toBe("event_integrity");
+  });
+});
+
+/**
+ * The rule that cost a real run.
+ *
+ * A player solved twelve levels in three minutes and forty-nine seconds and it
+ * was filed as a score of nought, because one of the twelve was solved in
+ * under 300ms and the speed check rejected the whole log. These pin the shape
+ * of the fix: one fast solve is skill, a log of nothing but fast solves is a
+ * fabrication, and the difference between them is a pattern.
+ */
+describe("plausibility, after the zero-score incident", () => {
+  const deck: DeckEntry[] = [
+    { levelId: "A", tier: "annoying", parSeconds: 20 },
+    { levelId: "B", tier: "cursed", parSeconds: 25 },
+    { levelId: "C", tier: "unhinged", parSeconds: 40 },
+    { levelId: "D", tier: "unhinged", parSeconds: 30 },
+    { levelId: "E", tier: "forbidden", parSeconds: 20 },
+  ];
+
+  /** A run of solves, one per level, at the given solve times. */
+  const log = (times: number[]): RunEvent[] => {
+    const events: RunEvent[] = [];
+    let at = 0;
+    times.forEach((solveMs, i) => {
+      const levelId = deck[i]!.levelId;
+      events.push({ seq: events.length + 1, kind: "enter", levelId, atMs: at });
+      at += solveMs;
+      events.push({ seq: events.length + 1, kind: "solve", levelId, atMs: at, solveMs });
+    });
+    return events;
+  };
+
+  it("accepts a run where one level was beaten by someone who knew it", () => {
+    const events = log([12_000, 9_000, 0, 21_000, 8_000]);
+    expect(validateRun(events, deck, 50_000)).toBeNull();
+  });
+
+  it("scores that run rather than zeroing it", () => {
+    const events = log([12_000, 9_000, 0, 21_000, 8_000]);
+    const totals = scoreRun(events, deck);
+    expect(totals.solved).toBe(5);
+    expect(totals.score).toBeGreaterThan(1_000);
+  });
+
+  it("still throws out a log that is nothing but instant solves", () => {
+    expect(validateRun(log([0, 0, 0, 0, 0]), deck, 4_000)).toBe("impossible_speed");
+  });
+
+  it("draws the line at a pattern, not a single data point", () => {
+    /* Two fast solves is a good run. Three is not a run. */
+    expect(validateRun(log([0, 50, 9_000, 21_000, 8_000]), deck, 40_000)).toBeNull();
+    expect(validateRun(log([0, 50, 90, 21_000, 8_000]), deck, 40_000)).toBe("impossible_speed");
+  });
+
+  /* The other rejections are structural and must keep firing: they are what
+     actually stands between the board and a forged log. */
+  it("keeps rejecting the things that are genuinely impossible", () => {
+    const ok = log([12_000, 9_000, 5_000, 21_000, 8_000]);
+    expect(validateRun(ok, deck, 999_000)).toBe("clock_overrun");
+    expect(validateRun([...ok, { seq: 1, kind: "fail", levelId: "A", atMs: 1 }], deck, 50_000))
+      .toBe("event_integrity");
+    expect(validateRun([{ seq: 1, kind: "enter", levelId: "NOPE", atMs: 0 }], deck, 1_000))
+      .toBe("deck_mismatch");
+  });
+
+  /*
+   * The actual log from the run that was lost, replayed. It is twelve solves,
+   * one skip and three fails over 3:49, with a single 0ms solve on L27 — the
+   * level whose honest solve really is two clicks once you know it.
+   */
+  it("accepts the exact run that was published as a zero", () => {
+    const real: Array<[number, RunEvent["kind"], string, number, number?]> = [
+      [1, "enter", "L01", 0], [2, "solve", "L01", 1004, 1004],
+      [3, "enter", "L05", 1004], [4, "fail", "L05", 8003], [5, "solve", "L05", 51002, 49998],
+      [6, "enter", "L02", 51002], [7, "solve", "L02", 64008, 13006],
+      [8, "enter", "L42", 64008], [9, "solve", "L42", 80002, 15994],
+      [10, "enter", "L04", 80002], [11, "fail", "L04", 84003], [12, "solve", "L04", 101002, 21000],
+      [13, "enter", "L11", 101002], [14, "solve", "L11", 138003, 37001],
+      [15, "enter", "L12", 138003], [16, "skip", "L12", 152047],
+      [17, "enter", "L16", 152047], [18, "solve", "L16", 173002, 20955],
+      [19, "enter", "L18", 173002], [20, "fail", "L18", 177003], [21, "solve", "L18", 190003, 17001],
+      [22, "enter", "L27", 190003], [23, "solve", "L27", 190003, 0],
+      [24, "enter", "L22", 190003], [25, "solve", "L22", 211004, 21001],
+      [26, "enter", "L28", 211004], [27, "solve", "L28", 214005, 3001],
+      [28, "enter", "L37", 214005], [29, "solve", "L37", 229005, 15000],
+    ];
+    const events: RunEvent[] = real.map(([seq, kind, levelId, atMs, solveMs]) => ({
+      seq, kind, levelId, atMs, ...(solveMs === undefined ? {} : { solveMs }),
+    }));
+    const realDeck: DeckEntry[] = [...new Set(events.map((e) => e.levelId))].map((id) => {
+      const m = META_BY_ID.get(id);
+      if (!m) throw new Error(`level ${id} left the catalogue`);
+      return { levelId: m.id, tier: m.tier, parSeconds: m.parSeconds };
+    });
+
+    expect(validateRun(events, realDeck, 229_005)).toBeNull();
+
+    const totals = scoreRun(events, realDeck);
+    expect(totals.solved).toBe(12);
+    expect(totals.skipped).toBe(1);
+    expect(totals.score).toBeGreaterThan(5_000);
+    /* And it stays under the ceiling the database enforces independently. */
+    expect(totals.score).toBeLessThanOrEqual(totals.solved * 4800);
   });
 });

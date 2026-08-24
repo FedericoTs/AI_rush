@@ -149,8 +149,26 @@ export type RejectionReason =
 /** Theoretical ceiling in five minutes, given the shortest par in the catalog. */
 export const MAX_LEVELS_PER_RUN = 14;
 export const CLOCK_GRACE_MS = 15_000;
-/** Below this, a level with a meaningful par was not actually played. */
+/** Below this, a level with a meaningful par probably was not actually played. */
 export const MIN_PLAUSIBLE_SOLVE_MS = 300;
+
+/**
+ * How many suspiciously fast solves a run is allowed before it is thrown out.
+ *
+ * This used to be zero, and it cost a real player a real run: twelve levels
+ * solved in three minutes and forty-nine seconds, filed as a score of nought,
+ * because one of the twelve — L27, whose honest solve is "click the field,
+ * take the first suggestion" — was beaten in two clicks by someone who already
+ * knew the trick. One fast solve is what learning a level looks like. It is
+ * not evidence of anything.
+ *
+ * The check still earns its place against a log of fourteen instant solves, so
+ * it stays; it just needs a pattern rather than a single data point. The real
+ * defences against a forged log are elsewhere and unaffected: the score is
+ * recomputed here from the events, and `submit_run` caps it at solves × 4,800
+ * whatever this function decides.
+ */
+export const MAX_IMPLAUSIBLE_SOLVES = 2;
 
 export function validateRun(
   events: readonly RunEvent[],
@@ -162,6 +180,7 @@ export function validateRun(
   const ids = new Set(deck.map((d) => d.levelId));
   const seen = new Set<number>();
   const solvedIds = new Set<string>();
+  let implausible = 0;
 
   for (const ev of events) {
     if (seen.has(ev.seq)) return "event_integrity";
@@ -172,11 +191,13 @@ export function validateRun(
       solvedIds.add(ev.levelId);
       const entry = deck.find((d) => d.levelId === ev.levelId);
       if (entry && entry.parSeconds > 5 && (ev.solveMs ?? 0) < MIN_PLAUSIBLE_SOLVE_MS) {
-        return "impossible_speed";
+        implausible++;
       }
     }
   }
 
+  /* A pattern, not a single data point — see MAX_IMPLAUSIBLE_SOLVES. */
+  if (implausible > MAX_IMPLAUSIBLE_SOLVES) return "impossible_speed";
   if (solvedIds.size > MAX_LEVELS_PER_RUN) return "too_many_levels";
 
   const seqs = [...seen].sort((a, b) => a - b);

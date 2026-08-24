@@ -59,6 +59,14 @@ export async function POST(req: Request) {
     const rejection = validateRun(events, deck, durationMs);
     const totals = rejection ? null : scoreRun(events, deck);
 
+    /*
+     * A rejected log is filed as rejected, with the reason.
+     *
+     * It used to be submitted with zeros in every field, which `submit_run`
+     * had no way to distinguish from a run somebody was simply bad at — so it
+     * went onto the board as a legitimate nought and nothing recorded why.
+     * That is exactly how a real twelve-level run was published as a zero.
+     */
     const result = await rpc<{ ok: boolean; reason?: string; rank?: number; total?: number }>(
       "submit_run",
       {
@@ -71,8 +79,11 @@ export async function POST(req: Request) {
         p_best_combo: totals?.bestCombo ?? 1,
         p_killed_by: body.killedBy ?? null,
         p_duration_ms: durationMs,
+        p_rejection: rejection,
       },
     );
+
+    if (rejection) console.error("[run/finish] rejected", { runId: body.runId, rejection });
 
     return NextResponse.json({
       ...result,

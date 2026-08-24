@@ -141,26 +141,50 @@ export function RunClient({
    * and rebuilds it — which, combined with a clock that used to re-render this
    * component every frame, reset the runner sixty times a second.
    */
+  /*
+   * Put the true time into the store before recording anything.
+   *
+   * The HUD only re-renders on second boundaries — that was the fix that made
+   * a canvas level playable — but the store reads its elapsed time from those
+   * same ticks, so every event was being stamped with a time rounded down to
+   * the last whole second. Two levels cleared inside one second produced a
+   * solve of exactly 0ms, and a 0ms solve was, until this was fixed on both
+   * ends, enough to have an entire run thrown out as impossible.
+   *
+   * The clock stays the single owner of time. This just asks it what time it
+   * is at the moment that matters, instead of using the last thing it said.
+   */
+  const stamp = useCallback(() => {
+    const now = clock.current?.remainingMs;
+    if (now !== undefined) setRemaining(now);
+  }, [setRemaining]);
+
   const handleSolve = useCallback(() => {
     sfx.solve();
+    stamp();
     solve();
-  }, [sfx, solve]);
+  }, [sfx, solve, stamp]);
 
   const handleFail = useCallback(
     (reason?: string) => {
       setFlash((n) => n + 1);
+      stamp();
       fail(reason);
     },
-    [fail],
+    [fail, stamp],
   );
 
   /* The ten seconds are a cost against a five-minute budget. Practice has no
-     budget worth defending, so charging them there would be noise. */
+     budget worth defending, so charging them there would be noise.
+
+     Charged after the event is recorded, so the skip is stamped with the time
+     it actually happened rather than ten seconds into the future. */
   const handleSkip = useCallback(() => {
     sfx.skip();
-    if (!only) clock.current?.penalize(SKIP_PENALTY_MS);
+    stamp();
     skip();
-  }, [sfx, skip, only]);
+    if (!only) clock.current?.penalize(SKIP_PENALTY_MS);
+  }, [sfx, skip, only, stamp]);
 
   const handleToggleMute = useCallback(() => {
     setMuted((m) => {

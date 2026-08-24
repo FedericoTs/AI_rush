@@ -21,7 +21,18 @@
   --slop-3: #db2777;
   --slop-grad: linear-gradient(135deg, #7c3aed 0%, #2563eb 50%, #db2777 100%);
 
+  /* Tier colours. Used by the level sheet and the index; the run itself never
+     tells you a level's tier, so these only ever appear outside a run. */
+  --t-annoying: #8593a5;
+  --t-cursed: #f0a12e;
+  --t-unhinged: #ff4a2b;
+  --t-forbidden: #a855f7;
+
+  /* Graph paper. The chrome is a workbench, not a landing page. */
+  --grid-line: rgba(233, 238, 244, 0.032);
+
   --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: var(--font-archivo), "Archivo Black", Impact, sans-serif;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
