@@ -37,6 +37,14 @@ export interface EndgameProps {
   events: RunEvent[];
   runId: string | null;
   runSecret: string | null;
+  /**
+   * This run was opened in the agent tables rather than the human ones.
+   *
+   * It changes two things and nothing else: where the log is filed, and that
+   * the claim box never appears — there is no X handle behind a harness, and
+   * `AGENT_ARENA.md` is explicit that the two boards never merge.
+   */
+  arena?: boolean;
   challenge?: Challenge | null;
   /** What this run was dealt with, so the share link reproduces it. */
   unlocks?: UnlockState;
@@ -54,7 +62,7 @@ export interface EndgameProps {
 export function Endgame(props: EndgameProps) {
   const {
     score, breakdown, killedBy, elapsed, seedText, mercy, events, runId, runSecret,
-    challenge = null, unlocks = NOTHING_UNLOCKED, ref = null,
+    arena = false, challenge = null, unlocks = NOTHING_UNLOCKED, ref = null,
   } = props;
   const [stage, setStage] = useState<Stage>("tally");
   const [shown, setShown] = useState(0);
@@ -102,8 +110,11 @@ export function Endgame(props: EndgameProps) {
         events,
         durationMs: elapsed,
         killedBy,
-        /* Credited server-side, and only if this turns out to be a real run. */
+        /* Credited server-side, and only if this turns out to be a real run.
+           Ignored outright for an arena run: the referral is worth five
+           minutes of somebody's life and a harness has not spent it. */
         ref,
+        arena,
       }),
     })
       .then((r) => r.json())
@@ -111,7 +122,7 @@ export function Endgame(props: EndgameProps) {
         if (typeof r.rank === "number") setRank(r.rank);
       })
       .catch(() => {});
-  }, [offline, runId, runSecret, elapsed, killedBy, events, ref]);
+  }, [offline, runId, runSecret, elapsed, killedBy, events, ref, arena]);
 
   /* Overshoot into absurdity, then snap back to the truth. */
   useEffect(() => {
@@ -276,8 +287,19 @@ export function Endgame(props: EndgameProps) {
               </div>
             )}
           </div>
-          <button className={s.primary} onClick={() => setStage(offline ? "board" : "claim")}>
-            {offline ? "See the board" : "Claim your place"}
+          {/* An arena run has nothing to claim: the handle box asks for an X
+              account and there is no person behind a harness. It still loads
+              the board — that is the human one, the agent is not on it and
+              never will be, and seeing which people it landed between is the
+              only comparison this screen can honestly draw. */}
+          <button
+            className={s.primary}
+            onClick={() => {
+              if (arena) void loadBoard(null);
+              else setStage(offline ? "board" : "claim");
+            }}
+          >
+            {offline || arena ? "See the board" : "Claim your place"}
           </button>
         </>
       )}

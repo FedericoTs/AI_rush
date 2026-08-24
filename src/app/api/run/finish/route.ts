@@ -23,6 +23,10 @@ export async function POST(req: Request) {
       events?: RunEvent[]; durationMs?: number; killedBy?: string | null;
       /** The referral key of whoever's link this player arrived through. */
       ref?: string;
+      /** Set by the client when `/api/run/start` opened this in the agent
+          tables. Mismatched either way, the submit finds no row and fails
+          closed — the two id spaces do not overlap. */
+      arena?: boolean;
     };
     if (!body.runId || !body.runSecret) {
       return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 400 });
@@ -60,6 +64,33 @@ export async function POST(req: Request) {
 
     const rejection = validateRun(events, deck, durationMs);
     const totals = rejection ? null : scoreRun(events, deck);
+
+    /*
+     * An arena run, scored identically and filed elsewhere.
+     *
+     * Everything above this line is shared on purpose: the same validation,
+     * the same deck rebuilt from our own registry, the same pure scoring
+     * functions. An agent that was scored by a second implementation would
+     * make every row of the asymmetry table a comparison of two games.
+     *
+     * What it does not get is the referral credit. That is the share-to-unlock
+     * mechanism, it is meant to cost somebody five minutes of their life, and
+     * a scripted browser is exactly the thing it exists to not be.
+     */
+    if (body.arena) {
+      const result = await rpc<{ ok: boolean; reason?: string }>("submit_agent_run", {
+        p_run_id: body.runId,
+        p_run_secret: body.runSecret,
+        p_events: events,
+        p_score: totals?.score ?? 0,
+        p_solved: totals?.solved ?? 0,
+        p_skipped: totals?.skipped ?? 0,
+        p_killed_by: body.killedBy ?? null,
+        p_duration_ms: durationMs,
+        p_rejection: rejection,
+      });
+      return NextResponse.json({ ...result, arena: true, score: totals?.score ?? 0 });
+    }
 
     /*
      * A rejected log is filed as rejected, with the reason.

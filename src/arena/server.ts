@@ -6,6 +6,7 @@ import { z } from "zod";
 import { COLS, ROWS, rasterize, render } from "./raster";
 import { extractBoxes } from "./extract";
 import { prepareContext } from "./page";
+import { arenaUrl, operatorFromEnv } from "./url";
 
 /**
  * The Agent Arena, cheap first version.
@@ -38,13 +39,30 @@ import { prepareContext } from "./page";
  * Stated here, in the tool descriptions, and at run start rather than buried:
  * it has no side effects outside a sandboxed browser pointed at one game, it
  * cannot read a filesystem or reach another origin, and it returns characters
- * and a score. Reasoning is printed to this process's stderr and returned to
- * the caller; **this version publishes nothing**, because there is no
- * spectator page yet. When there is one, that changes and the notice changes
- * with it.
+ * and a score.
+ *
+ * **Reasoning is still not published.** `why` strings go to this process's
+ * stderr and back to the caller, and nowhere else — there is no spectator feed
+ * yet, and storing them before there is somewhere they were promised to appear
+ * would be exactly the kind of quiet collection §8 exists to refuse.
+ *
+ * What *is* published, and only if the operator names themselves with
+ * `ARENA_AGENT`, is the outcome: levels reached, solved, skipped, and how long
+ * each took. That is what the asymmetry table at `/arena` is made of. Unnamed,
+ * the run is not filed at all.
  */
 
 const GAME_URL = process.env.ARENA_URL ?? "https://ai-rush.lol";
+
+/*
+ * Who this harness says it is, from `ARENA_AGENT` / `ARENA_OPERATOR`.
+ *
+ * Unset by default, and that means the run is not filed anywhere at all —
+ * somebody trying the server out gets a private game, and appearing on a
+ * public table is a thing you opt into by naming yourself. Named, the run is
+ * filed in the agent tables, which never touch the human board.
+ */
+const WHO = operatorFromEnv();
 
 /* A phone-shaped viewport. Most of the catalogue is designed portrait-first,
    and a desktop-width window would show several levels in a layout no human
@@ -76,12 +94,10 @@ class Arena {
       executablePath: process.env.CHROMIUM_PATH || undefined,
     });
     const context = await this.browser.newContext({ viewport: VIEWPORT });
-    await prepareContext(context);
+    await prepareContext(context, WHO);
 
     this.page = await context.newPage();
-    const url = new URL("/play", GAME_URL);
-    if (seed) url.searchParams.set("seed", seed);
-    await this.page.goto(url.toString(), { waitUntil: "domcontentloaded" });
+    await this.page.goto(arenaUrl(GAME_URL, seed, WHO), { waitUntil: "domcontentloaded" });
 
     /* The deck is dealt on the client, so `domcontentloaded` fires on an empty
        stage. Without this the agent's first turn is spent looking at nothing —
@@ -181,7 +197,14 @@ server.tool(
     "origin, or any other tool.",
     "",
     "Your `why` strings are returned to whoever is running you and printed to",
-    "this process's log. This version publishes nothing anywhere else.",
+    "this process's log. They are not sent anywhere and not stored.",
+    "",
+    WHO
+      ? `This run is filed publicly as "${WHO.agent}": which levels were reached,`
+        + " solved or skipped, and how long each took. That feeds the asymmetry"
+        + " table at /arena. It never touches the human leaderboard."
+      : "This run is not recorded anywhere. Set ARENA_AGENT to put your results"
+        + " on the public asymmetry table at /arena.",
   ].join("\n"),
   {
     seed: z.string().optional().describe("Play a specific run. Omit for a fresh one."),
