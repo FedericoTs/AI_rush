@@ -116,3 +116,35 @@ test("the ask appears where players actually feel something", async ({ page }) =
   await page.goto("/board");
   await expect(page.getByText(ask)).toBeVisible();
 });
+
+/*
+ * The gallery.
+ *
+ * There is nothing approved on a fresh database, so these assert the frame
+ * rather than the cards: the sort tabs exist, they navigate, and the empty
+ * state says which of the three is empty. The card rendering — including the
+ * rule that submitted text is never treated as markup — is covered by the
+ * component tests in `src/app/lab/Gallery.test.tsx`, which can supply rows.
+ */
+test("the gallery is on the page, below the form, with its three sorts", async ({ page }) => {
+  await page.goto("/lab");
+
+  await expect(page.getByRole("heading", { name: "What people sent" })).toBeVisible();
+  for (const tab of ["Top", "New", "Shipped"]) {
+    await expect(page.getByRole("link", { name: tab, exact: true })).toBeVisible();
+  }
+
+  /* The form is what this page exists to get filled in, so it comes first. */
+  const form = await page.getByLabel("What does the interface call itself?").boundingBox();
+  const gallery = await page.getByRole("heading", { name: "What people sent" }).boundingBox();
+  expect(gallery!.y).toBeGreaterThan(form!.y);
+});
+
+test("each sort says what is missing from it, in its own words", async ({ page }) => {
+  await page.goto("/lab?sort=shipped");
+  const shipped = page.getByText(/Nothing from the Lab has shipped yet|SHIPPED/);
+  await expect(shipped.first()).toBeVisible();
+
+  await page.goto("/lab?sort=new");
+  await expect(page.getByRole("link", { name: "New", exact: true })).toBeVisible();
+});

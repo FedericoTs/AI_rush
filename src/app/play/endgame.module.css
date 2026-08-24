@@ -12,6 +12,8 @@
 .row span:first-child { color: var(--chrome-dim); }
 .row span:last-child { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .death span:last-child { color: var(--hazard); }
+/* The author of the level that killed you, right where the sting is. */
+.byline { font-style: normal; color: var(--chrome-dim); }
 /* Practice has no score, so beating par is the only thing it can congratulate. */
 .underPar { color: var(--good); }
 

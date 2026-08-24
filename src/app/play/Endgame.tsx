@@ -225,6 +225,8 @@ export function Endgame(props: EndgameProps) {
     url: challengeUrl,
     pick: score,
     rival: challenge,
+    /* The whole point of the Lab, in one line of a post somebody else writes. */
+    killedByCreator: nemesis?.creator?.handle ?? null,
   });
 
   return (
@@ -266,7 +268,11 @@ export function Endgame(props: EndgameProps) {
             <div className={s.row}><span>Seed</span><span>{seedText}</span></div>
             {killedBy && (
               <div className={`${s.row} ${s.death}`}>
-                <span>Cause of death</span><span>&ldquo;{killedBy}&rdquo;</span>
+                <span>Cause of death</span>
+                <span>
+                  &ldquo;{killedBy}&rdquo;
+                  {nemesis?.creator && <i className={s.byline}> by {nemesis.creator.handle}</i>}
+                </span>
               </div>
             )}
           </div>

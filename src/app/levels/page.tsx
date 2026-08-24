@@ -88,7 +88,12 @@ export default function Levels() {
                   <span className={s.id}>{m.id}</span>
                   <span className={s.body}>
                     <span className={s.title}>{m.title}</span>
-                    <span className={s.parodies}>{m.parodies}</span>
+                    <span className={s.parodies}>
+                      {m.parodies}
+                      {/* The index credit. A contributor should be able to
+                          send someone a link to the list and point at a row. */}
+                      {m.creator && <i className={s.creator}> · by {m.creator.handle}</i>}
+                    </span>
                   </span>
                   <span className={s.facts}>
                     {needs(m).map((n) => (

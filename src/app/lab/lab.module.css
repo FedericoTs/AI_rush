@@ -81,3 +81,5 @@
 .rules li { font-size: 0.82rem; color: var(--chrome-dim); padding-left: 1.1rem; position: relative; line-height: 1.5; }
 .rules li::before { content: "▸"; position: absolute; left: 0; color: var(--hazard); font-size: 0.7rem; top: 0.22rem; }
 .rules b { color: var(--chrome-ink); font-weight: 600; }
+
+.galleryHead { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }

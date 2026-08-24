@@ -532,6 +532,21 @@ function RunStage(props: {
           />
         </div>
 
+        {/*
+          * A community level carries its author, always.
+          *
+          * Small, persistent and under the card rather than in the chrome —
+          * a byline in the HUD would read as part of the game's own furniture,
+          * and the whole value of this line is that it is visibly somebody
+          * else's name on somebody else's idea.
+          */}
+        {current.module.meta.creator && (
+          <p className={s.byline}>
+            level by {current.module.meta.creator.handle} ·{" "}
+            <Link href="/lab">submit yours</Link>
+          </p>
+        )}
+
         <div className={s.skipRow}>
           <button className={s.skip} onClick={props.onSkip}>
             SKIP THIS LEVEL

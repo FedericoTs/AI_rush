@@ -1,0 +1,106 @@
+/*
+ * The gallery.
+ *
+ * These cards are other people's work, so they get the clean treatment the
+ * submission form gets — readable type, real contrast, nothing that flickers.
+ * The joke lives inside the levels; a community wall that made contributors'
+ * ideas hard to read would be the one place the bit stops being funny.
+ */
+
+.tabs { display: flex; gap: 0.4rem; }
+.tab {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; text-decoration: none;
+  padding: 0.35rem 0.65rem; border: 1px solid var(--chrome-line);
+  border-radius: 5px; color: var(--chrome-dim);
+}
+.tab:hover { color: var(--chrome-ink); border-color: var(--chrome-dim); }
+.tabOn { background: var(--chrome-ink); color: var(--chrome); border-color: var(--chrome-ink); }
+
+.grid { display: grid; gap: 0.7rem; }
+
+.card {
+  display: flex; flex-direction: column; gap: 0.45rem;
+  border: 1px solid var(--chrome-line); border-radius: 14px;
+  padding: 0.85rem 0.9rem; background: var(--chrome-2);
+}
+.card[data-status="shipped"] { border-color: var(--good); }
+/* A public no is greyed, never hidden — that distinction is the whole point. */
+.card[data-status="rejected"] { opacity: 0.72; }
+
+.head { display: flex; align-items: center; gap: 0.5rem; }
+.sp { flex: 1; }
+
+.shipped {
+  font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.12em;
+  color: #04140f; background: var(--good); border-radius: 4px;
+  padding: 0.18rem 0.4rem; text-decoration: none; white-space: nowrap;
+}
+.notShipping {
+  font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.12em;
+  color: var(--chrome-dim); border: 1px solid var(--chrome-line);
+  border-radius: 4px; padding: 0.16rem 0.4rem; white-space: nowrap;
+}
+
+.title { margin: 0; font-size: 1.02rem; font-weight: 700; letter-spacing: -0.01em; }
+.parodies { margin: 0; font-size: 0.78rem; color: var(--chrome-dim); }
+.mechanic {
+  margin: 0.15rem 0 0; font-size: 0.86rem; line-height: 1.55;
+  color: var(--chrome-ink); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+.inputs { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.inputs span {
+  font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--chrome-dim);
+  border: 1px solid var(--chrome-line); border-radius: 3px; padding: 0.12rem 0.34rem;
+}
+
+.note {
+  margin: 0.2rem 0 0; font-size: 0.79rem; line-height: 1.5; color: var(--chrome-dim);
+  border-left: 2px solid var(--hazard); padding-left: 0.6rem;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.note b { color: var(--chrome-ink); }
+
+.foot { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem; flex-wrap: wrap; }
+
+.vote {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  border: 1px solid var(--chrome-line); border-radius: 999px;
+  padding: 0.35rem 0.75rem; background: none; color: var(--chrome-dim);
+  font-size: 0.78rem; cursor: pointer;
+}
+.vote:hover { color: var(--chrome-ink); border-color: var(--chrome-dim); }
+.vote:disabled { opacity: 0.6; }
+.voted { border-color: var(--good); color: var(--good); background: #0b1a15; }
+.arrow { font-size: 0.6rem; }
+.count { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 600; }
+.voteLabel { font-size: 0.72rem; }
+
+.deadCount { font-size: 0.72rem; color: #4b5563; font-family: var(--font-mono); }
+
+.report {
+  background: none; border: none; color: #4b5563; font-size: 0.68rem;
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer; padding: 0;
+}
+.report:hover { color: var(--hazard); }
+
+.reportBox { display: flex; gap: 0.3rem; flex-wrap: wrap; align-items: center; flex: 1; min-width: 0; }
+.reportBox input {
+  flex: 1; min-width: 8rem; font: inherit; font-size: 0.76rem; padding: 0.35rem 0.5rem;
+  border: 1px solid var(--chrome-line); border-radius: 7px;
+  background: var(--chrome); color: var(--chrome-ink);
+}
+.reportBox button {
+  border: 1px solid var(--hazard); background: none; color: var(--hazard);
+  border-radius: 7px; padding: 0.35rem 0.6rem; font-size: 0.72rem; cursor: pointer;
+}
+.reportBox .cancel { border-color: var(--chrome-line); color: var(--chrome-dim); }
+.reportDone { font-size: 0.72rem; color: var(--good); }
+
+.empty {
+  margin: 0; border: 1px dashed var(--chrome-line); border-radius: 14px;
+  padding: 1.4rem 1rem; text-align: center; color: var(--chrome-dim);
+  font-size: 0.85rem; line-height: 1.6;
+}

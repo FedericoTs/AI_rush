@@ -188,12 +188,22 @@ a complete run, and neither one's version is the broken one.
 **Exit:** a submitted level idea has been built, shipped, credited, and its
 author has posted about it.
 
-- [ ] `/lab` gallery and voting (the submission form already shipped in Phase 3)
-- [ ] `/api/lab/vote|remove`, rate limits, moderation queue
-- [ ] Credit surfaces: in-level byline, level index, share card attribution
-- [ ] Admin view for triage (can be a Supabase Studio saved query at first —
-      do not build a CMS)
-- [ ] First Community Drop shipped and announced
+- [x] `/lab` gallery and voting — Top / New / Shipped, below the form because
+      the form is what the page is for. Rejections appear **with their reason
+      on the card**, never as a silent deletion; a rejection with no reason
+      written on it stays invisible, which is the spam path and nothing else
+- [x] `/api/lab/vote|remove`, rate limits, moderation queue. A vote is keyed to
+      a **ballot** — a random id the browser makes up about itself — not a
+      fingerprint. Somebody who clears site data can vote twice; that is an
+      accepted cost, and the reason it is affordable is that a vote decides
+      nothing on its own (`0004_lab_gallery.sql`)
+- [x] Credit surfaces: a persistent byline under the level, the author on the
+      level index, and the handle in the post text when their level was the
+      cause of death — which is the part that is actually worth having
+- [x] Admin view for triage: the saved queries are in the migration's footer,
+      as specified. No CMS
+- [ ] First Community Drop shipped and announced — **needs submissions**, and
+      then a human to read them on a Friday
 
 ---
 

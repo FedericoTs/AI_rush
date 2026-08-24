@@ -89,6 +89,40 @@ export async function liveStats(): Promise<LiveStats> {
   }
 }
 
+export type LabSort = "top" | "new" | "shipped";
+
+export interface LabCard {
+  id: string;
+  x_handle: string;
+  title: string;
+  parodies: string;
+  mechanic: string;
+  inputs: string[];
+  status: "approved" | "shipped" | "rejected";
+  rejection_note: string | null;
+  shipped_level_id: string | null;
+  votes: number;
+  created_at: string;
+}
+
+/**
+ * The gallery.
+ *
+ * Every string on these rows was typed by a stranger. They are stored as text,
+ * returned as text, and rendered as text — never as HTML, never near a code
+ * generator. That is the security boundary from `COMMUNITY_LEVELS.md` §5 and
+ * it is why this returns plain values rather than anything richer.
+ */
+export async function labGallery(sort: LabSort): Promise<LabCard[]> {
+  if (!dbConfigured) return [];
+  try {
+    return await rpc<LabCard[]>("lab_gallery", { p_sort: sort, p_limit: 60 });
+  } catch (err) {
+    console.error("[labGallery]", err);
+    return [];
+  }
+}
+
 export interface RankedRow {
   rank: number;
   handle: string;

@@ -45,6 +45,7 @@
 .body { min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 .title { font-size: 0.88rem; font-weight: 600; }
 .parodies { font-size: 0.7rem; color: var(--chrome-dim); }
+.creator { font-style: normal; color: var(--good); }
 .facts { display: flex; align-items: center; gap: 0.4rem; }
 .par { font-family: var(--font-mono); font-size: 0.66rem; color: var(--chrome-dim); font-variant-numeric: tabular-nums; }
 .needs {
