@@ -100,6 +100,10 @@ export default async function Home() {
           </p>
         </div>
 
+        <Link className={s.labLink} href="/lab">
+          You think you can do worse? Design a level →
+        </Link>
+
         <p className={s.warn}>
           Contains flashing colour and sudden sound. Sound can be muted from the bar once a run
           starts.

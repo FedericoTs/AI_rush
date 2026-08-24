@@ -1,0 +1,83 @@
+/* The Lab. Deliberately the one clean, well-built surface in the product —
+   this is the content pipeline, and every point of friction is an idea that
+   never arrives. */
+
+.shell {
+  width: 100%; max-width: 560px; flex: 1;
+  display: flex; flex-direction: column; gap: 1.1rem;
+  padding: 1.2rem 0.75rem 3rem;
+}
+
+.head { display: flex; align-items: baseline; gap: 0.6rem; }
+.head h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; }
+.head h1 i { font-style: normal; color: var(--hazard); }
+.sp { flex: 1; }
+.back {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--chrome-dim); text-decoration: none;
+}
+.back:hover { color: var(--chrome-ink); }
+
+.lede { margin: 0; font-size: 0.95rem; color: var(--chrome-ink); line-height: 1.55; }
+.aside {
+  margin: 0; font-size: 0.8rem; color: var(--chrome-dim); line-height: 1.55;
+  border-left: 2px solid var(--chrome-line); padding-left: 0.7rem;
+}
+
+.form { display: flex; flex-direction: column; gap: 1rem; }
+
+.field { display: flex; flex-direction: column; gap: 0.3rem; border: none; padding: 0; margin: 0; }
+.field label, .field legend {
+  font-size: 0.88rem; font-weight: 600; color: var(--chrome-ink); padding: 0;
+}
+.field input, .field textarea {
+  width: 100%; font: inherit; font-size: 0.95rem; padding: 0.65rem 0.75rem;
+  border: 1px solid var(--chrome-line); border-radius: 9px;
+  background: var(--chrome-2); color: var(--chrome-ink); resize: vertical;
+}
+.field input::placeholder, .field textarea::placeholder { color: #5b6773; }
+.field input:focus, .field textarea:focus {
+  outline: 2px solid var(--good); outline-offset: 1px; border-color: var(--good);
+}
+.field input[aria-invalid="true"], .field textarea[aria-invalid="true"] { border-color: var(--hazard); }
+.help { font-size: 0.74rem; color: var(--chrome-dim); line-height: 1.45; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.15rem; }
+.chip {
+  border: 1px solid var(--chrome-line); background: var(--chrome-2); color: var(--chrome-dim);
+  border-radius: 999px; padding: 0.34rem 0.75rem; font-size: 0.78rem; cursor: pointer;
+}
+.chip:hover { color: var(--chrome-ink); border-color: var(--chrome-dim); }
+.chipOn { background: var(--good); border-color: var(--good); color: #04140f; font-weight: 600; }
+
+.error {
+  font-size: 0.83rem; color: #ffb4a6; background: #2a1512;
+  border: 1px solid #4a231d; border-radius: 9px; padding: 0.6rem 0.7rem;
+}
+
+.primary {
+  border: none; border-radius: 11px; padding: 0.85rem; background: #fff; color: #0b0e13;
+  font-weight: 700; font-size: 0.95rem; text-align: center; text-decoration: none; display: block;
+}
+.primary:disabled { opacity: 0.5; }
+.secondary {
+  border: 1px solid var(--chrome-line); background: none; color: var(--chrome-dim);
+  border-radius: 11px; padding: 0.85rem; font-size: 0.88rem; text-align: center;
+  text-decoration: none; display: block; cursor: pointer;
+}
+.secondary:hover { color: var(--chrome-ink); border-color: var(--chrome-dim); }
+
+.fine { margin: 0; font-size: 0.72rem; color: #63707e; line-height: 1.5; }
+
+.done {
+  border: 1px solid var(--good); border-radius: 14px; padding: 1.2rem;
+  background: var(--chrome-2); display: flex; flex-direction: column; gap: 0.6rem;
+}
+.done h2 { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
+.done p { margin: 0; font-size: 0.87rem; color: var(--chrome-dim); line-height: 1.55; }
+.doneRow { display: grid; gap: 0.5rem; margin-top: 0.4rem; }
+
+.rules { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
+.rules li { font-size: 0.82rem; color: var(--chrome-dim); padding-left: 1.1rem; position: relative; line-height: 1.5; }
+.rules li::before { content: "▸"; position: absolute; left: 0; color: var(--hazard); font-size: 0.7rem; top: 0.22rem; }
+.rules b { color: var(--chrome-ink); font-weight: 600; }

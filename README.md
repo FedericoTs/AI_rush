@@ -44,7 +44,8 @@ npm run e2e            # Playwright, desktop and mobile
 
 Not built yet: no calibration screen, no sensor levels, and no chaos modifier
 *rendering* — the schedule exists and is tested, but nothing draws the effects
-until Phase 5. Level submissions are specified and not yet built.
+until Phase 5. Submissions are collected but there is no public gallery or
+voting yet; a human reads the queue.
 
 The original single-file prototype stays in [`prototype/`](prototype/) as the
 reference these were ported from.

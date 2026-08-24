@@ -51,3 +51,10 @@
   height: 7px; width: 5.5rem; border-radius: 4px; background: var(--chrome-line); opacity: 0.5;
 }
 .miniEmpty .miniRank, .miniEmpty .miniScore { color: #3d4854; }
+
+.labLink {
+  display: block; text-align: center; text-decoration: none;
+  border: 1px dashed var(--chrome-line); border-radius: 12px; padding: 0.7rem;
+  font-size: 0.8rem; color: var(--chrome-dim);
+}
+.labLink:hover { color: var(--good); border-color: var(--good); }

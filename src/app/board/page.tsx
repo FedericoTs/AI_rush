@@ -72,6 +72,9 @@ export default async function Board({
       <Link className={s.cta} href="/play">
         Take your five minutes
       </Link>
+      <Link className={s.labLink} href="/lab">
+        You think you can do worse? Design a level →
+      </Link>
     </main>
   );
 }

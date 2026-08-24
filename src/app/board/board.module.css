@@ -39,3 +39,10 @@
   padding: 0.1rem 0.32rem;
 }
 .beat:hover { color: var(--hazard); border-color: var(--hazard); }
+
+.labLink {
+  display: block; text-align: center; text-decoration: none;
+  border: 1px dashed var(--chrome-line); border-radius: 12px; padding: 0.7rem;
+  font-size: 0.8rem; color: var(--chrome-dim); margin-top: -0.4rem;
+}
+.labLink:hover { color: var(--good); border-color: var(--good); }

@@ -101,9 +101,9 @@ makes sense to someone who has never seen the game.
 - [ ] `/api/og` share card + percentile variants + edge caching
 - [ ] Post-to-X intent with the randomized text bank
 - [ ] `/r/[seed]` seeded challenge entry + ghost bar + head-to-head card
-- [ ] **Level submission intake** — the form, the table, and a Friday triage
-      query. No gallery, no voting, no admin UI. One day of work that starts the
-      content pipeline months before the Lab ships (`COMMUNITY_LEVELS.md` §2)
+- [x] **Level submission intake** — `/lab`, the table, and a Friday triage
+      query. No gallery, no voting, no admin UI, as planned. Entry points on
+      the endgame, the board and the front page (`COMMUNITY_LEVELS.md` §2)
 - [ ] PostHog events for the balance loop
 
 ---

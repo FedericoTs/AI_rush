@@ -296,6 +296,11 @@ export function Endgame(props: EndgameProps) {
             <a className={s.secondary} href="/play">
               Run it again
             </a>
+            {/* The ask lands here because this is peak motivation: thirty
+                seconds after an interface has just humiliated someone. */}
+            <a className={s.lab} href="/lab">
+              You think you can do worse? Design a level →
+            </a>
           </div>
         </>
       )}

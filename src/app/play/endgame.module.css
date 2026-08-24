@@ -98,3 +98,10 @@
 .won .versusText b { color: var(--good); }
 .lost .versusText b { color: var(--hazard); }
 .versusText span { font-size: 0.7rem; color: var(--chrome-dim); }
+
+.lab {
+  display: block; text-align: center; text-decoration: none;
+  border: 1px dashed var(--chrome-line); border-radius: 12px; padding: 0.7rem;
+  font-size: 0.8rem; color: var(--chrome-dim);
+}
+.lab:hover { color: var(--good); border-color: var(--good); }
