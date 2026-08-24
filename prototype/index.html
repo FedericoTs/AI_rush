@@ -204,6 +204,71 @@ button{font:inherit;cursor:pointer}
   text-align:center;color:var(--slop-1);margin-bottom:.9rem;text-indent:.5em
 }
 
+/* ─── L01 confirm ─────────────────────────────────────────── */
+.confirm{display:flex;gap:.6rem;margin-top:1rem}
+.confirm button{
+  flex:1;border:none;border-radius:11px;padding:.85rem .5rem;font-weight:700;font-size:.9rem;
+  transition:background .18s,color .18s,box-shadow .18s
+}
+.b-good{background:#10B981;color:#fff;box-shadow:0 4px 12px -4px rgba(16,185,129,.7)}
+.b-bad{background:#EF4444;color:#fff;box-shadow:0 4px 12px -4px rgba(239,68,68,.7)}
+.b-ghost{background:#F3F4F6;color:#6B7280;box-shadow:none}
+
+/* ─── L02 OTP ─────────────────────────────────────────────── */
+.otp-code{
+  font-family:var(--m);font-size:1.55rem;font-weight:700;letter-spacing:.34em;
+  text-align:center;color:var(--slop-1);margin-bottom:1rem;text-indent:.34em
+}
+.otp{display:flex;gap:.4rem;justify-content:center;position:relative;padding:.5rem 0}
+.otp-cell{
+  flex:1;max-width:46px;height:56px;border:2px solid var(--slop-line);border-radius:10px;
+  background:#fff;position:relative;cursor:text
+}
+.otp-cell.on{border-color:var(--slop-1);box-shadow:0 0 0 3px rgba(124,58,237,.16);z-index:2}
+.otp-cell.stuffed{z-index:4}
+.otp-cell span{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-family:var(--m);font-size:1.35rem;font-weight:700;white-space:nowrap;
+  color:var(--slop-ink);pointer-events:none
+}
+.otp-catch{position:absolute;left:50%;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0}
+
+/* ─── L36 · the honest one. no gradient, no emoji, no tricks ── */
+.card.plain{box-shadow:0 2px 10px rgba(0,0,0,.3);border:1px solid #D6DBE3}
+.card.plain::before{display:none}
+.card.plain h2{
+  background:none;-webkit-background-clip:border-box;background-clip:border-box;
+  color:#111827;font-weight:700;font-size:1.3rem;letter-spacing:-.02em;margin-bottom:.35rem
+}
+.card.plain .sub{color:#4B5563}
+.field{margin-bottom:.9rem}
+.field label{display:block;font-size:.8rem;font-weight:600;color:#374151;margin-bottom:.3rem}
+.field input{
+  width:100%;font:inherit;font-size:.95rem;padding:.68rem .7rem;border:1px solid #9AA3B0;
+  border-radius:8px;background:#fff;color:#111827
+}
+.field input:focus{outline:2px solid #1D4ED8;outline-offset:1px;border-color:#1D4ED8}
+.field .err-in{font-size:.74rem;color:#B91C1C;margin-top:.28rem;font-weight:500}
+.pw-row{position:relative}
+.pw-row input{padding-right:4.2rem}
+.pw-row button{
+  position:absolute;right:.35rem;top:50%;transform:translateY(-50%);
+  background:none;border:none;font-size:.76rem;color:#1D4ED8;font-weight:600;padding:.35rem .4rem
+}
+.signin{
+  width:100%;border:none;border-radius:8px;padding:.78rem;background:#1D4ED8;color:#fff;
+  font-weight:600;font-size:.95rem;margin-top:.2rem
+}
+.signin:hover{background:#1E3FA8}
+.plain-links{display:flex;justify-content:space-between;margin-top:.85rem;font-size:.82rem}
+.plain-links a{color:#1D4ED8;text-decoration:none;font-weight:500;cursor:pointer}
+.plain-links a:hover{text-decoration:underline}
+.plain-note{
+  margin-top:.75rem;font-size:.78rem;color:#374151;background:#F3F4F6;
+  border-radius:6px;padding:.55rem .65rem;line-height:1.45
+}
+.btn-ghost{background:#F3F4F6;color:#6B7280}
+
 /* ─── title / tally ──────────────────────────────────────── */
 .screen{flex:1;display:flex;flex-direction:column;justify-content:center;padding:1.2rem;gap:.9rem}
 .screen h1{
@@ -336,6 +401,220 @@ var SLOP_SUB = [
   "We use AI-powered validation to keep your data safe. 🚀",
   "This helps us personalize your experience. Thanks for your patience! 💜"
 ];
+
+/* ══════════════════════════════════════════════════════════
+   LEVEL L01 — Continue To Your Account
+   ══════════════════════════════════════════════════════════ */
+
+var L01 = {
+  meta:{ id:"L01", slug:"continue-to-your-account", title:"Continue To Your Account",
+         tier:"annoying", parSeconds:10, family:"meta" },
+  mount:function(root, api){
+    var cursed = true, timer = 0;
+
+    root.innerHTML =
+      '<div class="card">' +
+        '<div class="badge">Step 1 of 2 · Bank-Level Security</div>' +
+        '<h2>Continue To Your Account ✨</h2>' +
+        '<p class="sub">' + api.slopSub + '</p>' +
+        '<div class="confirm">' +
+          '<button id="c-no">Cancel</button>' +
+          '<button id="c-go">Continue</button>' +
+        '</div>' +
+        '<p class="hint">By continuing you agree to our Terms, our other Terms, and the ' +
+        'processing of your data by 1,400 carefully selected partners. 🔐</p>' +
+        '<div class="foot"><span>Privacy</span><span>Terms</span><span>Careers</span><span>Careers</span></div>' +
+      '</div>';
+
+    var no = root.querySelector("#c-no"), go = root.querySelector("#c-go");
+
+    /* cursed = Cancel wears the primary green, Continue wears destructive red */
+    function paint(){
+      no.className = cursed ? "b-good" : "b-ghost";
+      go.className = cursed ? "b-bad"  : "b-good";
+      go.textContent = cursed ? "⚠ Continue" : "Continue";
+    }
+    paint();
+
+    go.addEventListener("click", function(){ api.solve(); });
+
+    no.addEventListener("click", function(){
+      api.fail("clicked-cancel"); Sfx.fail();
+      /* show the sane arrangement just long enough for you to commit to it */
+      cursed = false; paint();
+      clearTimeout(timer);
+      timer = setTimeout(function(){ cursed = true; paint(); Sfx.click(); }, 400);
+    });
+
+    return function(){ clearTimeout(timer); };
+  }
+};
+
+/* ══════════════════════════════════════════════════════════
+   LEVEL L02 — One-Time Passcode
+   ══════════════════════════════════════════════════════════ */
+
+var L02 = {
+  meta:{ id:"L02", slug:"one-time-passcode", title:"One-Time Passcode",
+         tier:"annoying", parSeconds:20, family:"text" },
+  mount:function(root, api){
+    var CODE = "481516";
+    var cells = ["","","","","",""], focus = 0;
+
+    var cellHtml = "";
+    for (var i=0;i<6;i++) cellHtml += '<div class="otp-cell" data-i="'+i+'"><span></span></div>';
+
+    root.innerHTML =
+      '<div class="card">' +
+        '<div class="badge">Verification · AI-Powered</div>' +
+        '<h2>One-Time Passcode 🔒</h2>' +
+        '<p class="sub">' + api.slopSub + '</p>' +
+        '<div class="otp-code">' + CODE + '</div>' +
+        '<div class="otp" id="otp">' + cellHtml +
+          '<input class="otp-catch" id="otpcatch" inputmode="numeric" autocomplete="off" ' +
+          'autocorrect="off" spellcheck="false" aria-label="One-time passcode">' +
+        '</div>' +
+        '<button class="cta" id="go">Verify</button>' +
+        '<div class="err" id="err" hidden></div>' +
+        '<p class="hint">Enter the 6-digit code shown above. For your convenience the code has ' +
+        'also been sent to the device you are currently holding. 📩</p>' +
+        '<div class="foot"><span>Privacy</span><span>Terms</span><span>Careers</span><span>Careers</span></div>' +
+      '</div>';
+
+    var otp = root.querySelector("#otp"), catcher = root.querySelector("#otpcatch");
+    var err = root.querySelector("#err"), go = root.querySelector("#go");
+    var nodes = [].slice.call(otp.querySelectorAll(".otp-cell"));
+
+    function paint(){
+      for (var i=0;i<6;i++){
+        nodes[i].querySelector("span").textContent = cells[i];
+        nodes[i].classList.toggle("on", i === focus);
+        nodes[i].classList.toggle("stuffed", cells[i].length > 1);
+      }
+    }
+    paint();
+
+    otp.addEventListener("click", function(e){
+      var c = e.target.closest(".otp-cell"); if (!c) return;
+      focus = +c.dataset.i;
+      paint();
+      catcher.focus();          /* inside the gesture, so iOS raises the keypad */
+      Sfx.click();
+    });
+
+    /* focus never advances. that is the entire level. */
+    catcher.addEventListener("input", function(){
+      var v = catcher.value.replace(/\D/g, "");
+      catcher.value = "";
+      if (!v) return;
+      cells[focus] += v;
+      paint();
+      Sfx.click();
+    });
+
+    catcher.addEventListener("keydown", function(e){
+      if (e.key === "Backspace" && !catcher.value){
+        e.preventDefault();
+        cells[focus] = cells[focus].slice(0,-1);
+        paint();
+      }
+    });
+
+    go.addEventListener("click", function(){
+      var oneEach = cells.every(function(c){ return c.length === 1; });
+      if (oneEach && cells.join("") === CODE){ api.solve(); return; }
+      err.hidden = false;
+      err.textContent = "Invalid code. Please try again! 😊";
+      cells = ["","","","","",""]; focus = 0; paint();
+      api.fail("bad-otp"); Sfx.fail();
+    });
+
+    return function(){};
+  }
+};
+
+/* ══════════════════════════════════════════════════════════
+   LEVEL L36 — Sign In
+   There is no bit. This form is meant to be genuinely good:
+   real labels, real focus rings, sane tab order, working
+   password reveal, honest validation copy. Nothing here
+   punishes the player and nothing flashes at them — the whole
+   joke depends on it being exactly what it appears to be.
+   ══════════════════════════════════════════════════════════ */
+
+var L36 = {
+  meta:{ id:"L36", slug:"sign-in", title:"Sign In",
+         tier:"forbidden", parSeconds:20, family:"meta" },
+  mount:function(root, api){
+    root.innerHTML =
+      '<div class="card plain">' +
+        '<h2>Sign in</h2>' +
+        '<p class="sub">Welcome back. Enter your details to continue.</p>' +
+        '<div class="field">' +
+          '<label for="si-email">Email address</label>' +
+          '<input id="si-email" type="email" inputmode="email" autocomplete="username" ' +
+          'placeholder="you@example.com">' +
+          '<div class="err-in" id="e-email" hidden></div>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="si-pw">Password</label>' +
+          '<div class="pw-row">' +
+            '<input id="si-pw" type="password" autocomplete="current-password">' +
+            '<button type="button" id="si-eye" aria-label="Show password">Show</button>' +
+          '</div>' +
+          '<div class="err-in" id="e-pw" hidden></div>' +
+        '</div>' +
+        '<button class="signin" id="si-go">Sign in</button>' +
+        '<div class="plain-links">' +
+          '<a id="si-forgot" tabindex="0" role="button">Forgot password?</a>' +
+          '<a id="si-new" tabindex="0" role="button">Create an account</a>' +
+        '</div>' +
+        '<div class="plain-note" id="si-note" hidden></div>' +
+      '</div>';
+
+    var email = root.querySelector("#si-email"), pw = root.querySelector("#si-pw");
+    var eE = root.querySelector("#e-email"), eP = root.querySelector("#e-pw");
+    var note = root.querySelector("#si-note");
+
+    root.querySelector("#si-eye").addEventListener("click", function(){
+      var hidden = pw.type === "password";
+      pw.type = hidden ? "text" : "password";
+      this.textContent = hidden ? "Hide" : "Show";
+      this.setAttribute("aria-label", hidden ? "Hide password" : "Show password");
+    });
+
+    function submit(){
+      var em = email.value.trim(), p = pw.value;
+      var okE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em);
+      var okP = p.length >= 6;
+
+      eE.hidden = okE;
+      eE.textContent = em ? "Enter a valid email address." : "Email address is required.";
+      eP.hidden = okP;
+      eP.textContent = p ? "Password must be at least 6 characters." : "Password is required.";
+
+      /* a validation message is not a fail. no flash, no shake, no lost
+         first-try bonus — it is just a form telling you something true. */
+      if (okE && okP) api.solve();
+    }
+
+    root.querySelector("#si-go").addEventListener("click", submit);
+    [email, pw].forEach(function(el){
+      el.addEventListener("keydown", function(e){ if (e.key === "Enter") submit(); });
+    });
+
+    root.querySelector("#si-forgot").addEventListener("click", function(){
+      note.hidden = false;
+      note.textContent = "Enter your email address above and we will send you a reset link.";
+    });
+    root.querySelector("#si-new").addEventListener("click", function(){
+      note.hidden = false;
+      note.textContent = "Account creation is not part of this prototype. Signing in works fine.";
+    });
+
+    return function(){};
+  }
+};
 
 /* ══════════════════════════════════════════════════════════
    LEVEL L11 — Choose A Secure Password 🦖
@@ -824,7 +1103,9 @@ var L37 = {
    SHELL
    ══════════════════════════════════════════════════════════ */
 
-var DECK = [L11, L12, L37];
+/* Tier ramp, and no two consecutive levels share an input family:
+   meta → text → coupled → motor → coupled → meta */
+var DECK = [L01, L02, L12, L11, L37, L36];
 var RUN_SECONDS = 300;
 
 var stage = document.getElementById("stage");
@@ -856,25 +1137,26 @@ function title(){
   stage.innerHTML =
     '<div class="screen">' +
       '<h1>AI<i>RUSH</i></h1>' +
-      '<p><b>Prototype slice.</b> Three levels, a real five-minute clock, real scoring. ' +
+      '<p><b>Prototype slice.</b> Six levels, a real five-minute clock, real scoring. ' +
       'Solve or skip — the clock does not stop either way.</p>' +
       '<p class="warn">Contains flashing colour and sudden sound. Sound can be muted from the bar once a run starts.</p>' +
       '<div class="dlg">' +
         '<h3>Ready to get started? ✨</h3>' +
         '<p>We just need a moment to verify a few things. This should be quick!</p>' +
         '<div class="dlg-row">' +
-          '<button class="btn-cancel" id="tCancel">Cancel</button>' +
-          '<button class="btn-continue" id="tGo">⚠ Continue</button>' +
+          '<button class="btn-ghost" id="tInfo">What is this?</button>' +
+          '<button class="btn-continue" id="tGo">⚠ START</button>' +
         '</div>' +
+        '<div class="plain-note" id="tNote" hidden></div>' +
       '</div>' +
     '</div>';
-  stage.querySelector("#tCancel").addEventListener("click", function(){
-    Sfx.unlock(); Sfx.fail();
-    var d = stage.querySelector(".dlg p");
-    d.textContent = "No problem! Let's try that again. 😊";
-    var row = stage.querySelector(".dlg-row");
-    row.insertBefore(row.lastElementChild, row.firstElementChild);
-    setTimeout(function(){ row.insertBefore(row.lastElementChild, row.firstElementChild); }, 420);
+  stage.querySelector("#tInfo").addEventListener("click", function(){
+    Sfx.unlock(); Sfx.click();
+    var n = stage.querySelector("#tNote");
+    n.hidden = false;
+    n.textContent = "Six interfaces, five minutes. Each one looks normal for about a second " +
+      "and a half. Solve what you can, skip what you cannot — skipping costs ten seconds " +
+      "and your combo. Nothing here is broken on purpose except everything.";
   });
   stage.querySelector("#tGo").addEventListener("click", start);
 }
