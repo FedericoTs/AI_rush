@@ -214,11 +214,18 @@ same bar as Phase 2, different species.
 Do this in two steps, and stop after the first if it isn't funny.
 
 **6.5a — the week-long probe**
-- [ ] MCP server with `look` / `click` / `type` / `key` / `drag` / `wait` / `skip`
-- [ ] The `why` parameter, required by schema on every action
-- [ ] The DOM → 48×24 character-grid rasterizer (`look()`) — the only real
-      technical risk in this phase
-- [ ] Point an agent at the existing 48 levels; read the transcript
+- [x] MCP server with `look` / `click` / `type` / `key` / `drag` / `wait` /
+      `skip` (`src/arena/`, `npm run arena`)
+- [x] The `why` parameter, required by schema on every action — the call fails
+      validation without it, verified over the wire
+- [x] The DOM → 48×24 character-grid rasterizer (`look()`). Split in two so the
+      risk is testable: extraction runs in the page and is dumb, and everything
+      that decides what the agent *perceives* is a pure function with 14 tests
+      over hand-written layouts. `npm run arena:probe -- L05` prints what a real
+      level looks like through it — which is how both of its real bugs were
+      found, not by a unit test
+- [ ] Point an agent at the levels; read the transcript — **needs an operator**
+      with an MCP client and an agent to point at it
 - [ ] **Gate:** is watching this actually funny? If no, stop here. One week spent.
 
 **6.5b — the mode**
