@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CATALOG } from "@/levels/catalog";
+import { CATALOG, LEVELS_BUILT, LEVELS_UNBUILT, LEVELS_WRITTEN } from "@/levels/catalog";
 import { SheetTile } from "./SheetTile";
 import { Logo } from "@/ui/logo/Logo";
 import { SUBHEADS } from "@/ui/slop/phrases";
@@ -10,9 +10,6 @@ import s from "./page.module.css";
 
 export const dynamic = "force-dynamic";
 
-/** Written in `docs/LEVELS.md`, whether or not they are built yet. */
-const LEVELS_WRITTEN = 48;
-const UNBUILT = LEVELS_WRITTEN - CATALOG.length;
 
 /**
  * Ghost tiles to square off the sheet.
@@ -49,7 +46,7 @@ export default async function Home() {
         <span className={s.mastLeft}>HOSTILE INTERFACE SPEEDRUN</span>
         <span className={s.mastSp} />
         <span className={s.mastRight}>
-          {CATALOG.length}/{LEVELS_WRITTEN} BUILT
+          {LEVELS_BUILT}/{LEVELS_WRITTEN} BUILT
         </span>
       </div>
 
@@ -136,7 +133,7 @@ export default async function Home() {
           <div className={s.sectionHead}>
             <span className={s.sectionName}>The sheet</span>
             <span className={s.sectionNote}>
-              {CATALOG.length} pinned · {UNBUILT} to go
+              {LEVELS_BUILT} pinned · {LEVELS_UNBUILT === 0 ? "all of them" : `${LEVELS_UNBUILT} to go`}
             </span>
           </div>
 
@@ -157,8 +154,14 @@ export default async function Home() {
             {Array.from({ length: EMPTY_CELLS }, (_, i) => (
               <Link className={s.ghostTile} key={`jar-${i}`} href="/lab">
                 <span className={s.tileId}>???</span>
-                <span className={s.ghostTitle}>Still in the jar</span>
-                <span className={s.tileParodies}>{UNBUILT} written, unbuilt →</span>
+                <span className={s.ghostTitle}>
+                  {LEVELS_UNBUILT === 0 ? "Yours goes here" : "Still in the jar"}
+                </span>
+                <span className={s.tileParodies}>
+                  {LEVELS_UNBUILT === 0
+                    ? "every written level is built →"
+                    : `${LEVELS_UNBUILT} written, unbuilt →`}
+                </span>
               </Link>
             ))}
           </div>
@@ -225,8 +228,9 @@ export default async function Home() {
         <Link className={s.labLink} href="/lab">
           <span className={s.labBig}>You think you can do worse?</span>
           <span className={s.labSmall}>
-            {UNBUILT} levels are written and unbuilt. Send one of your own and it ships with your
-            handle on it →
+            {LEVELS_UNBUILT === 0
+              ? "Every level we wrote is built. The next one has to come from somebody else — send it and it ships with your handle on it →"
+              : `${LEVELS_UNBUILT} levels are written and unbuilt. Send one of your own and it ships with your handle on it →`}
           </span>
         </Link>
 

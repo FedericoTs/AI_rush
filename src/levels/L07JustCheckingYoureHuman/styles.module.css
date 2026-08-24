@@ -1,0 +1,17 @@
+.ask { margin: 0 0 0.6rem; font-size: 0.88rem; color: var(--slop-ink); }
+.ask b { color: var(--slop-1); }
+
+.grid {
+  display: grid; gap: 0.25rem; padding: 0.35rem;
+  border: 1.5px solid var(--slop-line); border-radius: 12px; background: #eef1f5;
+  touch-action: none; user-select: none;
+}
+.grid[data-held="yes"] { border-color: #128a6a; }
+
+.cell {
+  aspect-ratio: 1; display: grid; place-items: center; cursor: pointer;
+  border: 2px solid transparent; border-radius: 8px; background: #fff;
+  font-size: clamp(1.2rem, 7vw, 1.9rem); line-height: 1;
+}
+.cell span { pointer-events: none; }
+.on { border-color: var(--slop-1); background: #f0ecff; }

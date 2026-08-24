@@ -1,0 +1,22 @@
+.ask { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--slop-ink); line-height: 1.5; }
+.ask b { color: var(--slop-1); }
+
+.field {
+  display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;
+  min-height: 3rem; padding: 0.5rem; border: 1.5px solid var(--slop-line);
+  border-radius: 10px; background: #fff;
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: #eceafd; color: #4b3ea8; border-radius: 999px;
+  padding: 0.25rem 0.65rem; font-size: 0.78rem; font-weight: 600;
+}
+.chipOk { background: #dcf5ec; color: #0f7a5f; }
+.input { flex: 1; min-width: 7rem; border: none; outline: none; font: inherit; font-size: 0.85rem; }
+
+.suggestions { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
+.suggestion {
+  border: 1px solid var(--slop-line); border-radius: 999px; background: #fff;
+  color: var(--slop-dim); padding: 0.25rem 0.6rem; font-size: 0.72rem; cursor: pointer;
+}
+.suggestion:hover { border-color: var(--slop-1); color: var(--slop-1); }

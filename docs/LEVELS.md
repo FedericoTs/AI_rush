@@ -830,6 +830,15 @@ other" is a perfect P2 sentence.
 
 ---
 
+> **Built, with one correction.** "Drag only the largest gear" and "the marked
+> tooth moves at 1/7th your input" cannot both hold: for an output to turn
+> *slower* it has to be the bigger gear. Built as written the ratio is 3 — the
+> marked tooth would move three times faster than the drag. Since this is the
+> one level where mechanical accuracy *is* the joke, the arithmetic won: a 7T
+> drive turns a 49T output through four idlers, which is exactly 1/7, and the
+> idlers cancel — a real property of simple gear trains, and a better line for
+> the specifications footer than an invented number.
+
 ### 38 · Human Verification Required
 `unhinged` · pointer · par 40s · *CAPTCHA widget*
 
@@ -878,6 +887,13 @@ address. Showing results for: Antarctica."*
 **Degraded path.** None needed.
 
 ---
+
+> **Built, with one correction.** The honest solve is stated as "left to right"
+> and then, in the same sentence, "the leftmost digit must be settled last".
+> Those are opposites. Since the carry travels leftward, a column only ever
+> disturbs columns to its left, so the ordering where every move is final is
+> **right to left** — which is what shipped, and what the 10,000-seed proof
+> checks.
 
 ### 40 · Confirm Quantity
 `annoying` · pointer · par 20s · *numeric stepper*
@@ -968,6 +984,15 @@ and everyone shifts back one.
 place.
 
 ---
+
+> **Built, with one correction.** The stated solve — "set the largest target
+> first and work down", because "descending order converges and ascending
+> order oscillates" — is not true of a three-control simplex, and
+> `src/levels/coupled.test.ts` measures it: over two thousand seeded starts
+> both orderings converge in an identical 1.5 sweeps. With the sum pinned,
+> fixing two values fixes the third whichever way round you go. What shipped is
+> the convergence task this entry already describes, with the ordering claim
+> removed rather than faked.
 
 ### 44 · Display Settings
 `unhinged` · pointer · par 40s · *three settings sliders*

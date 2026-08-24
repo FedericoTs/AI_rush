@@ -1,0 +1,10 @@
+.want { font-size: 0.82rem; color: var(--slop-dim); margin-bottom: 0.7rem; }
+.want b { color: var(--slop-1); }
+
+.row { display: flex; flex-direction: column; gap: 0.22rem; margin-bottom: 0.6rem; }
+.row span { font-size: 0.78rem; font-weight: 600; color: var(--slop-ink); }
+.select {
+  width: 100%; font: inherit; font-size: 0.9rem; padding: 0.55rem 0.6rem;
+  border: 1.5px solid var(--slop-line); border-radius: 9px; background: #fff; color: var(--slop-ink);
+}
+.select:focus { outline: 2px solid var(--slop-1); outline-offset: 1px; border-color: var(--slop-1); }

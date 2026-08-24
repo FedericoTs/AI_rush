@@ -1,0 +1,23 @@
+.want { font-size: 0.82rem; color: var(--slop-dim); margin-bottom: 0.6rem; }
+.want b { color: var(--slop-1); }
+
+.ends { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+.end {
+  flex: 1; display: flex; flex-direction: column; gap: 0.1rem;
+  border: 1.5px solid var(--slop-line); border-radius: 10px; padding: 0.45rem 0.6rem; background: #fff;
+}
+.end span { font-size: 0.62rem; color: var(--slop-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+.end b { font-size: 0.92rem; }
+.endOk { border-color: #128a6a; }
+.endOk b { color: #0f7a5f; }
+
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.2rem; }
+.day {
+  aspect-ratio: 1; border: 1px solid transparent; border-radius: 7px;
+  background: #f6f7f9; color: var(--slop-ink); font-size: 0.75rem; cursor: pointer;
+}
+.day:hover { border-color: var(--slop-1); }
+.inRange { background: #ece9fd; }
+.isEnd { background: var(--slop-1); color: #fff; font-weight: 700; }
+
+.duration { font-size: 0.62rem; color: #b7bec7; margin-top: 0.35rem; text-align: right; }

@@ -1,0 +1,15 @@
+.task { margin: 0 0 0.6rem; font-size: 0.88rem; font-weight: 600; color: var(--slop-ink); }
+
+.stage {
+  display: grid; place-items: center; overflow-x: auto;
+  border: 1.5px solid var(--slop-line); border-radius: 12px;
+  background: repeating-linear-gradient(45deg, #fbfcfd 0 8px, #f5f7f9 8px 16px);
+  padding: 0.4rem; touch-action: none; cursor: ew-resize;
+}
+.stage:focus { outline: 2px solid var(--slop-1); outline-offset: 2px; }
+.stage canvas { display: block; }
+
+.spec {
+  margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.54rem;
+  color: #c2c9d2; line-height: 1.5;
+}

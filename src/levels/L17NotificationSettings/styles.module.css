@@ -1,0 +1,32 @@
+.bar { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; }
+.sp { flex: 1; }
+.bell {
+  border: 1.5px solid var(--slop-line); border-radius: 9px; background: #fff;
+  font-size: 0.95rem; line-height: 1; padding: 0.3rem 0.45rem; cursor: pointer;
+}
+.bellOff { border-color: #128a6a; background: #e9f8f2; }
+
+.stage { position: relative; min-height: 12rem; }
+.form { display: grid; gap: 0.5rem; }
+.row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--slop-ink); }
+.row input { width: 1rem; height: 1rem; accent-color: var(--slop-1); }
+.ctaSlot { margin-top: 0.4rem; }
+
+/* Over the button, deliberately: the stack is the obstacle. */
+.toasts {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column-reverse; gap: 0.3rem; pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: 0.5rem;
+  background: #1d2430; color: #f2f5f8; border-radius: 10px;
+  padding: 0.5rem 0.6rem; font-size: 0.76rem;
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.6);
+}
+.toast span { flex: 1; }
+.toast button {
+  border: none; background: none; color: #93a0b2; cursor: pointer;
+  font-size: 0.8rem; line-height: 1; padding: 0.1rem 0.2rem;
+}
+.toast button:hover { color: #fff; }

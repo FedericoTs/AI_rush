@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { CATALOG } from "@/levels/catalog";
+import { LEVELS_BUILT, LEVELS_WRITTEN } from "@/levels/catalog";
 import { siteHost } from "@/lib/site";
 import { CURSOR_H, CURSOR_W, cursorSvg } from "@/ui/logo/cursor";
 import { logoSvg } from "@/ui/logo/pixels";
@@ -25,7 +25,6 @@ import { ARCHIVO_BLACK, INTER_REGULAR } from "./font";
  * are the shape of the pile and the two words.
  */
 
-const WRITTEN = 48;
 const INK = "#E9EEF4";
 const DIM = "#8593A5";
 const HAZARD = "#FF4A2B";
@@ -265,7 +264,7 @@ export function GET() {
           }}
         >
           <div style={{ display: "flex" }}>
-            {CATALOG.length}/{WRITTEN} BUILT · SOLVE OR SKIP · THE CLOCK DOES NOT STOP
+            {LEVELS_BUILT}/{LEVELS_WRITTEN} BUILT · SOLVE OR SKIP · THE CLOCK DOES NOT STOP
           </div>
           <div style={{ display: "flex", flex: 1 }} />
           <div style={{ display: "flex", color: INK }}>{siteHost()}</div>

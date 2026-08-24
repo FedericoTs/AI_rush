@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mulberry32 } from "../rng";
-import { CouplingGraph, type Coupling, type ControlSpec } from "./graph";
+import { CouplingGraph, type Coupling, type ControlSpec, type ControlState } from "./graph";
 import { proveSolvable, scrambleFrom, solveOrder } from "./solver";
 
 /** L37 — four dials, each turning every dial to its right. Solve: left to right. */
@@ -129,5 +129,86 @@ describe("solvability, which is not optional", () => {
       expect(start[id]).toBeLessThanOrEqual(9);
     }
     expect(proveSolvable(g, start, target).solvable).toBe(true);
+  });
+});
+
+/**
+ * The two edge kinds Phase 5 needed, and the ordering claim each makes.
+ */
+describe("redistribute", () => {
+  /* Three sliders that sum to a constant — L44. Declared in both directions
+     because every slider takes from every other one. */
+  const ids = ["b", "c", "s"];
+  const graph = new CouplingGraph(
+    ids.map((id) => ({ id, min: 0, max: 100 })),
+    ids.flatMap((from) =>
+      ids.filter((to) => to !== from).map((to) => ({ from, to, kind: "redistribute" as const })),
+    ),
+  );
+
+  const sum = (s: ControlState) => ids.reduce((n, id) => n + s[id]!, 0);
+
+  it("holds the total constant, which is the entire mechanic", () => {
+    let state: ControlState = { b: 50, c: 50, s: 50 };
+    for (const [id, delta] of [["b", 20], ["s", -13], ["c", 7], ["b", -31]] as const) {
+      state = graph.apply(state, id, delta);
+      expect(sum(state), `after ${id} ${delta}`).toBe(150);
+    }
+  });
+
+  it("takes proportionally, so a big value gives up more than a small one", () => {
+    const next = graph.apply({ b: 10, c: 80, s: 60 }, "b", 30);
+    expect(next.b).toBe(40);
+    /* c holds more than s, so c surrenders more. That asymmetry is why
+       descending order converges and ascending order oscillates — the level's
+       honest solve is a property of this arithmetic, not a rule on top of it. */
+    expect(80 - next.c!).toBeGreaterThan(60 - next.s!);
+  });
+
+  it("gives the change back rather than break the invariant at a stop", () => {
+    /* Nothing left to take: the others are already at their floor, so the
+       slider cannot climb at all and must not pretend to. */
+    const pinned: ControlState = { b: 90, c: 0, s: 0 };
+    const next = graph.apply(pinned, "b", 10);
+    expect(next).toEqual(pinned);
+  });
+
+  it("keeps only as much of a move as the others can pay for", () => {
+    /* Six units available between them, ten requested. */
+    const next = graph.apply({ b: 40, c: 4, s: 2 }, "b", 10);
+    expect(next.b).toBe(46);
+    expect(next.c).toBe(0);
+    expect(next.s).toBe(0);
+    expect(sum(next)).toBe(46);
+  });
+
+  it("is honestly reported as having no solve order", () => {
+    /* Every control moves every other one, so no move is ever final. Saying
+       otherwise would produce a plan that looks valid and is not. */
+    expect(solveOrder(graph)).toBeNull();
+  });
+});
+
+describe("writeback", () => {
+  /* A child that overwrites its parent — L39's city → country reverse lookup. */
+  const COUNTRY_OF = [0, 0, 1, 1, 2];
+  const graph = new CouplingGraph(
+    [
+      { id: "country", min: 0, max: 2 },
+      { id: "city", min: 0, max: 4 },
+    ],
+    [{ from: "city", to: "country", kind: "writeback", map: (v) => COUNTRY_OF[v] ?? 0 }],
+  );
+
+  it("sets the parent from the child, not by a delta", () => {
+    const next = graph.set({ country: 2, city: 0 }, "city", 3);
+    expect(next.city).toBe(3);
+    expect(next.country).toBe(1);
+  });
+
+  it("orders the child before the parent it overwrites", () => {
+    /* Which is the level's fastest solve read straight off the graph: set the
+       city and let it fill the country in for you. */
+    expect(solveOrder(graph)).toEqual(["city", "country"]);
   });
 });

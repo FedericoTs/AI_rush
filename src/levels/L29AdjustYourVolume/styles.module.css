@@ -1,0 +1,17 @@
+.ask { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--slop-ink); }
+
+.stage {
+  position: relative; height: 14rem; touch-action: none; cursor: crosshair;
+  border: 1.5px solid var(--slop-line); border-radius: 12px;
+  background: linear-gradient(180deg, #fbfcfd, #f3f5f8);
+}
+
+/* Invisible by default. That is the level. */
+.field {
+  position: absolute; border: 1.5px solid transparent; border-radius: 9px;
+  display: grid; place-items: center;
+  font-size: 0.75rem; font-weight: 600; color: #0f7a5f;
+  transition: box-shadow 90ms linear, border-color 90ms linear;
+}
+.over { border-color: rgba(124, 58, 237, 0.35); }
+.filled { background: #e9f8f2; border-color: #128a6a; }

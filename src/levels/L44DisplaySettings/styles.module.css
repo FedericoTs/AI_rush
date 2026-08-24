@@ -1,0 +1,27 @@
+.sliders { display: grid; gap: 0.9rem; }
+.slider { display: grid; gap: 0.3rem; }
+.head { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.82rem; }
+.head span { font-weight: 600; color: var(--slop-ink); }
+.head b { font-family: var(--font-mono); color: var(--slop-dim); }
+.ok { color: #0f7a5f; }
+
+.track { position: relative; height: 1.6rem; display: flex; align-items: center; }
+.fill {
+  position: absolute; left: 0; height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--slop-1), var(--slop-2));
+  pointer-events: none;
+}
+.track::before {
+  content: ""; position: absolute; inset: auto 0; height: 6px;
+  border-radius: 3px; background: #e8eaee;
+}
+.marker {
+  position: absolute; top: 0; bottom: 0; width: 2px; background: #128a6a;
+  pointer-events: none; transform: translateX(-1px);
+}
+.range { position: relative; width: 100%; margin: 0; background: transparent; }
+
+.budget {
+  margin-top: 0.7rem; font-family: var(--font-mono); font-size: 0.66rem;
+  color: var(--slop-dim); text-align: right;
+}

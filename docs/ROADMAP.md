@@ -167,20 +167,30 @@ a complete run, and neither one's version is the broken one.
 **Exit:** eight consecutive runs with no repeated level; modifiers active from
 2:00 without a single broken composition.
 
-- [ ] **The coupled dependency-graph evaluator, first.** Typed edges
-      (`propagate`, `evict`, `redistribute`, `writeback`, `relayout`) plus the
-      reachability solver. Eleven levels become config once it exists
-- [ ] Coupled family: L37, L39, L40, L41, L42, L43, L44, L45, L46, L47, L48
-- [ ] L38 (real gear geometry on canvas) — the one bespoke build in the family
-- [ ] Remaining `annoying`: L03, L04, L06, L07, L08, L09, L10
-- [ ] Remaining `cursed`: L15, L16, L17, L18, L21
-- [ ] Remaining `unhinged`: L23, L24, L25, L27, L29, L30
-- [ ] Remaining `forbidden`: L31, L32, L33, L34
-- [ ] All 12 chaos modifiers + the incompatibility matrix
+The content half is done: 48 written, 48 built. The chaos half is not — the
+modifiers are specified, scheduled and dealt, and no `ChaosProvider` draws them,
+so a run announces "Drifting · Comic Sans" and then behaves identically.
+
+- [x] **The coupled dependency-graph evaluator.** `propagate`, `evict`,
+      `redistribute` and `writeback`, plus the ordering solver. `relayout`
+      stays deliberately unbuilt: it moves pixels rather than values, and a
+      scroll offset in a graph of numbers is a category error — L48 owns its
+      own layout cruelty
+- [x] Coupled family: L37, L39, L40, L41, L42, L43, L44, L45, L46, L47, L48
+- [x] L38 (real gear geometry on canvas) — the one bespoke build in the family
+- [x] Remaining `annoying`: L03, L04, L06, L07, L08, L09, L10
+- [x] Remaining `cursed`: L15, L16, L17, L18, L21
+- [x] Remaining `unhinged`: L23, L24, L25, L27, L29, L30
+- [x] Remaining `forbidden`: L31, L32, L33, L34
+- [x] **48 of 48 written levels built**, plus the secret. The catalogue is full
+- [x] **Solvability proof over 10,000 seeds** for every coupled level
+      (`src/levels/coupled.test.ts`). Each proves its *own* honest solve, because
+      each has a different one — a topological order where the graph is acyclic,
+      and measured convergence where it is not
+- [ ] All 12 chaos modifiers + the incompatibility matrix — the specs, the
+      schedule and the deal are built; **nothing renders them yet**
 - [ ] Automated composition test: every (level × modifier) pair renders,
       remains solvable, and doesn't violate `incompatibleModifiers`
-- [ ] **Solvability proof over 10,000 seeds** for every coupled level, in CI.
-      An unsolvable seed turns the joke into a bug report
 
 ---
 

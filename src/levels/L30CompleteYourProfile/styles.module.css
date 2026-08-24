@@ -1,0 +1,40 @@
+.dots { display: flex; gap: 0.3rem; margin-bottom: 0.8rem; }
+.dot {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  border: none; background: none; cursor: pointer; padding: 0;
+  font-size: 0.6rem; color: var(--slop-dim);
+}
+.dot i { display: block; width: 100%; height: 4px; border-radius: 2px; background: #e3e7ec; }
+.dotOn { color: var(--slop-1); font-weight: 700; }
+.dotOn i { background: var(--slop-1); }
+.dotDone i { background: #b9aef6; }
+
+.pane { min-height: 7rem; }
+.row { display: flex; flex-direction: column; gap: 0.3rem; }
+.row > span { font-size: 0.82rem; font-weight: 600; color: var(--slop-ink); }
+.input {
+  width: 100%; font: inherit; font-size: 0.92rem; padding: 0.55rem 0.6rem;
+  border: 1.5px solid var(--slop-line); border-radius: 9px; background: #fff; color: var(--slop-ink);
+}
+.input:focus { outline: 2px solid var(--slop-1); outline-offset: 1px; border-color: var(--slop-1); }
+.help { font-style: normal; font-size: 0.7rem; color: var(--slop-dim); }
+
+.codeCard {
+  border: 1.5px dashed var(--slop-line); border-radius: 10px; padding: 0.7rem;
+  display: flex; flex-direction: column; gap: 0.25rem; background: #fbfaff;
+}
+.codeCard b { font-family: var(--font-mono); font-size: 1.25rem; color: var(--slop-1); letter-spacing: 0.06em; }
+.codeCard em { font-style: normal; font-size: 0.7rem; color: var(--slop-dim); }
+
+.review { display: grid; gap: 0.35rem; }
+.review div { display: flex; justify-content: space-between; font-size: 0.82rem; }
+.review i { font-style: normal; color: var(--slop-dim); }
+.review b { font-family: var(--font-mono); }
+
+.nav { display: flex; gap: 0.5rem; align-items: stretch; margin-top: 0.7rem; }
+.nav > :last-child { flex: 1; }
+.back {
+  border: 1.5px solid var(--slop-line); border-radius: 11px; background: #fff;
+  color: var(--slop-dim); padding: 0 1rem; font: inherit; font-size: 0.9rem; cursor: pointer;
+}
+.back:hover { color: var(--slop-ink); border-color: var(--slop-dim); }

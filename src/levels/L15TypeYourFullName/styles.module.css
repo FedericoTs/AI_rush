@@ -1,0 +1,16 @@
+.target {
+  font-family: var(--font-mono); font-size: 1.05rem; text-align: center;
+  color: var(--slop-1); margin-bottom: 0.8rem; font-weight: 600; letter-spacing: 0.04em;
+}
+.field {
+  width: 100%; font: inherit; font-family: var(--font-mono); font-size: 1rem;
+  padding: 0.65rem 0.7rem; border: 1.5px solid var(--slop-line); border-radius: 9px;
+  background: #fff; color: var(--slop-ink);
+}
+.field:focus { outline: 2px solid var(--slop-1); outline-offset: 1px; border-color: var(--slop-1); }
+.overflow { border-color: #f0a0c0; }
+.state {
+  font-family: var(--font-mono); font-size: 0.66rem; margin-top: 0.5rem;
+  display: flex; justify-content: space-between; color: var(--slop-dim);
+}
+.good { color: #128a6a; }

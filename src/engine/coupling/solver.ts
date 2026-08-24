@@ -30,8 +30,25 @@ export function solveOrder(graph: CouplingGraph): ControlId[] | null {
     indegree.set(c.id, 0);
     edges.set(c.id, []);
   }
+  /*
+   * Which edges constrain the order.
+   *
+   * `propagate` and `writeback` both mean "moving this one moves that one", so
+   * both are real ordering constraints: set the cause before the effect and the
+   * effect is still yours to set afterwards.
+   *
+   * `redistribute` is deliberately in here too, and it is what makes L44
+   * correctly report as *not* orderable. Those edges are declared in both
+   * directions — each slider takes from the others — so they form a cycle, and
+   * a cycle is exactly the truth: no sequence of moves is final when every
+   * control moves every other one. That level converges instead, and proves
+   * itself that way. Leaving redistribute out would have produced a topological
+   * order that looked valid and silently wasn't.
+   *
+   * `evict` is excluded: the level owns recency, not the graph.
+   */
   for (const e of graph.couplings) {
-    if (e.kind !== "propagate") continue;
+    if (e.kind === "evict") continue;
     edges.get(e.from)!.push(e.to);
     indegree.set(e.to, (indegree.get(e.to) ?? 0) + 1);
   }

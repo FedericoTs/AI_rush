@@ -1,0 +1,19 @@
+.ask { margin: 0 0 0.7rem; font-size: 0.86rem; color: var(--slop-ink); line-height: 1.5; }
+.ask b { color: var(--slop-1); }
+
+.stars {
+  display: flex; justify-content: center; gap: 0.15rem;
+  padding: 0.6rem 0.4rem; border: 1.5px solid var(--slop-line);
+  border-radius: 12px; background: #fff; touch-action: none;
+}
+.star {
+  border: none; background: none; cursor: pointer; padding: 0 0.1rem;
+  font-size: clamp(1.9rem, 11vw, 2.6rem); line-height: 1; color: #d8dde4;
+  transition: color 120ms linear;
+}
+.lit { color: #f5b942; }
+
+.readout {
+  margin-top: 0.45rem; text-align: center; font-family: var(--font-mono);
+  font-size: 0.72rem; color: var(--slop-dim);
+}

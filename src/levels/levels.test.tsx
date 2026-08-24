@@ -264,3 +264,216 @@ describe("levels that ask for something real", () => {
     }
   });
 });
+
+/**
+ * The fifteen built in Phase 5.
+ *
+ * Each of these asserts the level's *honest solve* — the route `LEVELS.md`
+ * promises a player can find. A level whose advertised escape does not actually
+ * work is not a hard level, it is a broken one, and that is the single worst
+ * thing this game can ship.
+ */
+
+describe("L07 · Just Checking You're Human", () => {
+  it("stops the shuffle on a long press, which is the undocumented escape", () => {
+    vi.useFakeTimers();
+    mount(BY_ID.get("L07")!);
+    const grid = screen.getByTestId("captcha-grid");
+    expect(grid.getAttribute("data-held")).toBe("no");
+
+    fireEvent.pointerDown(grid);
+    act(() => vi.advanceTimersByTime(600));
+    expect(grid.getAttribute("data-held")).toBe("yes");
+
+    /* Held means held: the tiles stop moving. */
+    const before = grid.textContent;
+    act(() => vi.advanceTimersByTime(3000));
+    expect(grid.textContent).toBe(before);
+    vi.useRealTimers();
+  });
+
+  it("validates against what the cells hold now, not what they held when picked", () => {
+    vi.useFakeTimers();
+    const p = mount(BY_ID.get("L07")!);
+    const grid = screen.getByTestId("captcha-grid");
+    fireEvent.pointerDown(grid);
+    act(() => vi.advanceTimersByTime(600)); // freeze it so the test is deterministic
+
+    const cells = Array.from(grid.querySelectorAll("button"));
+    cells.forEach((c, i) => {
+      if (c.textContent?.includes("🚦")) fireEvent.click(screen.getByTestId(`cell-${i}`));
+    });
+    fireEvent.click(screen.getByText("Verify"));
+    expect(p.onSolve).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+});
+
+describe("L08 · Your Date Of Birth", () => {
+  it("steps a wheel exactly one notch from the keyboard", () => {
+    mount(BY_ID.get("L08")!);
+    const day = screen.getByTestId("wheel-day");
+    const before = Number(day.getAttribute("aria-valuenow"));
+    fireEvent.keyDown(day, { key: "ArrowUp" });
+    const after = Number(screen.getByTestId("wheel-day").getAttribute("aria-valuenow"));
+    expect(after).toBe(before === 31 ? 1 : before + 1);
+  });
+
+  it("solves once all three wheels are on the date on file", () => {
+    const p = mount(BY_ID.get("L08")!);
+    const set = (key: string, want: number, max: number) => {
+      for (let i = 0; i < max + 1; i++) {
+        const el = screen.getByTestId(`wheel-${key}`);
+        if (Number(el.getAttribute("aria-valuenow")) === want) return;
+        fireEvent.keyDown(el, { key: "ArrowUp" });
+      }
+    };
+    set("day", 14, 31);
+    set("month", 6, 12);
+    set("year", 1988, 200);
+    fireEvent.click(screen.getByText("Confirm Date Of Birth"));
+    expect(p.onSolve).toHaveBeenCalledOnce();
+  });
+});
+
+describe("L15 · Type Your Full Name", () => {
+  it("corrects only the last word, which is what makes the decoy trick work", async () => {
+    const { correct } = await import("./L15TypeYourFullName");
+    /* The real word is shielded because something else is now last. */
+    expect(correct("Beatrix Wolstenholme")).toBe("Beatrix Wholesomeness");
+    expect(correct("Beatrix Wolstenholme zz")).toBe("Beatrix Wolstenholme zz");
+  });
+
+  it("outruns the corrector if you never stop typing", () => {
+    vi.useFakeTimers();
+    const p = mount(BY_ID.get("L15")!);
+    const field = screen.getByTestId("name-field");
+    fireEvent.change(field, { target: { value: "Beatrix Wolstenholme" } });
+    /* Submitted before the 300ms idle timer fires. */
+    fireEvent.click(screen.getByText("Continue"));
+    expect(p.onSolve).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it("pounces if you pause", () => {
+    vi.useFakeTimers();
+    mount(BY_ID.get("L15")!);
+    fireEvent.change(screen.getByTestId("name-field"), { target: { value: "Beatrix" } });
+    act(() => vi.advanceTimersByTime(400));
+    expect((screen.getByTestId("name-field") as HTMLInputElement).value).toBe("Beatrice");
+    vi.useRealTimers();
+  });
+});
+
+describe("L17 · Notification Settings", () => {
+  it("stops generating entirely once the bell is found", () => {
+    vi.useFakeTimers();
+    mount(BY_ID.get("L17")!);
+    act(() => vi.advanceTimersByTime(5000));
+    const before = screen.getByTestId("toasts").children.length;
+    expect(before).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByTestId("bell"));
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(screen.getByTestId("toasts").children.length).toBe(before);
+    vi.useRealTimers();
+  });
+
+  it("spawns more than it clears while unmuted, so whack-a-mole cannot win", () => {
+    vi.useFakeTimers();
+    mount(BY_ID.get("L17")!);
+    act(() => vi.advanceTimersByTime(1500));
+
+    let dismissals = 0;
+    for (let i = 0; i < 12; i++) {
+      const stack = screen.getByTestId("toasts");
+      const close = stack.querySelector("button");
+      if (!close) break;
+      fireEvent.click(close);
+      dismissals++;
+    }
+    /* Still standing after a dozen dismissals. The button stays covered. */
+    expect(dismissals).toBeGreaterThan(0);
+    expect(screen.getByTestId("toasts").children.length).toBeGreaterThan(0);
+    vi.useRealTimers();
+  });
+});
+
+describe("L21 · Rate Your Experience", () => {
+  it("registers the lagged value, not the live one", () => {
+    vi.useFakeTimers();
+    mount(BY_ID.get("L21")!);
+    const stars = screen.getByTestId("stars");
+    stars.getBoundingClientRect = () => ({ left: 0, width: 250 }) as DOMRect;
+
+    fireEvent.pointerMove(stars, { clientX: 200 }); // four stars, live
+    /* Nothing has caught up yet — the readout is still the old value. */
+    expect(screen.getByTestId("rating-readout").textContent).toMatch(/No rating yet/);
+
+    act(() => vi.advanceTimersByTime(700));
+    expect(screen.getByTestId("rating-readout").textContent).toMatch(/4 of 5/);
+    vi.useRealTimers();
+  });
+
+  it("solves when the settled value is four", () => {
+    vi.useFakeTimers();
+    const p = mount(BY_ID.get("L21")!);
+    const stars = screen.getByTestId("stars");
+    stars.getBoundingClientRect = () => ({ left: 0, width: 250 }) as DOMRect;
+    fireEvent.pointerMove(stars, { clientX: 200 });
+    act(() => vi.advanceTimersByTime(700));
+    fireEvent.click(screen.getByTestId("star-4"));
+    expect(p.onSolve).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+});
+
+describe("L29 · Adjust Your Volume", () => {
+  it("is solvable without hearing anything at all", () => {
+    /* The fallback exists so a colour-blind, deaf, muted or WebAudio-less
+       player has a real route through — not a lesser one. */
+    const mod = BY_ID.get("L29")!;
+    expect(mod.Fallback).toBeTruthy();
+    const Degraded = mod.Fallback!;
+
+    const p = props();
+    render(<Degraded {...p} />);
+    const stage = screen.getByTestId("sonar");
+    stage.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 100 }) as DOMRect;
+
+    /* The three fields sit where a normal form would put them. */
+    for (const [x, y] of [[50, 22], [32, 55], [74, 55]]) {
+      fireEvent.pointerDown(stage, { clientX: x, clientY: y });
+    }
+    fireEvent.click(screen.getByText("Submit Form"));
+    expect(p.onSolve).toHaveBeenCalledOnce();
+  });
+});
+
+describe("L30 · Complete Your Profile", () => {
+  it("loses your answers when you use Back from the last step", () => {
+    const p = mount(BY_ID.get("L30")!);
+    fireEvent.click(screen.getByTestId("dot-1"));
+    fireEvent.change(screen.getByTestId("field-code"), { target: { value: "WS-1234" } });
+    fireEvent.click(screen.getByTestId("dot-3"));
+    fireEvent.click(screen.getByTestId("back"));
+
+    expect(screen.getByTestId("step-0")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("dot-1"));
+    expect((screen.getByTestId("field-code") as HTMLInputElement).value).toBe("");
+    expect(p.onFail).toHaveBeenCalled();
+  });
+
+  it("keeps everything when you use the dots, which is the honest solve", () => {
+    const p = mount(BY_ID.get("L30")!);
+    fireEvent.click(screen.getByTestId("dot-2"));
+    const code = screen.getByTestId("workspace-code").textContent!;
+
+    fireEvent.click(screen.getByTestId("dot-1"));
+    fireEvent.change(screen.getByTestId("field-code"), { target: { value: code } });
+    fireEvent.click(screen.getByTestId("dot-3"));
+    fireEvent.click(screen.getByText("Finish"));
+
+    expect(p.onSolve).toHaveBeenCalledOnce();
+  });
+});

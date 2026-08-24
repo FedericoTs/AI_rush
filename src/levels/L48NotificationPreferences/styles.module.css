@@ -1,0 +1,24 @@
+.ask { margin: 0 0 0.6rem; font-size: 0.85rem; color: var(--slop-ink); }
+
+/* A fixed viewport with its own scrollbar: the height change happens *inside*
+   this box, which is what makes an opened section slide out of sight. */
+.panel {
+  height: 13rem; overflow-y: auto; overscroll-behavior: contain;
+  border: 1.5px solid var(--slop-line); border-radius: 12px; background: #fff;
+}
+.section { border-bottom: 1px solid var(--slop-line); }
+.section:last-child { border-bottom: none; }
+
+.header {
+  width: 100%; display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.7rem 0.75rem; background: none; border: none; cursor: pointer;
+  font: inherit; font-size: 0.88rem; font-weight: 600; color: var(--slop-ink); text-align: left;
+}
+.header span { flex: 1; }
+.chev { font-style: normal; color: var(--slop-dim); font-size: 0.7rem; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #128a6a; display: inline-block; }
+
+.body { padding: 0 0.75rem 0.85rem; }
+.blurb { margin: 0 0 0.6rem; font-size: 0.76rem; color: var(--slop-dim); line-height: 1.55; }
+.switch { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
+.switch input { width: 1.05rem; height: 1.05rem; accent-color: var(--slop-1); }
