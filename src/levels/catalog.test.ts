@@ -7,10 +7,18 @@ import type { InputCapability, Tier } from "@/engine/types";
 const CAPS = new Set<InputCapability>(["pointer", "keyboard", "touch", "audioOut"]);
 
 describe("the catalogue as shipped", () => {
-  it("has fourteen levels, registry and catalog agreeing", () => {
-    expect(REGISTRY).toHaveLength(14);
-    expect(CATALOG).toHaveLength(14);
+  /* The count is not the assertion — the two lists agreeing is. A level in the
+     registry and not the catalogue is a level the server cannot score. */
+  it("keeps registry and catalogue in step", () => {
+    expect(REGISTRY.length).toBe(CATALOG.length);
     expect(REGISTRY.map((m) => m.meta.id).sort()).toEqual(CATALOG.map((m) => m.id).sort());
+    expect(new Set(CATALOG.map((m) => m.id)).size).toBe(CATALOG.length);
+  });
+
+  /* Past this the dealer stops repeating itself: DECK_SIZE playable levels
+     plus the Honest Level, which is dealt from outside the general pool. */
+  it("has enough levels to fill a whole deck without reaching", () => {
+    expect(CATALOG.filter((m) => m.id !== "L36").length).toBeGreaterThanOrEqual(DECK_SIZE);
   });
 
   it("covers every tier, so the deck never has to draw off-tier", () => {

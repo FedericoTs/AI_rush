@@ -52,6 +52,15 @@
   -webkit-background-clip: text;
   color: transparent;
 }
+/* Painted normally, so an emoji is an emoji and not a violet rectangle. */
+.headingEmoji {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: initial;
+  -webkit-text-fill-color: initial;
+}
+
 .plain .heading {
   background: none;
   -webkit-background-clip: border-box;

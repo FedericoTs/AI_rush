@@ -1,0 +1,87 @@
+.banner {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 0.4rem 0.55rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.68rem;
+  color: #065f46;
+}
+
+.plans { display: grid; gap: 0.5rem; margin-top: 0.3rem; }
+
+.plan {
+  position: relative;
+  border: 1px solid var(--slop-line);
+  border-radius: 12px;
+  padding: 0.75rem 0.8rem;
+  background: #fff;
+}
+.popular { border-color: var(--slop-1); box-shadow: 0 6px 22px -12px rgba(124, 58, 237, 0.6); }
+.tag {
+  position: absolute; top: -0.5rem; right: 0.7rem;
+  background: var(--slop-grad); color: #fff;
+  font-size: 0.52rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.16rem 0.42rem; border-radius: 5px;
+}
+
+.planName { font-size: 0.82rem; font-weight: 700; color: var(--slop-ink); }
+.price { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.03em; color: var(--slop-ink); }
+.price span { font-size: 0.62rem; font-weight: 500; color: var(--slop-dim); letter-spacing: 0; }
+.blurb { font-size: 0.7rem; color: var(--slop-dim); margin-top: 0.1rem; }
+
+.features { list-style: none; margin: 0.5rem 0 0.7rem; padding: 0; display: grid; gap: 0.18rem; }
+.features li { font-size: 0.68rem; color: #4b5563; }
+.features li::before { content: "✓ "; color: #059669; }
+
+.choose {
+  width: 100%; border: 1px solid var(--slop-1); background: #fff; color: var(--slop-1);
+  border-radius: 9px; padding: 0.5rem; font-size: 0.78rem; font-weight: 700;
+}
+.popular .choose { background: var(--slop-grad); color: #fff; border-color: transparent; }
+
+.filler { margin-top: 0.9rem; display: grid; gap: 0.35rem; }
+.filler p { margin: 0; font-size: 0.64rem; color: #9ca3af; line-height: 1.45; }
+
+/*
+ * The free tier.
+ *
+ * #f4f4f5 on #ffffff at 8px is a real measurement of a real dark pattern, not
+ * an exaggeration of one. The 32px of invisible padding underneath it is the
+ * difference between a hard level and one nobody can finish with a thumb — we
+ * are cruel to the eyes, never to the hands.
+ */
+.freeRow { margin-top: 1.4rem; display: flex; justify-content: center; }
+.free {
+  font-size: 8px;
+  color: #f4f4f5;
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  letter-spacing: 0.02em;
+}
+.free:hover { color: #9ca3af; }
+.free:focus-visible { outline: 2px solid var(--slop-1); outline-offset: 2px; color: #6b7280; }
+
+.scrim {
+  position: absolute; inset: 0; z-index: 20;
+  background: rgba(17, 24, 39, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.modal {
+  background: #fff; border-radius: 14px; padding: 1rem;
+  width: 100%; max-width: 17rem; text-align: center;
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.6);
+}
+.modal h3 { margin: 0 0 0.3rem; font-size: 0.95rem; font-weight: 800; color: var(--slop-ink); }
+.modal p { margin: 0 0 0.8rem; font-size: 0.72rem; color: var(--slop-dim); }
+
+.take {
+  width: 100%; border: none; border-radius: 10px; padding: 0.65rem;
+  background: var(--slop-grad); color: #fff; font-weight: 700; font-size: 0.82rem;
+}
+.dismiss {
+  width: 100%; border: none; background: none; margin-top: 0.4rem;
+  color: #9ca3af; font-size: 0.68rem; text-decoration: underline;
+}

@@ -20,8 +20,34 @@ export function SlopBadge({ children }: { children: ReactNode }) {
   return <div className={styles.badge}>{children}</div>;
 }
 
+/**
+ * A gradient heading, with the emoji left out of the gradient.
+ *
+ * `background-clip: text` paints the text with the gradient by making the
+ * glyphs transparent — and it does that to the emoji too, so every heading in
+ * the game was rendering its 🍪 or 🎨 as a featureless violet rectangle. That
+ * reads as a rendering bug rather than as a design choice, which is the one
+ * thing the slop is not allowed to look like: it has to look expensive and
+ * deranged, never broken.
+ *
+ * Headings put their emoji at the end, so splitting the trailing run of
+ * non-word characters off and painting it normally fixes all of them at once
+ * without touching a single call site.
+ */
 export function SlopHeading({ children }: { children: ReactNode }) {
-  return <h2 className={styles.heading}>{children}</h2>;
+  if (typeof children !== "string") {
+    return <h2 className={styles.heading}>{children}</h2>;
+  }
+
+  const match = /^(.*?)(\s*[^\p{L}\p{N}\p{P}\s]+)$/u.exec(children);
+  if (!match) return <h2 className={styles.heading}>{children}</h2>;
+
+  return (
+    <h2 className={styles.heading}>
+      {match[1]}
+      <span className={styles.headingEmoji}>{match[2]}</span>
+    </h2>
+  );
 }
 
 export function SlopMicrocopy({ children }: { children: ReactNode }) {

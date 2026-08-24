@@ -1,0 +1,63 @@
+.swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.swatchBlock { display: flex; flex-direction: column; gap: 0.25rem; }
+.swatch {
+  height: 4.4rem;
+  border-radius: 10px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.swatchLabel {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem;
+  font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--slop-dim);
+}
+.swatchLabel b {
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0;
+  text-transform: none; color: var(--slop-ink); font-weight: 600;
+}
+
+.sliders { display: grid; gap: 0.55rem; margin-top: 0.9rem; }
+.slider { display: flex; flex-direction: column; gap: 0.2rem; }
+.sliderHead {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.7rem; font-weight: 600; color: #374151;
+}
+.sliderHead b {
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--slop-dim);
+  font-variant-numeric: tabular-nums; font-weight: 500;
+}
+.slider input {
+  width: 100%;
+  accent-color: var(--slop-1);
+}
+
+/*
+ * The delta readout.
+ *
+ * Deliberately small and in the corner — the whole point is that it is
+ * present from the first frame and ignored for thirty seconds. It is also the
+ * reason this level is playable without colour vision at all, so it must never
+ * be decorative: no colour-only state, and the number is always legible.
+ */
+.readout {
+  margin-top: 0.7rem;
+  margin-left: auto;
+  width: fit-content;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: #9ca3af;
+  border: 1px solid var(--slop-line);
+  border-radius: 6px;
+  padding: 0.18rem 0.4rem;
+  display: flex;
+  gap: 0.2rem;
+  font-variant-numeric: tabular-nums;
+}
+.readout span { color: #4b5563; font-weight: 600; }
+.readoutClose { border-color: #6ee7b7; background: #f0fdf4; }
+.readoutClose span { color: #047857; }
+
+.cta {
+  width: 100%; border: none; border-radius: 12px; padding: 0.8rem; margin-top: 0.7rem;
+  background: var(--slop-grad); color: #fff; font-weight: 700; font-size: 0.92rem;
+  box-shadow: 0 4px 14px -4px rgba(124, 58, 237, 0.6);
+}

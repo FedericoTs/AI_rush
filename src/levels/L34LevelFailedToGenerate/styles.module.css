@@ -1,0 +1,113 @@
+/*
+ * No SlopCard here, deliberately.
+ *
+ * The premise is that the renderer fell over before it got to the styling. A
+ * gradient border and a glass card would mean it succeeded.
+ */
+.crash {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 0.8rem;
+  color: #111827;
+}
+
+.trace {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  line-height: 1.5;
+  color: #6b7280;
+  background: #fef2f2;
+  border-left: 3px solid #dc2626;
+  padding: 0.5rem 0.6rem;
+  overflow-x: auto;
+  white-space: pre;
+}
+.traceHead { color: #b91c1c; font-weight: 700; }
+
+.instruction {
+  margin: 0.7rem 0 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: #6b7280;
+}
+
+.slots { display: grid; gap: 0.3rem; }
+.slot {
+  min-height: 2.6rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.5rem;
+}
+.slotFull { border-style: solid; border-color: #e5e7eb; background: #f9fafb; }
+/* The snap target, lit while you are carrying something. */
+.slotOpen { border-color: #7c3aed; background: #f5f3ff; }
+.slot:hover { border-color: #a78bfa; }
+.slotHint { font-family: var(--font-mono); font-size: 0.56rem; color: #d1d5db; }
+
+.placed { width: 100%; }
+.placed:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
+
+.pieceLabel { font-size: 0.76rem; font-weight: 600; color: #374151; }
+.pieceInput {
+  width: 100%;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #9ca3af;
+  border-radius: 3px;
+  background: #fff;
+  color: #111827;
+}
+.pieceButton {
+  display: inline-block;
+  background: #111827;
+  color: #fff;
+  border-radius: 5px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* What the renderer left on the floor, at the angles it left it. */
+.debris {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding: 0.6rem 0.2rem;
+  border-top: 1px dashed #e5e7eb;
+}
+.loose {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 0.3rem 0.45rem;
+  cursor: grab;
+  max-width: 100%;
+}
+.loose:nth-child(2) { align-self: flex-end; }
+.loose:nth-child(3) { align-self: center; }
+.looseHeld { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18); }
+.loose:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }
+
+.tagName {
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.status {
+  margin-top: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: #6b7280;
+}

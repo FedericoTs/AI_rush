@@ -109,6 +109,12 @@ makes sense to someone who has never seen the game.
       plays one on its own, `/levels/all` plays the lot in order. The clock
       counts up, chaos modifiers are off, and nothing is filed — a board you
       could farm one level at a time would not be worth being on
+- [x] **Levels 15–22 built** — L03 (population-sorted country list that will
+      not hold still), L06 (six live requirements that un-satisfy each other),
+      L09 (the interstitial whose big ✕ restarts it), L10 (the scroll gate you
+      beat by reading), L24 (the 8px free tier), L34 (reassemble the form the
+      renderer dropped), L41 (a permutation puzzle proved solvable by
+      construction), L47 (HSL sliders, an RGB target, and one honest number)
 - [ ] PostHog events for the balance loop
 
 ---

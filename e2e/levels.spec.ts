@@ -153,3 +153,39 @@ test("the index says plainly that practice does not count", async ({ page }) => 
   await page.goto("/levels");
   await expect(page.getByText(/nothing you do reaches the leaderboard/i)).toBeVisible();
 });
+
+/*
+ * Two measurements that only exist in a real browser.
+ *
+ * jsdom does not apply CSS modules, so a computed-style assertion in the unit
+ * suite would read the browser default and pass forever. These are the bits of
+ * two levels where the exact rendered value *is* the mechanic.
+ */
+test("L24's free tier really is 8px of #f4f4f5 on white", async ({ page }) => {
+  await page.goto("/levels/L24");
+  const free = page.getByRole("button", { name: "Continue with Free" });
+  await expect(free).toBeVisible();
+
+  const style = await free.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { size: s.fontSize, colour: s.color };
+  });
+  expect(style.size).toBe("8px");
+  expect(style.colour).toBe("rgb(244, 244, 245)");
+
+  /* Cruel to the eyes, never to the thumbs: it still has to be tappable. */
+  const box = (await free.boundingBox())!;
+  expect(box.height).toBeGreaterThanOrEqual(24);
+});
+
+test("L10's escape hatch is set in the same body text it hides in", async ({ page }) => {
+  await page.goto("/levels/L10");
+  const escape = page.getByRole("button", { name: /By continuing to not read this/ });
+  const clause = page.locator("p").filter({ has: escape });
+
+  const [link, body] = await Promise.all([
+    escape.evaluate((el) => getComputedStyle(el).color),
+    clause.evaluate((el) => getComputedStyle(el).color),
+  ]);
+  expect(link).toBe(body);
+});

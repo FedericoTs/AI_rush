@@ -1,0 +1,95 @@
+.ad {
+  position: relative;
+  background: linear-gradient(160deg, #1e1b4b 0%, #4c1d95 55%, #831843 100%);
+  border-radius: 12px;
+  padding: 2.2rem 1.1rem 1.1rem;
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+  min-height: 15rem;
+}
+
+/*
+ * Six pixels of ink, twenty-four pixels of target.
+ *
+ * The padding is invisible and load-bearing: a genuinely 6px tap target on a
+ * phone is not a difficult level, it is an unfinishable one. Cruel to the
+ * eyes, never to the thumbs.
+ */
+.tiny {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 3;
+}
+.tiny span { font-size: 6px; }
+
+.big {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111827;
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+  z-index: 3;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+}
+
+.sponsor {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.52rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.logo {
+  width: 52px; height: 52px; margin: 0.3rem auto 0.6rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 800;
+}
+
+.name { margin: 0 0 0.25rem; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
+.pitch { margin: 0 auto 1rem; font-size: 0.82rem; color: rgba(255, 255, 255, 0.72); max-width: 24ch; line-height: 1.4; }
+
+.fakeCta {
+  display: inline-block;
+  background: #fff; color: #111827;
+  border-radius: 999px; padding: 0.5rem 1.1rem;
+  font-size: 0.8rem; font-weight: 700;
+}
+
+.timer {
+  margin-top: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.66);
+}
+.restarted {
+  margin-top: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: #fca5a5;
+}

@@ -18,6 +18,11 @@ and a half before the player realises, and an index that gave away the bit
 would sell that for nothing. Anything a shipped level's index row says has to
 be true of the interface at first glance and useless as a hint.
 
+**Shipped so far (22 of 48).** L01, L02, L03, L04, L05, L06, L09, L10, L11,
+L12, L16, L18, L22, L24, L27, L28, L34, L36, L37, L41, L42, L47. Everything
+else in this file is written and unbuilt — `src/levels/registry.ts` is the
+authority, and the front page counts it live rather than trusting this line.
+
 **Playing one on its own.** Every shipped level is individually reachable:
 `/levels` is the index, `/levels/L37` is that level alone, `/levels/all` is the
 catalogue in order, and `/levels/L01,L11` is a hand-written pair. In there the
