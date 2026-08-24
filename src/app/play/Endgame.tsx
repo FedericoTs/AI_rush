@@ -47,6 +47,10 @@ export function Endgame(props: EndgameProps) {
   const [rows, setRows] = useState<BoardRow[]>([]);
   const [myHandle, setMyHandle] = useState<string | null>(null);
   const submitted = useRef(false);
+  /* The run has to land before it can be ranked. A player who skips straight
+     through can reach the claim box before the submit round-trip returns, so
+     claiming waits on this rather than racing it. */
+  const landing = useRef<Promise<void> | null>(null);
 
   const solved = breakdown.filter((b) => !b.skipped).length;
   const offline = !runId || !runSecret;
@@ -57,7 +61,7 @@ export function Endgame(props: EndgameProps) {
     if (submitted.current) return;
     submitted.current = true;
     if (offline) return;
-    void fetch("/api/run/finish", {
+    landing.current = fetch("/api/run/finish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -115,6 +119,7 @@ export function Endgame(props: EndgameProps) {
     setClaiming(true);
     setClaimError(null);
     try {
+      await landing.current;
       const res = await fetch("/api/run/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,7 +128,9 @@ export function Endgame(props: EndgameProps) {
       const data = (await res.json()) as { ok?: boolean; rank?: number; reason?: string };
       if (!data.ok) {
         setClaimError(
-          data.reason === "bad_handle" ? "That is not a valid X handle." : "Could not claim that. Try again?",
+          data.reason === "bad_handle"
+            ? "That is not a valid X handle."
+            : "Could not claim that place. Your score still stands — try again?",
         );
         setClaiming(false);
         return;

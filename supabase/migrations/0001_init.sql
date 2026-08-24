@@ -108,13 +108,14 @@ create or replace function start_run(
 language plpgsql security definer set search_path = public as $$
 declare v_recent integer;
 begin
-  -- Rate limit. Six finished runs from one address in ten minutes is already
-  -- generous for a five-minute game.
+  -- Starting a run writes one row and grants nothing; the protection that
+  -- matters is in submit_run. This is only a runaway-script backstop, set far
+  -- above what an office or a CGNAT'd mobile network produces.
   select count(*) into v_recent
   from runs
   where ip_hash = p_ip_hash and p_ip_hash <> '' and created_at > now() - interval '10 minutes';
 
-  if v_recent > 12 then
+  if v_recent > 240 then
     raise exception 'rate_limited' using errcode = 'P0001';
   end if;
 
@@ -167,7 +168,9 @@ begin
   insert into run_events (run_id, seq, kind, level_id, at_ms, solve_ms)
   select p_run_id,
          (e ->> 'seq')::int, e ->> 'kind', left(e ->> 'levelId', 16),
-         (e ->> 'atMs')::int, nullif(e ->> 'solveMs', '')::int
+         -- via numeric: a client that sends fractional milliseconds should not
+         -- lose its whole run to a cast error.
+         (e ->> 'atMs')::numeric::int, nullif(e ->> 'solveMs', '')::numeric::int
   from jsonb_array_elements(coalesce(p_events, '[]'::jsonb)) as e
   on conflict do nothing;
 

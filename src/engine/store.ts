@@ -91,7 +91,7 @@ export const useRun = create<RunState>((set, get) => ({
       killedBy: current.module.meta.title,
       events: [
         ...s.events,
-        { seq: s.events.length + 1, kind: "enter", levelId: current.module.meta.id, atMs: s.elapsedMs },
+        { seq: s.events.length + 1, kind: "enter", levelId: current.module.meta.id, atMs: Math.round(s.elapsedMs) },
       ],
     });
   },
@@ -101,7 +101,7 @@ export const useRun = create<RunState>((set, get) => ({
     const current = s.deck[s.index];
     if (!current) return;
 
-    const solveMs = Math.max(0, s.elapsedMs - s.levelStartMs);
+    const solveMs = Math.round(Math.max(0, s.elapsedMs - s.levelStartMs));
     const streak = s.streak + 1;
     const combo = comboFor(streak);
     const points = scoreLevel({
@@ -124,7 +124,7 @@ export const useRun = create<RunState>((set, get) => ({
       ],
       events: [
         ...s.events,
-        { seq: s.events.length + 1, kind: "solve", levelId: current.module.meta.id, atMs: s.elapsedMs, solveMs },
+        { seq: s.events.length + 1, kind: "solve", levelId: current.module.meta.id, atMs: Math.round(s.elapsedMs), solveMs },
       ],
     });
     get().enterLevel();
@@ -138,7 +138,7 @@ export const useRun = create<RunState>((set, get) => ({
       fails: s.fails + 1,
       events: [
         ...s.events,
-        { seq: s.events.length + 1, kind: "fail", levelId: current.module.meta.id, atMs: s.elapsedMs },
+        { seq: s.events.length + 1, kind: "fail", levelId: current.module.meta.id, atMs: Math.round(s.elapsedMs) },
       ],
     });
   },
@@ -164,14 +164,16 @@ export const useRun = create<RunState>((set, get) => ({
       ],
       events: [
         ...s.events,
-        { seq: s.events.length + 1, kind: "skip", levelId: current.module.meta.id, atMs: s.elapsedMs },
+        { seq: s.events.length + 1, kind: "skip", levelId: current.module.meta.id, atMs: Math.round(s.elapsedMs) },
       ],
     });
     get().enterLevel();
   },
 
   setRemaining(ms) {
-    set({ remainingMs: ms, elapsedMs: RUN_DURATION_MS - ms });
+    /* Rounded on the way in. The clock is a float, the log is not: Postgres
+       stores at_ms as an integer and will not cast "4033.59" for anyone. */
+    set({ remainingMs: ms, elapsedMs: Math.round(RUN_DURATION_MS - ms) });
     if (ms <= 0 && get().phase === "playing") get().finish(true);
   },
 

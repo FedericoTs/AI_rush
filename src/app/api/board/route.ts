@@ -25,7 +25,8 @@ export async function GET(req: Request) {
     }
     const rows: BoardRow[] = await selectBoard(mercy, limit);
     return NextResponse.json({ rows });
-  } catch {
+  } catch (err) {
+    console.error("[board]", err);
     return NextResponse.json({ rows: [], offline: true });
   }
 }

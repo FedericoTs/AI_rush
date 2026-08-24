@@ -28,7 +28,8 @@ export async function POST(req: Request) {
     const row = rows[0];
     if (!row) return NextResponse.json({ offline: true });
     return NextResponse.json({ runId: row.run_id, runSecret: row.run_secret });
-  } catch {
+  } catch (err) {
+    console.error('[start_run]', err);
     return NextResponse.json({ offline: true });
   }
 }

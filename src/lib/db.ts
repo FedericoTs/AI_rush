@@ -12,8 +12,20 @@ import { headers } from "next/headers";
  * handlers are the only caller.
  */
 
-const URL_ = process.env.SUPABASE_URL;
-const KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+/*
+ * These are defaults, not secrets, and env vars override both.
+ *
+ * A Supabase *publishable* key is meant to be public — in a conventional
+ * Supabase app it ships inside the browser bundle. Everything it can reach is
+ * bounded by the policy layer, and here that layer allows exactly five things:
+ * open a run, submit one (against a server-side ceiling), claim one with its
+ * secret, read the public board, and file a level idea. No table is directly
+ * readable or writable. Publishing this key changes nothing about what anyone
+ * can do.
+ */
+const URL_ = process.env.SUPABASE_URL ?? "https://zamiayilppjufozhuxev.supabase.co";
+const KEY =
+  process.env.SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_SMJQPfZRBM9jTRQULEPDhA_tE4Mr219";
 
 export const dbConfigured = Boolean(URL_ && KEY);
 

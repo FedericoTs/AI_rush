@@ -20,7 +20,8 @@ export async function POST(req: Request) {
       { p_run_id: runId, p_run_secret: runSecret, p_handle: String(handle).slice(0, 20) },
     );
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    console.error("[run/claim]", err);
     return NextResponse.json({ offline: true });
   }
 }

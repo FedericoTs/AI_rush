@@ -167,6 +167,25 @@ describe("client score and server recompute", () => {
     expect(validateRun(s.events, deckEntries(), s.elapsedMs)).toBeNull();
   });
 
+  /* The clock is a float and the database column is an integer. A fractional
+     atMs loses the entire run to a cast error, silently, at the last step. */
+  it("emits whole milliseconds, never fractions", () => {
+    start(11);
+    for (let i = 0; i < 5; i++) {
+      const s = useRun.getState();
+      s.setRemaining(s.remainingMs - 3333.7777);
+      if (i % 2 === 0) useRun.getState().solve();
+      else useRun.getState().fail();
+    }
+    for (const ev of useRun.getState().events) {
+      expect(Number.isInteger(ev.atMs)).toBe(true);
+      if (ev.solveMs !== undefined) expect(Number.isInteger(ev.solveMs)).toBe(true);
+    }
+    for (const row of useRun.getState().breakdown) {
+      expect(Number.isInteger(row.solveMs)).toBe(true);
+    }
+  });
+
   it("numbers events consecutively from one, with no gaps", () => {
     start(5);
     elapse(3_000);

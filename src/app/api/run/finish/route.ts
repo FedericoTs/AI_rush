@@ -60,7 +60,10 @@ export async function POST(req: Request) {
       /* Surfaced as a generic message; the player never sees the reason. */
       rejected: rejection ?? undefined,
     });
-  } catch {
+  } catch (err) {
+    /* The player sees a run that simply did not reach the board. We should
+       still be able to find out why without reproducing it. */
+    console.error("[run/finish]", err);
     return NextResponse.json({ offline: true });
   }
 }
