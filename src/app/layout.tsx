@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo_Black, Inter, JetBrains_Mono } from "next/font/google";
-import { siteUrl } from "@/lib/site";
+import { ogImage, siteUrl } from "@/lib/site";
 import { ServiceWorker } from "@/ui/ServiceWorker";
 import "./globals.css";
 
@@ -34,13 +34,13 @@ export const metadata: Metadata = {
     title: "AI Rush",
     description: DESCRIPTION,
     type: "website",
-    images: [{ url: "/api/og", width: 1200, height: 675 }],
+    images: [{ url: ogImage(), width: 1200, height: 675 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "AI Rush",
     description: DESCRIPTION,
-    images: ["/api/og"],
+    images: [ogImage()],
   },
   /* Installed on iOS, this is what stops the status bar from being an opaque
      white strip above a very dark game. */

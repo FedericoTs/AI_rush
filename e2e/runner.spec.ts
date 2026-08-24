@@ -17,16 +17,25 @@ import type { Page } from "@playwright/test";
  * reflex level from a test.
  */
 
-async function reachRunner(page: Page): Promise<boolean> {
-  await page.goto("/play?seed=ABC123");
-  for (let i = 0; i < 15; i++) {
-    if ((await page.locator('[data-level="L11"]').count()) > 0) return true;
-    const skip = page.getByRole("button", { name: "SKIP THIS LEVEL" });
-    if ((await skip.count()) === 0) return false;
-    await skip.click();
-    await page.waitForTimeout(80);
-  }
-  return false;
+/*
+ * Opened directly, not hunted for in a dealt deck.
+ *
+ * This used to skip through a hard-coded seed until L11 turned up, and
+ * `test.skip` when it did not. Two things were wrong with that. A change to
+ * the deal moved L11 out of that deck and all four of these quietly stopped
+ * running — the suite stayed green while the only coverage of the canvas game
+ * loop evaporated. And the mobile project deals a different sequence entirely,
+ * because its capability set is different, so no single seed could serve both.
+ *
+ * The practice room renders through exactly the same `RunStage`, with the same
+ * `GameClock` ticking the same second boundaries — which *is* the regression
+ * under test, since the bug was the clock re-rendering the component and
+ * tearing the loop down with it. Whether L11 also turns up in real decks is a
+ * dealing question, and `deck.test.ts` owns it.
+ */
+async function reachRunner(page: Page): Promise<void> {
+  await page.goto("/play?level=L11&seed=ABC123");
+  await page.locator('[data-level="L11"]').waitFor({ state: "attached" });
 }
 
 /**
@@ -41,7 +50,7 @@ const uptime = (page: Page) =>
     .then((v) => Number(v ?? -1));
 
 test("the game loop survives the clock ticking under it", async ({ page }) => {
-  test.skip(!(await reachRunner(page)), "L11 not in this deck");
+  await reachRunner(page);
 
   await page.waitForTimeout(1500);
   const first = await uptime(page);
@@ -55,7 +64,7 @@ test("the game loop survives the clock ticking under it", async ({ page }) => {
 });
 
 test("the runner keeps its state across a clock second boundary", async ({ page }) => {
-  test.skip(!(await reachRunner(page)), "L11 not in this deck");
+  await reachRunner(page);
 
   /* Five seconds spans several clock ticks and at least one visible change to
      the HUD countdown — the exact thing that used to reset the level. */
@@ -64,7 +73,7 @@ test("the runner keeps its state across a clock second boundary", async ({ page 
 });
 
 test("the canvas is actually being drawn", async ({ page }) => {
-  test.skip(!(await reachRunner(page)), "L11 not in this deck");
+  await reachRunner(page);
 
   /* Compare the pixels, not their encoded length — two different frames
      encode to the same byte count often enough to make that a flake. */
@@ -87,7 +96,7 @@ test("the canvas is actually being drawn", async ({ page }) => {
 });
 
 test("keyboard jumps reach the level rather than scrolling the page", async ({ page }) => {
-  test.skip(!(await reachRunner(page)), "L11 not in this deck");
+  await reachRunner(page);
 
   const scrollTop = () => page.evaluate(() => document.scrollingElement?.scrollTop ?? 0);
   const before = await scrollTop();

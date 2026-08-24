@@ -275,6 +275,19 @@ export function GET() {
     {
       width: 1200,
       height: 675,
+      headers: {
+        /*
+         * An hour at the edge, and a week of serving the stale copy while a
+         * fresh one is fetched behind it.
+         *
+         * Not `immutable`, even though the URL is versioned: the footer counts
+         * how many levels are built, and that number should catch up on its
+         * own within the hour rather than waiting for somebody to remember to
+         * bump `OG_VERSION`. The version exists for *art* changes, which are
+         * the ones an unfurler will otherwise never show — see `lib/site.ts`.
+         */
+        "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=604800",
+      },
       fonts: [
         /* Inter first: satori falls back through this list in order for any
            family it cannot resolve, and a display face at the front of it

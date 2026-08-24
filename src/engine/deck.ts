@@ -20,13 +20,52 @@ import {
   ALL_MODIFIERS, MAX_CONCURRENT_MODIFIERS, MERCY_SAFE_MODIFIERS, MODIFIERS_START_SEC,
 } from "./chaos/modifiers";
 
-/** Tier pools by nominal position in the run, in seconds. */
+/**
+ * Tier pools by position in the run, in seconds **of the actual clock**.
+ *
+ * Straight out of `GAME_DESIGN.md` §5, which states them as wall-clock minutes:
+ * 0:00–1:15 annoying, 1:15–2:45 +cursed, 2:45–4:15 +unhinged, 4:15–5:00
+ * +forbidden. They are left in those units deliberately, so this table can be
+ * checked against the document without arithmetic.
+ */
 const WINDOWS: ReadonlyArray<{ untilSec: number; tiers: readonly Tier[] }> = [
   { untilSec: 75, tiers: ["annoying"] },
   { untilSec: 165, tiers: ["annoying", "cursed"] },
   { untilSec: 255, tiers: ["cursed", "unhinged"] },
   { untilSec: Infinity, tiers: ["unhinged", "forbidden"] },
 ];
+
+/**
+ * Real seconds per par second.
+ *
+ * The deal walks the deck accumulating **par**, and the windows above are in
+ * **clock time**. Those are not the same quantity, and treating them as if they
+ * were — which is what this did until somebody played the game and noticed —
+ * stretches the whole difficulty curve by however much slower people are than
+ * par.
+ *
+ * The effect was not subtle. At a factor of 1.0, a player who got through seven
+ * levels in their five minutes was dealt 84% `annoying`, 16% `cursed`, and
+ * never once a `forbidden` level. Most of the catalogue's range was unreachable
+ * by most of the people playing it, and the escalation the run is built around
+ * simply did not happen.
+ *
+ * Two is the conservative correction: it puts the tier mix at the middle of the
+ * observed reach closest to the ≈4/4/3/2 split §5 asks for, without front-
+ * loading the hardest tier onto people who are struggling. A stronger player
+ * still earns more of it by getting further, which is the intended reward.
+ *
+ * **This is the one number in the deal that is an estimate**, and it is exactly
+ * what `npm run playtest:report` measures — it prints median first-try solve
+ * times against par per level. Replace it with the real ratio once five people
+ * have played (`docs/PLAYTEST.md`).
+ */
+export const PACE = 2.0;
+
+/** Where the run's clock has really got to, after this much par. */
+function clockAt(nominalSec: number): number {
+  return nominalSec * PACE;
+}
 
 /** Deal past the clock so a fast player never runs out of levels. */
 export const DECK_SIZE = 14;
@@ -124,11 +163,11 @@ export function dealDeck(opts: DealOptions): DealtLevel[] {
   for (let slot = 0; slot < DECK_SIZE; slot++) {
     let chosen: LevelModule | null = null;
 
-    if (honestSlot.pending && honest && nominalSec >= HONEST_LEVEL_EARLIEST_SEC) {
+    if (honestSlot.pending && honest && clockAt(nominalSec) >= HONEST_LEVEL_EARLIEST_SEC) {
       chosen = honest;
       honestSlot.pending = false;
     } else {
-      chosen = pick(playable, tiersAt(nominalSec), st, rng);
+      chosen = pick(playable, tiersAt(clockAt(nominalSec)), st, rng);
     }
     if (!chosen) break;
 
@@ -138,7 +177,7 @@ export function dealDeck(opts: DealOptions): DealtLevel[] {
     dealt.push({
       module: chosen,
       degraded,
-      modifiers: rollModifiers(chosen, nominalSec, mercy, rng),
+      modifiers: rollModifiers(chosen, clockAt(nominalSec), mercy, rng),
     });
 
     st.used.add(chosen.meta.id);

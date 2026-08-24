@@ -127,3 +127,25 @@
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 @media (prefers-reduced-motion: reduce) { .secretToast { animation: none; } }
+
+/*
+ * "None of this is real."
+ *
+ * Deliberately the chrome's voice and not the level's: mono, hazard-edged, and
+ * outside the card. A level has to look genuine for the first second and a half
+ * (P1), so this cannot go inside one — but a convincing password field is
+ * convincing to a password manager too, and somebody two minutes into a panic
+ * should not have to work out where what they typed went.
+ */
+.fakeNotice {
+  margin: 0.55rem 0 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--chrome-line);
+  border-left: 2px solid var(--hazard);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  line-height: 1.5;
+  color: var(--chrome-dim);
+}
+.fakeNotice b { color: var(--chrome-ink); font-weight: 600; }

@@ -193,3 +193,74 @@ describe("L37 · Set Your Security PIN", () => {
     void before;
   });
 });
+
+/**
+ * A convincing form is convincing to a password manager too.
+ *
+ * Pillar P1 asks every level to look like a genuine interface for the first
+ * second and a half, and four of them achieve that by being a sign-in page or
+ * a checkout. That is the joke, and it is the one place the joke can cost a
+ * player something real: somebody two minutes into a five-minute panic types a
+ * real address without thinking, and a browser offers to remember it.
+ *
+ * `meta.collects` is what makes the chrome show a notice. These render every
+ * level and fail if one grows a credential or card field without declaring it,
+ * so the notice cannot be quietly forgotten on the next one.
+ */
+describe("levels that ask for something real", () => {
+  const SENSITIVE_LABEL =
+    /e-?mail|password|card|cvv|cvc|expiry|last four|sort code|iban|account number/i;
+
+  function fields(mod: LevelModule): HTMLInputElement[] {
+    cleanup();
+    mount(mod);
+    return Array.from(document.querySelectorAll("input"));
+  }
+
+  function looksSensitive(mod: LevelModule): boolean {
+    for (const el of fields(mod)) {
+      if (el.type === "password" || el.type === "email") return true;
+      const described = `${el.getAttribute("aria-label") ?? ""} ${el.placeholder} ${
+        document.querySelector(`label[for="${el.id}"]`)?.textContent ?? ""
+      }`;
+      if (SENSITIVE_LABEL.test(described)) return true;
+    }
+    return false;
+  }
+
+  it("declares `collects`, so the chrome can say nothing is real", () => {
+    const undeclared: string[] = [];
+    for (const mod of REGISTRY) {
+      if (looksSensitive(mod) && !mod.meta.collects) undeclared.push(mod.meta.id);
+    }
+    expect(undeclared, "these ask for a credential or card and say nothing").toEqual([]);
+  });
+
+  /*
+   * The sharpest edge, and the one that was actually wrong.
+   *
+   * L36 shipped with `autoComplete="username"` and `current-password` — the
+   * exact hints that make a manager fill a real credential into a game and
+   * then offer to save it. No level may ask for that.
+   */
+  it("never invites a password manager to fill or save a real credential", () => {
+    const INVITING = new Set(["username", "email", "current-password", "tel", "cc-number", "cc-csc"]);
+    const offenders: string[] = [];
+
+    for (const mod of REGISTRY) {
+      for (const el of fields(mod)) {
+        const hint = (el.getAttribute("autocomplete") ?? "").toLowerCase();
+        if (INVITING.has(hint)) offenders.push(`${mod.meta.id}:${hint}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("only claims to collect things it actually asks for", () => {
+    for (const mod of REGISTRY) {
+      if (!mod.meta.collects) continue;
+      expect(mod.meta.collects.length, `${mod.meta.id} declares an empty list`).toBeGreaterThan(0);
+      expect(looksSensitive(mod), `${mod.meta.id} declares collects but has no such field`).toBe(true);
+    }
+  });
+});

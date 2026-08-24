@@ -9,6 +9,7 @@ export const meta: LevelMeta = {
   family: "meta",
   parSeconds: 20,
   requires: ["pointer"],
+  collects: ["credentials"],
   /* Nothing may be layered on top of this one. A modifier would be a tell,
      and the level is worth 1000 points precisely because it is untouched. */
   incompatibleModifiers: [

@@ -9,6 +9,7 @@ export const meta: LevelMeta = {
   family: "meta",
   parSeconds: 45,
   requires: ["pointer"],
+  collects: ["credentials"],
   /*
    * The level is already the broken-layout joke. Anything that breaks the
    * layout further does not raise the difficulty, it removes the signal the

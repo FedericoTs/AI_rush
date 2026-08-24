@@ -9,5 +9,6 @@ export const meta: LevelMeta = {
   family: "coupled",
   parSeconds: 20,
   requires: ["keyboard"],
+  collects: ["credentials"],
   incompatibleModifiers: ["lag"],
 };

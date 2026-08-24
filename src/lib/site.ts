@@ -22,3 +22,22 @@ export function siteUrl(): string {
 export function siteHost(): string {
   return siteUrl().replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
+
+/**
+ * The share card's cache buster. **Bump this whenever the card's art changes.**
+ *
+ * X, Slack, iMessage and every other unfurler caches an OG image against its
+ * URL, hard and for a long time, and none of them offer a reliable way to ask
+ * for a refresh. So a redesigned card at the same URL is a redesigned card
+ * nobody sees — the old one keeps circulating on every new post, which is
+ * exactly what happened to the first version of this one.
+ *
+ * Changing the URL is the only thing that actually works. Links already posted
+ * keep their old image, which is correct: they were shared with it.
+ */
+export const OG_VERSION = 2;
+
+/** The absolute URL of the share card, versioned. */
+export function ogImage(): string {
+  return `/api/og?v=${OG_VERSION}`;
+}

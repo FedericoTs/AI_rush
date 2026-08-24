@@ -41,6 +41,25 @@ export interface LevelMeta {
   /** Community-designed levels carry their author forever. */
   creator?: { handle: string; submissionId: string };
   /**
+   * This level wears a form that asks for something real.
+   *
+   * Pillar P1 says a level must look like a genuine interface for the first
+   * second and a half, and four of them do that by being a sign-in page or a
+   * checkout. That is the joke, and it is also the one place the joke can cost
+   * somebody something: a convincing password field is convincing to a password
+   * manager too, and a player halfway through a five-minute panic is exactly
+   * the person who types a real address without thinking.
+   *
+   * So a level that asks for credentials or card details says so here, and the
+   * *chrome* — never the level itself — carries a notice. The level keeps its
+   * straight face; the frame around it does not.
+   *
+   * `levels.test.tsx` renders every level and fails if one grows a password,
+   * email or card field without declaring it, so this cannot be forgotten on
+   * the next one.
+   */
+  collects?: readonly ("credentials" | "payment")[];
+  /**
    * Locked content. Absent means the level is in the deck from the first run.
    *
    * `share` levels open when N distinct people have played a run that started

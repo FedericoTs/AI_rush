@@ -23,6 +23,7 @@ import { Calibrate } from "./Calibrate";
 import { useInput } from "@/input/useInput";
 import { REGISTRY } from "@/levels/registry";
 import { ObserverBar, ObserverExport } from "./Observer";
+import { FakeNotice } from "./FakeNotice";
 import { useWakeLock } from "@/ui/useWakeLock";
 import {
   downloadSession, sessionFilename,
@@ -538,6 +539,11 @@ function RunStage(props: {
             sfx={sfx}
           />
         </div>
+
+        {/* Chrome, never the level. See FakeNotice. */}
+        {current.module.meta.collects && (
+          <FakeNotice collects={current.module.meta.collects} />
+        )}
 
         {/*
           * A community level carries its author, always.

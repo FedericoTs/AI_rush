@@ -9,6 +9,7 @@ export const meta: LevelMeta = {
   family: "motor",
   parSeconds: 40,
   requires: ["pointer"],
+  collects: ["payment"],
   /* It already is the rotate modifier, and mirroring a rotating card makes the
      direction of travel unlearnable rather than difficult. */
   incompatibleModifiers: ["rotate", "mirror", "slippery", "drift", "lag", "shrink"],

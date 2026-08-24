@@ -61,7 +61,19 @@ function Component({ onSolve }: LevelProps) {
           id="si-email"
           type="email"
           inputMode="email"
-          autoComplete="username"
+          /*
+           * Never `username`.
+           *
+           * This is the honest level: it looks exactly like a real sign-in,
+           * which means a password manager finds it exactly as convincing as a
+           * person does. It would offer to fill a real address and then offer
+           * to *save* whatever got typed into a game. The level's joke costs
+           * nobody anything; that would.
+           */
+          autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -78,7 +90,12 @@ function Component({ onSolve }: LevelProps) {
           <input
             id="si-pw"
             type={reveal ? "text" : "password"}
-            autoComplete="current-password"
+            /* Same reason as the email field above: `current-password` invites
+               a manager to fill, and then to save, a real credential here. */
+            autoComplete="new-password"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={onEnter}

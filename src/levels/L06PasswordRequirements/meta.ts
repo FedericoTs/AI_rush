@@ -9,6 +9,7 @@ export const meta: LevelMeta = {
   family: "text",
   parSeconds: 25,
   requires: ["keyboard"],
+  collects: ["credentials"],
   /* Typing under artificial input delay is not a puzzle, it is a wall. */
   incompatibleModifiers: ["lag", "mirror"],
 };

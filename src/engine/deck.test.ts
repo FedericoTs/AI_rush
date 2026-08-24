@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { dealDeck, DECK_SIZE, HONEST_LEVEL_ID, practiceDeck, type CapabilitySet } from "./deck";
+import { dealDeck, DECK_SIZE, HONEST_LEVEL_ID, PACE, practiceDeck, type CapabilitySet } from "./deck";
 import { MODIFIERS } from "./chaos/modifiers";
+import { REGISTRY as SHIPPED } from "@/levels/registry";
 import type { Family, InputCapability, LevelModule, Tier } from "./types";
 
 /* Synthetic catalogue. Deliberately not the real registry — the dealer's rules
@@ -117,7 +118,8 @@ describe("dealDeck", () => {
       if (at >= 0) {
         runsWithIt++;
         const nominalSec = deck.slice(0, at).reduce((t, d) => t + d.module.meta.parSeconds, 0);
-        expect(nominalSec).toBeGreaterThanOrEqual(120);
+        /* Two minutes of *clock*, which is what §5 says — hence PACE. */
+        expect(nominalSec * PACE).toBeGreaterThanOrEqual(120);
       }
     }
     expect(runsWithIt / 800).toBeGreaterThan(0.04);
@@ -178,7 +180,7 @@ describe("chaos schedule", () => {
       const deck = deal(seed);
       let nominal = 0;
       for (const d of deck) {
-        if (nominal < 120) expect(d.modifiers).toHaveLength(0);
+        if (nominal * PACE < 120) expect(d.modifiers).toHaveLength(0);
         nominal += d.module.meta.parSeconds;
       }
     }
@@ -256,5 +258,92 @@ describe("practiceDeck", () => {
     const [poor] = practiceDeck({ registry: REGISTRY, ids: ["MIC"], capabilities: NONE });
     expect(ok!.degraded).toBe(false);
     expect(poor!.degraded).toBe(true);
+  });
+});
+
+/**
+ * The bug a player found, made into a test.
+ *
+ * The deal walks the deck accumulating **par**; the tier windows in
+ * `GAME_DESIGN.md` §5 are stated in **clock minutes**. Treating one as the
+ * other stretched the whole curve by however much slower people are than par,
+ * and the result was that a player who got through seven levels in their five
+ * minutes was dealt 84% `annoying`, 16% `cursed`, and never once a `forbidden`
+ * level. Most of the catalogue was unreachable by most of the people playing.
+ *
+ * These pin the property rather than the constant, so `PACE` can be replaced
+ * with a measured number from `npm run playtest:report` without rewriting them
+ * — they only fail if the escalation stops being reachable.
+ */
+describe("the curve is reachable in the time people actually have", () => {
+  /* What a run looks like to someone who gets seven levels in. */
+  const REACH = 7;
+
+  function mixOverSeeds(reach: number) {
+    const counts: Record<Tier, number> = { annoying: 0, cursed: 0, unhinged: 0, forbidden: 0 };
+    let sawBeyondAnnoying = 0;
+    for (let seed = 0; seed < 400; seed++) {
+      const slice = deal(seed).slice(0, reach);
+      for (const d of slice) counts[d.module.meta.tier]++;
+      if (slice.some((d) => d.module.meta.tier !== "annoying")) sawBeyondAnnoying++;
+    }
+    return { counts, sawBeyondAnnoying };
+  }
+
+  it("does not spend a whole short run in the shallow end", () => {
+    const { counts } = mixOverSeeds(REACH);
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    /* The regression: `annoying` was 84% of a seven-level run. Anything past
+       two thirds means the escalation has stopped happening again. */
+    expect(counts.annoying / total).toBeLessThan(0.67);
+    /* And the top half of the catalogue has to actually turn up. */
+    expect((counts.unhinged + counts.forbidden) / total).toBeGreaterThan(0.08);
+  });
+
+  it("reaches every tier before the deck runs out", () => {
+    const seen = new Set<Tier>();
+    for (let seed = 0; seed < 200; seed++) {
+      for (const d of deal(seed)) seen.add(d.module.meta.tier);
+    }
+    expect([...seen].sort()).toEqual(["annoying", "cursed", "forbidden", "unhinged"]);
+  });
+
+  it("still opens gently — the first level is never the deep end", () => {
+    for (let seed = 0; seed < 400; seed++) {
+      expect(deal(seed)[0]!.module.meta.tier).toBe("annoying");
+    }
+  });
+});
+
+/**
+ * No level is orphaned.
+ *
+ * Levels are dealt through tier windows, family adjacency, permission budgets
+ * and a coupled cap, and it is entirely possible to write a level that every
+ * one of those quietly excludes — it ships, it is in the index, and no run ever
+ * contains it. The e2e suite used to hunt one particular level through dealt
+ * decks and skip when it could not find it, which is how a change to the deal
+ * managed to switch off four tests without anybody noticing.
+ *
+ * This asks the question directly instead.
+ */
+describe("every level is actually reachable", () => {
+  /* The real catalogue, not this file's fixtures — the question is about
+     levels that actually shipped. */
+  const caps: CapabilitySet = new Set(["pointer", "keyboard", "touch", "audioOut"]);
+
+  it("deals each unlocked level to somebody within a few hundred seeds", () => {
+    const seen = new Set<string>();
+    for (let seed = 0; seed < 300 && seen.size < SHIPPED.length; seed++) {
+      for (const d of dealDeck({ seed, registry: SHIPPED, capabilities: caps })) {
+        seen.add(d.module.meta.id);
+      }
+    }
+
+    const orphaned = SHIPPED.filter((m) => !seen.has(m.meta.id) && !m.meta.unlock).map(
+      (m) => `${m.meta.id} (${m.meta.tier}/${m.meta.family})`,
+    );
+    expect(orphaned, "these ship but no run ever deals them").toEqual([]);
   });
 });

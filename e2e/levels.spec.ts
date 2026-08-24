@@ -383,3 +383,40 @@ test("L26 tells you how the pattern was delivered, whichever way it was", async 
   await expect(page.getByTestId("l26-pad")).toBeVisible();
   await expect(page.getByTestId("l26-stage")).toBeVisible();
 });
+
+/*
+ * "None of this is real."
+ *
+ * Six levels wear a genuine-looking sign-in or checkout, because a level has to
+ * look real for the first second and a half. That is the joke and it is the one
+ * place the joke can cost a player something: somebody mid-panic types a real
+ * address without thinking. The notice lives in the chrome so the level keeps
+ * its straight face — which is exactly why it needs a test, since nothing
+ * inside the level would reveal its absence.
+ */
+for (const id of ["L06", "L31", "L33", "L34", "L36", "L42"]) {
+  test(`${id} says plainly that nothing typed into it goes anywhere`, async ({ page }) => {
+    await page.goto(`/play?level=${id}&seed=ABC123`);
+    const note = page.getByRole("note");
+    await expect(note).toBeVisible();
+    await expect(note).toContainText(/never leaves this tab/i);
+  });
+}
+
+test("a level that asks for nothing is left alone", async ({ page }) => {
+  /* L01 is a confirm dialog. A notice here would be noise, and noise is how a
+     notice stops being read on the levels that need it. */
+  await page.goto("/play?level=L01&seed=ABC123");
+  await expect(page.locator("[data-level]")).toBeVisible();
+  await expect(page.getByRole("note")).toHaveCount(0);
+});
+
+test("the honest level does not invite a password manager", async ({ page }) => {
+  await page.goto("/play?level=L36&seed=ABC123");
+  const email = page.getByLabel("Email address");
+  await expect(email).toHaveAttribute("autocomplete", "off");
+  const pw = page.getByLabel("Password", { exact: true });
+  /* `new-password`, never `current-password`: one asks a manager to generate,
+     the other asks it to hand over a real credential and then save this one. */
+  await expect(pw).toHaveAttribute("autocomplete", "new-password");
+});
