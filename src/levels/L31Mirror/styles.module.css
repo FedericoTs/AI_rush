@@ -1,0 +1,35 @@
+/*
+ * The whole level, in one declaration.
+ *
+ * Flipping the container rather than each element means hit areas flip with
+ * the pixels — the button really is where it looks like it is, from the
+ * mirror's point of view. Anything less than that would be a drawing of the
+ * joke rather than the joke.
+ */
+.flip { transform: scaleX(-1); }
+
+.label { display: block; font-size: 0.7rem; font-weight: 600; color: #374151; margin: 0.6rem 0 0.25rem; }
+
+.input {
+  width: 100%;
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--slop-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--slop-ink);
+}
+.input:focus-visible { outline: 2px solid var(--slop-1); outline-offset: 1px; }
+
+.cta {
+  width: 100%; border: none; border-radius: 12px; padding: 0.8rem; margin-top: 0.9rem;
+  background: var(--slop-grad); color: #fff; font-weight: 700; font-size: 0.92rem;
+  box-shadow: 0 4px 14px -4px rgba(124, 58, 237, 0.6);
+}
+
+/*
+ * Reduced motion does not un-mirror this — the mirror is the level, not an
+ * effect — but it is worth saying out loud that nothing here animates, so
+ * there is nothing for that preference to turn off.
+ */

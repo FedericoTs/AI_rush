@@ -107,3 +107,26 @@
   font-size: 0.8rem; color: var(--chrome-dim);
 }
 .lab:hover { color: var(--good); border-color: var(--good); }
+
+/* ─── what sharing buys ─────────────────────────────────── */
+.unlockBox {
+  border: 1px solid var(--chrome-line);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: var(--chrome-2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.unlockHead {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--chrome-dim);
+}
+.unlockHead b {
+  margin-left: auto; color: var(--good); font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.unlockTrack { height: 3px; border-radius: 2px; background: var(--chrome-line); overflow: hidden; }
+.unlockFill { height: 100%; background: var(--good); transition: width 400ms ease-out; }
+.unlockNote { margin: 0; font-size: 0.68rem; color: #6b7280; line-height: 1.5; }

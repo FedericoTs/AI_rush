@@ -113,3 +113,23 @@
   font-size: 0.58rem;
   color: #c3c8d0;
 }
+
+/*
+ * The duplicate footer link, which is real.
+ *
+ * Styled to be indistinguishable from the dead ones beside it — same size,
+ * same colour, no underline, no pointer change until hover. A secret that
+ * looks like a button is not a secret. It keeps a focus ring, because a
+ * keyboard player finding it by tabbing is a legitimate way to find it.
+ */
+.secretLink {
+  font: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: default;
+}
+.secretLink:hover { color: var(--slop-1); cursor: pointer; }
+.secretLink:focus-visible { outline: 2px solid var(--slop-1); outline-offset: 2px; }

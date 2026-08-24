@@ -12,15 +12,21 @@ import { meta as L12 } from "./L12EnterYourPhoneNumber/meta";
 import { meta as L16 } from "./L16BackspaceUnavailable/meta";
 import { meta as L18 } from "./L18DragToUnlock/meta";
 import { meta as L22 } from "./L22LoadingYourDashboard/meta";
+import { meta as L23 } from "./L23AiIsGeneratingYourCode/meta";
 import { meta as L24 } from "./L24SelectYourPlan/meta";
+import { meta as L25 } from "./L25TwoCursors/meta";
 import { meta as L27 } from "./L27ConfirmYourAddress/meta";
 import { meta as L28 } from "./L28AreYouStillThere/meta";
+import { meta as L31 } from "./L31Mirror/meta";
+import { meta as L32 } from "./L32NetworkConditions/meta";
+import { meta as L33 } from "./L33ThisPageIsRotating/meta";
 import { meta as L34 } from "./L34LevelFailedToGenerate/meta";
 import { meta as L36 } from "./L36SignIn/meta";
 import { meta as L37 } from "./L37SetYourSecurityPin/meta";
 import { meta as L41 } from "./L41RankYourPriorities/meta";
 import { meta as L42 } from "./L42ConfirmYourPassword/meta";
 import { meta as L47 } from "./L47MatchThisColour/meta";
+import { meta as L49 } from "./L49Careers/meta";
 
 /**
  * Level metadata, with no components attached.
@@ -31,8 +37,8 @@ import { meta as L47 } from "./L47MatchThisColour/meta";
  * lets the server hold the authoritative copy of what a level is worth.
  */
 export const CATALOG: readonly LevelMeta[] = [
-  L01, L02, L03, L04, L05, L06, L09, L10, L11, L12, L16, L18, L22, L24, L27,
-  L28, L34, L36, L37, L41, L42, L47,
+  L01, L02, L03, L04, L05, L06, L09, L10, L11, L12, L16, L18, L22, L23, L24,
+  L25, L27, L28, L31, L32, L33, L34, L36, L37, L41, L42, L47, L49,
 ];
 
 export const META_BY_ID = new Map(CATALOG.map((m) => [m.id, m]));

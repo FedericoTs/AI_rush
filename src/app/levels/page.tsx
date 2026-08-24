@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TIER_BASE } from "@/engine/scoring";
 import type { InputCapability, LevelMeta, Tier } from "@/engine/types";
 import { CATALOG } from "@/levels/catalog";
+import { LockedRow } from "./LockedRow";
 import s from "./levels.module.css";
 
 export const metadata = {
@@ -55,14 +56,14 @@ export default function Levels() {
       </div>
 
       <p className={s.lede}>
-        <b>{CATALOG.length} interfaces</b>, all of them shipped, all of them playable on their own.
-        A run deals you a random fourteen against a five-minute clock; in here you pick, the clock
-        counts <b>up</b>, and nothing you do reaches the leaderboard.
+        <b>{CATALOG.length} interfaces</b>, all of them shipped. A run deals you a random fourteen
+        against a five-minute clock; in here you pick, the clock counts <b>up</b>, and nothing you
+        do reaches the leaderboard. A few are locked — those are earned, or found.
       </p>
 
       <div className={s.allRow}>
         <Link className={s.playAll} href="/levels/all">
-          Play all {CATALOG.length}, in order
+          Play everything you have opened
         </Link>
         <Link className={s.realRun} href="/play">
           Or take the real five minutes →
@@ -81,7 +82,7 @@ export default function Levels() {
             </h2>
             <div className={s.list}>
               {rows.map((m) => (
-                <Link className={s.item} key={m.id} href={`/levels/${m.id}`} data-level-id={m.id}>
+                <LockedRow meta={m} key={m.id}>
                   <span className={s.id}>{m.id}</span>
                   <span className={s.body}>
                     <span className={s.title}>{m.title}</span>
@@ -94,9 +95,9 @@ export default function Levels() {
                       </span>
                     ))}
                     <span className={s.par}>par {m.parSeconds}s</span>
-                    <span className={s.go}>play →</span>
+                    <span className={s.go}>{m.unlock ? "locked" : "play →"}</span>
                   </span>
-                </Link>
+                </LockedRow>
               ))}
             </div>
           </section>
@@ -106,6 +107,11 @@ export default function Levels() {
       <p className={s.fine}>
         Par is what a level is scored against in a real run, not a time limit. Practice runs are
         never submitted — a board you could farm one level at a time would not be worth being on.
+      </p>
+      <p className={s.fine}>
+        A locked level is worth exactly what its tier is worth. Opening one gets you something new
+        to play, never an edge — the leaderboard cannot tell whether your run contained one, and
+        that is on purpose.
       </p>
 
       <Link className={s.labLink} href="/lab">

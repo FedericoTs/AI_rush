@@ -18,10 +18,33 @@ and a half before the player realises, and an index that gave away the bit
 would sell that for nothing. Anything a shipped level's index row says has to
 be true of the interface at first glance and useless as a hint.
 
-**Shipped so far (22 of 48).** L01, L02, L03, L04, L05, L06, L09, L10, L11,
-L12, L16, L18, L22, L24, L27, L28, L34, L36, L37, L41, L42, L47. Everything
-else in this file is written and unbuilt — `src/levels/registry.ts` is the
-authority, and the front page counts it live rather than trusting this line.
+**Shipped so far (28).** L01–L06, L09–L12, L16, L18, L22–L25, L27, L28,
+L31–L34, L36, L37, L41, L42, L47, plus **L49 · Careers**, which is not in the
+numbered catalogue below because it is the secret. Everything else in this file
+is written and unbuilt — `src/levels/registry.ts` is the authority, and the
+front page counts it live rather than trusting this line.
+
+**Locked content.** Three levels are not dealt on a first run:
+
+| Level | How it opens |
+| --- | --- |
+| **L23** AI Is Generating Your Code | 1 person plays a run from your link |
+| **L25** Two Cursors | 3 people play a run from your link |
+| **L49** Careers | Click the second *Careers* in any level's footer |
+
+A locked level is worth exactly what its tier is worth. It is new content,
+never an edge — the leaderboard cannot tell whether a run contained one, which
+is what keeps sharing from being pay-to-win and is the real reason none of it
+needs to resist forgery. The mechanism is documented in
+`supabase/migrations/0003_referrals.sql`.
+
+**L49 · Careers** — `forbidden` · pointer · par 30s · *a job application*.
+Three questions, each a miniature of a level the player has already survived:
+L01's dialog, L10's buried link, L24's eight-pixel free tier. Honest like L36 —
+real labels, no gradient, a wrong answer costs nothing but the reason it was
+wrong. The reward for reading the slop is a job offer from the people who write
+it. It is found by clicking the duplicate *Careers* link that has been in the
+footer phrase bank since the first level shipped.
 
 **Playing one on its own.** Every shipped level is individually reachable:
 `/levels` is the index, `/levels/L37` is that level alone, `/levels/all` is the

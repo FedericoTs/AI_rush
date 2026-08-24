@@ -1,4 +1,5 @@
 import { decodeSeed } from "@/engine/rng";
+import { parseUnlockParams } from "@/engine/unlocks";
 import { parseLevelSelection } from "@/levels/catalog";
 import { RunClient } from "./RunClient";
 
@@ -15,6 +16,9 @@ export default async function Play({
     vs?: string;
     target?: string;
     level?: string;
+    u?: string;
+    x?: string;
+    k?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -23,6 +27,16 @@ export default async function Play({
   /* `?level=L37`, `?level=L01,L11` or `?level=all` turns this into practice:
      a hand-picked deck, a clock that counts up, and nothing filed anywhere. */
   const practice = parseLevelSelection(params.level);
+
+  /* The deck this link was dealt with, so a challenge reproduces exactly even
+     when the sharer had content the visitor has not opened yet. Seeing a
+     locked level in someone else's run is a far better advertisement for it
+     than a description would be. */
+  const unlocks = parseUnlockParams(params.u, params.x);
+
+  /* Whoever's link this is. Carried to /api/run/finish and credited there —
+     only if this turns into a real, scored run. */
+  const ref = /^[A-Za-z0-9_-]{8,40}$/.test(params.k ?? "") ? params.k! : null;
 
   /* A challenge is just a seed with someone's name and number attached. No
      matchmaking, no lobby, no waiting for anyone to be online — the rival is
@@ -42,6 +56,8 @@ export default async function Play({
          meaningless — drop it rather than render a bar that can never resolve. */
       challenge={practice ? null : challenge}
       practice={practice}
+      unlocks={unlocks}
+      ref={ref}
     />
   );
 }

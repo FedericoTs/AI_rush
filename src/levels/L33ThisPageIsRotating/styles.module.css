@@ -1,0 +1,50 @@
+/*
+ * Six degrees a second, forever.
+ *
+ * A transform on the container rather than on each element, so hit areas turn
+ * with the pixels — the button really is where it looks like it is. `linear`
+ * because any easing would make the rate unlearnable, and the whole strategy
+ * is learning the rate.
+ */
+.spin {
+  animation: turn 60s linear infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes turn {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/*
+ * Reduced motion gets the angle without the spin.
+ *
+ * Still an awkward form held at an awkward angle, so the level survives — but
+ * a viewport that rotates continuously is precisely what this preference
+ * exists to prevent, and honouring it here is not optional.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .spin { animation: none; transform: rotate(30deg); }
+}
+
+.ask { margin: 0 0 0.8rem; font-size: 0.78rem; color: #4b5563; line-height: 1.45; }
+.ask b { color: var(--slop-ink); font-family: var(--font-mono); }
+
+.label { display: block; font-size: 0.7rem; font-weight: 600; color: #374151; margin: 0.55rem 0 0.2rem; }
+
+.input {
+  width: 100%;
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--slop-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--slop-ink);
+}
+.input:focus-visible { outline: 2px solid var(--slop-1); outline-offset: 1px; }
+
+.cta {
+  width: 100%; border: none; border-radius: 12px; padding: 0.8rem; margin-top: 0.9rem;
+  background: var(--slop-grad); color: #fff; font-weight: 700; font-size: 0.92rem;
+  box-shadow: 0 4px 14px -4px rgba(124, 58, 237, 0.6);
+}

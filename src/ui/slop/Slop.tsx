@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { findSecret } from "@/lib/unlockStore";
 import styles from "./slop.module.css";
 
 /**
@@ -72,14 +73,52 @@ export function SlopCta({
   );
 }
 
+/**
+ * The dead footer links every one of these interfaces has.
+ *
+ * Except that the list has always ended `… Careers, Careers` — a duplicate
+ * that has been sitting in the phrase bank since the first level shipped,
+ * reading as exactly the kind of mistake the thing generating these pages
+ * would make.
+ *
+ * The second one is real. Clicking it opens the level that is not in the
+ * catalogue, and nothing anywhere announces that. It is the one secret in the
+ * game, it has been on screen the whole time, and it goes to the player who
+ * reads the slop instead of skipping it — which is the habit L10 exists to
+ * teach and the thing this game most wants to reward.
+ *
+ * Deliberately not a keyboard trap: it is a real button with a real focus
+ * ring, so tabbing to the end of a level finds it too.
+ */
 export function SlopFooter({ links }: { links: readonly string[] }) {
+  const seen = new Set<string>();
+
   return (
     <div className={styles.foot}>
-      {links.map((l, i) => (
-        <span key={`${l}-${i}`}>{l}</span>
-      ))}
+      {links.map((label, i) => {
+        const duplicate = seen.has(label);
+        seen.add(label);
+        if (!duplicate) return <span key={`${label}-${i}`}>{label}</span>;
+
+        return (
+          <button
+            key={`${label}-${i}`}
+            type="button"
+            className={styles.secretLink}
+            data-secret="careers"
+            onClick={() => {
+              if (findSecret()) window.dispatchEvent(new CustomEvent(SECRET_FOUND));
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
+
+/** Fired once, the first time anybody clicks the duplicate. */
+export const SECRET_FOUND = "ai-rush:secret-found";
 
 export { styles as slop };

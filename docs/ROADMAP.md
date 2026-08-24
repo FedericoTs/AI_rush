@@ -115,6 +115,16 @@ makes sense to someone who has never seen the game.
       beat by reading), L24 (the 8px free tier), L34 (reassemble the form the
       renderer dropped), L41 (a permutation puzzle proved solvable by
       construction), L47 (HSL sliders, an RGB target, and one honest number)
+- [x] **The forbidden tier, finished** — L31 (a login form flipped
+      horizontally), L32 (900ms of lag on everything), L33 (a checkout rotating
+      at 6°/s). With L34 and L36 that is five, and the endgame window finally
+      draws from a real pool
+- [x] **Share-to-unlock, and one secret** — a credit lands only when somebody
+      who arrived through your link *finishes a real, server-scored run*, which
+      no link-preview crawler can do and which costs a faker five minutes of
+      playing the game properly. Opens L23 at one and L25 at three. L49 is not
+      earned at all: it is found, in a footer. Locked levels are worth what
+      their tier is worth and never more (`0003_referrals.sql`)
 - [ ] PostHog events for the balance loop
 
 ---

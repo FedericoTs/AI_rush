@@ -5,6 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameClock, formatClock } from "@/engine/clock";
 import { comboFor, RUN_DURATION_MS, SKIP_PENALTY_MS } from "@/engine/scoring";
 import { capabilityMarks, PRACTICE_DURATION_MS } from "@/engine/deck";
+import { NOTHING_UNLOCKED, isUnlocked, type UnlockState } from "@/engine/unlocks";
+import { ALL_LEVEL_IDS, META_BY_ID } from "@/levels/catalog";
+import { useUnlocks } from "@/lib/unlockStore";
 import { encodeSeed, streamFor } from "@/engine/rng";
 import { createSfx, type SfxHandle } from "@/engine/sfx";
 import { currentLevel, useRun } from "@/engine/store";
@@ -13,6 +16,7 @@ import { Endgame, type Challenge } from "./Endgame";
 import { PracticeEnd } from "./PracticeEnd";
 import { Handle } from "@/ui/Handle";
 import { MODIFIERS } from "@/engine/chaos/modifiers";
+import { SECRET_FOUND } from "@/ui/slop/Slop";
 import { detectPassive } from "@/input/capabilities";
 import { useInput } from "@/input/useInput";
 import { REGISTRY } from "@/levels/registry";
@@ -34,10 +38,20 @@ export function RunClient({
   mercy,
   challenge = null,
   practice = null,
+  unlocks: linkUnlocks = NOTHING_UNLOCKED,
+  ref = null,
 }: {
   seed: number;
   mercy: boolean;
   challenge?: Challenge | null;
+  /**
+   * What the link says this deck may contain. A bare /play uses whatever this
+   * browser has opened; a challenge link uses the sharer's, so their run
+   * reproduces exactly — including the levels the visitor has not opened yet.
+   */
+  unlocks?: UnlockState;
+  /** Whoever's link brought this player here, credited only on a real run. */
+  ref?: string | null;
   /**
    * Level ids to play instead of a dealt deck. Practice never opens a run
    * server-side and never posts anything: a leaderboard you can farm one level
@@ -47,6 +61,20 @@ export function RunClient({
 }) {
   const capabilities = useMemo(() => detectPassive(), []);
   const sfx = useMemo(() => createSfx(), []);
+  const mine = useUnlocks();
+
+  /*
+   * A link's unlock state wins over this browser's.
+   *
+   * That is what makes "same seed, same levels, same order" survive the whole
+   * feature — otherwise two people opening one challenge link would be dealt
+   * different decks and the head-to-head at the end would be a lie.
+   */
+  const fromLink = linkUnlocks.credits > 0 || linkUnlocks.secret;
+  const unlocks = useMemo<UnlockState>(
+    () => (fromLink ? linkUnlocks : { credits: mine.credits, secret: mine.secret }),
+    [fromLink, linkUnlocks, mine.credits, mine.secret],
+  );
   const durationMs = practice ? PRACTICE_DURATION_MS : RUN_DURATION_MS;
 
   const startRun = useRun((r) => r.startRun);
@@ -65,6 +93,7 @@ export function RunClient({
   const [remaining, setLocalRemaining] = useState(durationMs);
   const [muted, setMuted] = useState(false);
   const [flash, setFlash] = useState(0);
+  const [foundSecret, setFoundSecret] = useState(false);
   const [run, setRun] = useState<{ id: string; secret: string } | null>(null);
   const clock = useRef<GameClock | null>(null);
   const events = useRun((r) => r.events);
@@ -75,11 +104,39 @@ export function RunClient({
      and its contents are the whole meaning of it, so the joined string is the
      honest dependency. */
   const practiceKey = practice ? practice.join(",") : null;
-  const only = useMemo(() => (practiceKey === null ? undefined : practiceKey.split(",")), [practiceKey]);
+  const only = useMemo(() => {
+    if (practiceKey === null) return undefined;
+    const ids = practiceKey.split(",");
+    /* `/levels/all` means "all of mine". A hand-written list still plays
+       exactly what it names — typing a locked id into the address bar is the
+       same category as editing `?u=`, and this game is not going to punish
+       someone for reading a URL. */
+    if (ids.length !== ALL_LEVEL_IDS.length) return ids;
+    return ids.filter((id) => {
+      const m = META_BY_ID.get(id);
+      return m ? isUnlocked(m, { credits: mine.credits, secret: mine.secret }) : false;
+    });
+  }, [practiceKey, mine.credits, mine.secret]);
+
+  /* Same reasoning as `only`: a fresh object each render must not restart a
+     run, so the deal depends on the values rather than the identity. */
+  const unlockSig = `${unlocks.credits}:${unlocks.secret ? 1 : 0}`;
 
   useEffect(() => {
-    startRun({ seed, registry: REGISTRY, capabilities, mercy, only, durationMs });
-  }, [startRun, seed, capabilities, mercy, only, durationMs]);
+    const [credits, secret] = unlockSig.split(":");
+    startRun({
+      seed, registry: REGISTRY, capabilities, mercy, only, durationMs,
+      unlocks: { credits: Number(credits), secret: secret === "1" },
+    });
+  }, [startRun, seed, capabilities, mercy, only, durationMs, unlockSig]);
+
+  /* The one secret in the game, announced the one time it is found. Fired by
+     the duplicate "Careers" in the slop footer, which every level carries. */
+  useEffect(() => {
+    const onFound = () => setFoundSecret(true);
+    window.addEventListener(SECRET_FOUND, onFound);
+    return () => window.removeEventListener(SECRET_FOUND, onFound);
+  }, []);
 
   /* Open the run server-side in the background. If this fails — no database,
      offline, rate limited — the game is unaffected and the score is simply
@@ -222,6 +279,8 @@ export function RunClient({
           runId={run?.id ?? null}
           runSecret={run?.secret ?? null}
           challenge={challenge}
+          unlocks={unlocks}
+          ref={ref}
         />
       </div>
     );
@@ -245,6 +304,7 @@ export function RunClient({
       challenge={challenge}
       practice={only !== undefined}
       position={only ? `${index + 1}/${deck.length}` : null}
+      secretFound={foundSecret}
       onSolve={handleSolve}
       onFail={handleFail}
       onSkip={handleSkip}
@@ -268,6 +328,7 @@ function RunStage(props: {
   practice: boolean;
   /** "3/14" while practising, so the room says where you are in it. */
   position: string | null;
+  secretFound: boolean;
   onSolve: () => void;
   onFail: (reason?: string) => void;
   onSkip: () => void;
@@ -378,6 +439,16 @@ function RunStage(props: {
       </div>
 
       <div key={`flash-${flash}`} className={`${s.flash} ${flash > 0 ? s.flashOn : ""}`} />
+
+      {props.secretFound && (
+        <div className={s.secretToast} role="status">
+          <b>You read the footer.</b>
+          <span>
+            There were always two Careers links. <i>Careers</i> is unlocked — it is in the index
+            now, and it will turn up in your runs.
+          </span>
+        </div>
+      )}
     </div>
   );
 }

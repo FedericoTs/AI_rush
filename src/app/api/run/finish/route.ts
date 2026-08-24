@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { dbConfigured, rpc } from "@/lib/db";
+import { dbConfigured, ipHash, rpc } from "@/lib/db";
 import { scoreRun, validateRun, type DeckEntry, type RunEvent } from "@/engine/scoring";
 import { META_BY_ID } from "@/levels/catalog";
 
@@ -21,6 +21,8 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       runId?: string; runSecret?: string;
       events?: RunEvent[]; durationMs?: number; killedBy?: string | null;
+      /** The referral key of whoever's link this player arrived through. */
+      ref?: string;
     };
     if (!body.runId || !body.runSecret) {
       return NextResponse.json({ ok: false, reason: "unauthenticated" }, { status: 400 });
@@ -84,6 +86,34 @@ export async function POST(req: Request) {
     );
 
     if (rejection) console.error("[run/finish] rejected", { runId: body.runId, rejection });
+
+    /*
+     * Credit whoever's link brought this player here.
+     *
+     * This is the whole share-to-unlock mechanism and this is the only place
+     * it can live: the credit is only real if the run is, and the run only
+     * becomes real one statement above this one. The database checks the run
+     * is `finished` with a score above zero — a number it computed itself from
+     * the event log, never one this request carried.
+     *
+     * A link-preview crawler cannot reach here. It would have to open a run,
+     * play a level and post an event log that survives validation. And anyone
+     * willing to fake it has to play the game for five minutes on a different
+     * network, which is the behaviour the feature exists to cause.
+     */
+    if (result.ok && typeof body.ref === "string" && /^[A-Za-z0-9_-]{8,40}$/.test(body.ref)) {
+      try {
+        await rpc("credit_referral", {
+          p_key: body.ref,
+          p_run_id: body.runId,
+          p_ip_hash: await ipHash(),
+        });
+      } catch (err) {
+        /* Somebody's unlock is worth less than somebody's score. Never let a
+           referral failure take the run down with it. */
+        console.error("[run/finish] credit_referral", err);
+      }
+    }
 
     return NextResponse.json({
       ...result,

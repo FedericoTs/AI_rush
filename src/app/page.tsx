@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CATALOG } from "@/levels/catalog";
+import { SheetTile } from "./SheetTile";
 import { SUBHEADS } from "@/ui/slop/phrases";
 import { boardTop, liveStats } from "@/lib/db";
 import { Handle } from "@/ui/Handle";
@@ -138,17 +139,7 @@ export default async function Home() {
 
           <div className={s.tiles}>
             {CATALOG.map((m) => (
-              <Link
-                className={s.tile}
-                key={m.id}
-                href={`/levels/${m.id}`}
-                data-tier={m.tier}
-                data-home-level={m.id}
-              >
-                <span className={s.tileId}>{m.id}</span>
-                <span className={s.tileTitle}>{m.title}</span>
-                <span className={s.tileParodies}>{m.parodies}</span>
-              </Link>
+              <SheetTile meta={m} key={m.id} />
             ))}
 
             {/*

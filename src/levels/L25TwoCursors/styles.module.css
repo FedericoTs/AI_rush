@@ -1,0 +1,72 @@
+.stage {
+  position: relative;
+  border: 1px solid var(--slop-line);
+  border-radius: 12px;
+  padding: 0.7rem;
+  background: var(--slop-soft);
+  /* The real pointer is hidden: two drawn cursors and a system one would be
+     three, and the level is called Two Cursors. */
+  cursor: none;
+  touch-action: none;
+}
+
+.field { margin-bottom: 0.6rem; }
+.field:last-of-type { margin-bottom: 0; }
+.label { display: block; font-size: 0.7rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; }
+
+.slots { display: flex; gap: 0.35rem; }
+.opt {
+  flex: 1;
+  border: 1px solid var(--slop-line);
+  background: #fff;
+  color: #4b5563;
+  border-radius: 8px;
+  padding: 0.45rem 0.2rem;
+  font-size: 0.74rem;
+  cursor: none;
+}
+.optOn { border-color: var(--slop-1); background: #f5f3ff; color: var(--slop-1); font-weight: 600; }
+
+.value {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * The pointers.
+ *
+ * Identical apart from a hairline of opacity, because a decoy you can tell
+ * apart at a glance is not a decoy. The flicker is the only honest tell, and
+ * it lasts 200ms on purpose: catchable, missable, and worth watching for.
+ */
+.cursor {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 9px solid currentColor;
+  border-bottom: 13px solid transparent;
+  border-right: 4px solid transparent;
+  pointer-events: none;
+  transform: translate(-1px, -1px);
+  z-index: 5;
+}
+.real { color: #111827; }
+.decoy { color: #111827; opacity: 0.86; }
+.flick { color: var(--slop-1); }
+
+.bar { display: flex; gap: 0.5rem; margin-top: 0.7rem; }
+.clear {
+  border: 1px solid var(--slop-line); background: #fff; color: #6b7280;
+  border-radius: 10px; padding: 0.6rem 0.9rem; font-size: 0.78rem;
+}
+.cta {
+  flex: 1; border: none; border-radius: 10px; padding: 0.6rem;
+  background: var(--slop-grad); color: #fff; font-weight: 700; font-size: 0.85rem;
+}
+.cta:disabled { opacity: 0.4; }

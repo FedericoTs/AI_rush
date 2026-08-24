@@ -78,3 +78,36 @@
 .ahead { color: var(--good); }
 .ghostTrack { height: 2px; background: var(--chrome-line); position: relative; }
 .ghostFill { position: absolute; inset: 0 auto 0 0; background: var(--good); transition: width 0.4s ease-out; }
+
+/*
+ * The one secret in the game, announced once.
+ *
+ * Deliberately quiet and deliberately not a modal: it arrives mid-level, and
+ * anything that stole focus would cost the player the seconds they are
+ * currently being timed on. It says what happened and gets out of the way.
+ */
+.secretToast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.2rem;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: min(22rem, calc(100vw - 1.5rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--good);
+  border-radius: 12px;
+  background: #0d1a16;
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.9);
+  animation: rise 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.secretToast b { font-size: 0.85rem; color: var(--good); }
+.secretToast span { font-size: 0.72rem; color: var(--chrome-dim); line-height: 1.45; }
+.secretToast i { font-style: normal; color: var(--chrome-ink); }
+@keyframes rise {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .secretToast { animation: none; } }

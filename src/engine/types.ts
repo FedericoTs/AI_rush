@@ -40,6 +40,18 @@ export interface LevelMeta {
   incompatibleModifiers: ModifierId[];
   /** Community-designed levels carry their author forever. */
   creator?: { handle: string; submissionId: string };
+  /**
+   * Locked content. Absent means the level is in the deck from the first run.
+   *
+   * `share` levels open when N distinct people have played a run that started
+   * from your link. `secret` levels are not earned at all — they are found.
+   *
+   * A locked level is worth exactly what its tier is worth and nothing more.
+   * That is deliberate and load-bearing: it is what stops sharing from being
+   * pay-to-win, and it is why nobody has any reason to forge their way past
+   * this field.
+   */
+  unlock?: { kind: "share"; credits: number } | { kind: "secret" };
 }
 
 export interface LevelProps {

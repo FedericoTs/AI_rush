@@ -6,6 +6,8 @@ import type { LevelResult } from "@/engine/types";
 import type { RunEvent } from "@/engine/scoring";
 import { causeOfDeath, shareText, verdict, xIntent } from "@/lib/share";
 import { CATALOG } from "@/levels/catalog";
+import { NOTHING_UNLOCKED, nextShareUnlock, unlockParams, type UnlockState } from "@/engine/unlocks";
+import { rememberKey, useRefreshedCredits, useUnlocks } from "@/lib/unlockStore";
 import { Handle } from "@/ui/Handle";
 import s from "./endgame.module.css";
 
@@ -36,6 +38,10 @@ export interface EndgameProps {
   runId: string | null;
   runSecret: string | null;
   challenge?: Challenge | null;
+  /** What this run was dealt with, so the share link reproduces it. */
+  unlocks?: UnlockState;
+  /** Whoever's link brought this player here. */
+  ref?: string | null;
 }
 
 /**
@@ -48,7 +54,7 @@ export interface EndgameProps {
 export function Endgame(props: EndgameProps) {
   const {
     score, breakdown, killedBy, elapsed, seedText, mercy, events, runId, runSecret,
-    challenge = null,
+    challenge = null, unlocks = NOTHING_UNLOCKED, ref = null,
   } = props;
   const [stage, setStage] = useState<Stage>("tally");
   const [shown, setShown] = useState(0);
@@ -59,6 +65,9 @@ export function Endgame(props: EndgameProps) {
   const [rows, setRows] = useState<BoardRow[]>([]);
   const [myHandle, setMyHandle] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [key, setKey] = useState<string | null>(null);
+  const mine = useUnlocks();
+  useRefreshedCredits(mine.key);
   const submitted = useRef(false);
   /* The run has to land before it can be ranked. A player who skips straight
      through can reach the claim box before the submit round-trip returns, so
@@ -93,6 +102,8 @@ export function Endgame(props: EndgameProps) {
         events,
         durationMs: elapsed,
         killedBy,
+        /* Credited server-side, and only if this turns out to be a real run. */
+        ref,
       }),
     })
       .then((r) => r.json())
@@ -100,7 +111,7 @@ export function Endgame(props: EndgameProps) {
         if (typeof r.rank === "number") setRank(r.rank);
       })
       .catch(() => {});
-  }, [offline, runId, runSecret, elapsed, killedBy, events]);
+  }, [offline, runId, runSecret, elapsed, killedBy, events, ref]);
 
   /* Overshoot into absurdity, then snap back to the truth. */
   useEffect(() => {
@@ -148,7 +159,9 @@ export function Endgame(props: EndgameProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ runId, runSecret, handle: clean }),
       });
-      const data = (await res.json()) as { ok?: boolean; rank?: number; reason?: string };
+      const data = (await res.json()) as {
+        ok?: boolean; rank?: number; reason?: string; key?: string | null;
+      };
       if (!data.ok) {
         setClaimError(
           data.reason === "bad_handle"
@@ -159,6 +172,14 @@ export function Endgame(props: EndgameProps) {
         return;
       }
       if (typeof data.rank === "number") setRank(data.rank);
+      /* The key is minted at claim time, because this is the one moment a
+         player has a name to hang unlocks on. It is a bearer secret: holding
+         it is what proves the credits are yours, since a typed handle proves
+         nothing at all. */
+      if (data.key) {
+        setKey(data.key);
+        rememberKey(data.key);
+      }
       await loadBoard(`@${clean}`);
     } catch {
       setClaimError("Could not reach the leaderboard. Your score still counts locally.");
@@ -171,10 +192,30 @@ export function Endgame(props: EndgameProps) {
   /* The challenge link carries the seed plus your name and number, so whoever
      opens it plays your exact run with your score to chase. No lobby, nobody
      has to be online, and it keeps working a year from now. */
-  const challengeUrl =
-    myHandle && origin
-      ? `${origin}/play?seed=${seedText}&vs=${encodeURIComponent(myHandle.replace(/^@+/, ""))}&target=${score}`
-      : url;
+  /*
+   * One link does both jobs.
+   *
+   * There is no separate "share to unlock" artifact, on purpose. The challenge
+   * link is already the thing people want to send — beat my run — so the
+   * referral key rides along on it and the unlock state travels with it, which
+   * is what keeps "same seed, same levels, same order" true even when the
+   * sharer has content the visitor has not opened.
+   */
+  const myKey = key ?? mine.key;
+  const challengeUrl = (() => {
+    if (!origin) return "";
+    if (!myHandle) return url;
+    const q = new URLSearchParams({
+      seed: seedText,
+      vs: myHandle.replace(/^@+/, ""),
+      target: String(score),
+      ...unlockParams(unlocks),
+      ...(myKey ? { k: myKey } : {}),
+    });
+    return `${origin}/play?${q.toString()}`;
+  })();
+
+  const nextUp = nextShareUnlock(CATALOG, { credits: mine.credits, secret: mine.secret });
   const post = shareText({
     score,
     solved,
@@ -304,6 +345,49 @@ export function Endgame(props: EndgameProps) {
             >
               {copied ? "Copied — now go and taunt them" : "Challenge a friend to this exact run"}
             </button>
+
+            {/*
+              * What sharing actually buys, stated plainly.
+              *
+              * Not "share for a reward" — the credit only lands when somebody
+              * plays, so the honest sentence is about a person turning up, and
+              * the honest sentence is also the one that describes a real
+              * referral rather than a click on a button.
+              */}
+            {myKey && nextUp && (
+              <div className={s.unlockBox} data-testid="unlock-progress">
+                <div className={s.unlockHead}>
+                  <span>Locked · {nextUp.meta.title}</span>
+                  <b>
+                    {mine.credits}/{nextUp.credits}
+                  </b>
+                </div>
+                <div className={s.unlockTrack}>
+                  <div
+                    className={s.unlockFill}
+                    style={{ width: `${Math.min(100, (mine.credits / nextUp.credits) * 100)}%` }}
+                  />
+                </div>
+                <p className={s.unlockNote}>
+                  {nextUp.credits - mine.credits === 1
+                    ? "One person has to open your link and actually play a run."
+                    : `${nextUp.credits - mine.credits} more people have to open your link and actually play a run.`}{" "}
+                  Posting it does nothing on its own — somebody has to turn up.
+                </p>
+              </div>
+            )}
+            {myKey && !nextUp && (
+              <div className={s.unlockBox}>
+                <div className={s.unlockHead}>
+                  <span>Everything unlocked</span>
+                  <b>{mine.credits}</b>
+                </div>
+                <p className={s.unlockNote}>
+                  {mine.credits} {mine.credits === 1 ? "person has" : "people have"} played a run
+                  from your link. There is nothing left to open — thank you, genuinely.
+                </p>
+              </div>
+            )}
             <a className={s.secondary} href="/play">
               Run it again
             </a>

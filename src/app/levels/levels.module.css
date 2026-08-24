@@ -62,3 +62,22 @@
   font-size: 0.8rem; color: var(--chrome-dim);
 }
 .labLink:hover { color: var(--good); border-color: var(--good); }
+
+/*
+ * Locked rows are listed, not hidden.
+ *
+ * A catalogue with holes in it is how you find out something exists, and a
+ * lock nobody can see is not a lock — it is an absence. What stays secret is
+ * the same thing that stays secret for every other level: what it does.
+ */
+.locked { cursor: default; opacity: 0.72; border-left-style: dashed; }
+.locked:hover { background: var(--chrome-2); }
+.locked .title { color: var(--chrome-dim); }
+.locked .go { color: var(--t-cursed); }
+.lockNote {
+  grid-column: 2 / -1;
+  font-size: 0.62rem;
+  color: var(--t-cursed);
+  line-height: 1.4;
+  margin-top: 0.15rem;
+}

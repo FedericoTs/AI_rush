@@ -11,6 +11,7 @@
 import { create } from "zustand";
 import type { CapabilitySet } from "@/input/capabilities";
 import { dealDeck, practiceDeck } from "./deck";
+import type { UnlockState } from "./unlocks";
 import type { DealtLevel, LevelModule, LevelResult } from "./types";
 import { comboFor, scoreLevel, RUN_DURATION_MS } from "./scoring";
 import type { RunEvent } from "./scoring";
@@ -54,6 +55,8 @@ export interface RunState {
     /** Play exactly these levels, in this order, instead of dealing a deck. */
     only?: readonly string[];
     durationMs?: number;
+    /** What this deck may contain. Carried in the link so a challenge repeats. */
+    unlocks?: UnlockState;
   }): void;
   enterLevel(): void;
   solve(): void;
@@ -89,10 +92,10 @@ const BLANK = {
 export const useRun = create<RunState>((set, get) => ({
   ...BLANK,
 
-  startRun({ seed, registry, capabilities, mercy = false, only, durationMs = RUN_DURATION_MS }) {
+  startRun({ seed, registry, capabilities, mercy = false, only, durationMs = RUN_DURATION_MS, unlocks }) {
     const deck = only
       ? practiceDeck({ registry, ids: only, capabilities })
-      : dealDeck({ seed, registry, capabilities, mercy });
+      : dealDeck({ seed, registry, capabilities, mercy, unlocks });
     set({
       ...BLANK,
       phase: "playing",

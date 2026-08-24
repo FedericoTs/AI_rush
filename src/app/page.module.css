@@ -328,3 +328,21 @@
   .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .foot { flex-direction: row; gap: 1.4rem; }
 }
+
+/*
+ * A locked specimen. Still pinned to the board.
+ *
+ * A gap where a level should be tells you nothing. A tile you cannot open
+ * tells you something is there and roughly what it costs, which is the whole
+ * reason the sheet is on the front page.
+ */
+.lockedTile {
+  composes: tile;
+  border-left: 2px dashed var(--t-cursed);
+  background: repeating-linear-gradient(
+    -45deg, var(--chrome), var(--chrome) 7px, var(--chrome-2) 7px, var(--chrome-2) 14px
+  );
+  cursor: default;
+}
+.lockedTile .tileId { color: var(--t-cursed); }
+.lockedTile .tileTitle { color: var(--chrome-dim); }

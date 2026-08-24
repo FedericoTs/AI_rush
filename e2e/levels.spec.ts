@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { CATALOG } from "../src/levels/catalog";
 
+/** What a first-time player can reach. Locked levels are earned or found. */
+const OPEN = CATALOG.filter((m) => !m.unlock);
+const LOCKED = CATALOG.filter((m) => m.unlock);
+
 /**
  * The level index and the practice room.
  *
@@ -14,10 +18,13 @@ test("the index lists every level in the catalogue", async ({ page }) => {
   await page.goto("/levels");
   await expect(page.getByRole("heading", { name: /AI RUSH/ })).toBeVisible();
 
+  /* Locked levels are listed too. A catalogue with holes in it is how you
+     find out something exists; a lock nobody can see is just an absence. */
   for (const level of CATALOG) {
     await expect(page.locator(`[data-level-id="${level.id}"]`)).toBeVisible();
   }
   await expect(page.locator("[data-level-id]")).toHaveCount(CATALOG.length);
+  await expect(page.locator("[data-locked='yes']")).toHaveCount(LOCKED.length);
 });
 
 test("each row says what the interface pretends to be, and not what it does", async ({ page }) => {
@@ -35,7 +42,7 @@ test("each row says what the interface pretends to be, and not what it does", as
  * reachable — if one of these ever fails, a level exists that nobody can get
  * to except by luck of the deal.
  */
-for (const level of CATALOG) {
+for (const level of OPEN) {
   test(`${level.id} can be played on its own`, async ({ page }) => {
     await page.goto(`/levels/${level.id}`);
 
@@ -54,14 +61,16 @@ test("clicking a row from the index starts that level", async ({ page }) => {
   await expect(page.locator('[data-level="L37"]')).toBeVisible();
 });
 
-test("play-all deals the whole catalogue in order", async ({ page }) => {
+/* "all" means all of yours. A fresh browser has opened nothing, so play-all
+   is the unlocked catalogue — not every level in the file. */
+test("play-all deals everything this browser has opened, in order", async ({ page }) => {
   await page.goto("/levels/all");
-  await expect(page.getByTestId("practice-tag")).toContainText(`PRACTICE 1/${CATALOG.length}`);
-  await expect(page.locator(`[data-level="${CATALOG[0]!.id}"]`)).toBeVisible();
+  await expect(page.getByTestId("practice-tag")).toContainText(`PRACTICE 1/${OPEN.length}`);
+  await expect(page.locator(`[data-level="${OPEN[0]!.id}"]`)).toBeVisible();
 
   await page.getByRole("button", { name: "SKIP THIS LEVEL" }).click();
-  await expect(page.getByTestId("practice-tag")).toContainText(`PRACTICE 2/${CATALOG.length}`);
-  await expect(page.locator(`[data-level="${CATALOG[1]!.id}"]`)).toBeVisible();
+  await expect(page.getByTestId("practice-tag")).toContainText(`PRACTICE 2/${OPEN.length}`);
+  await expect(page.locator(`[data-level="${OPEN[1]!.id}"]`)).toBeVisible();
 });
 
 test("a hand-written pair plays both, in the order given", async ({ page }) => {
@@ -188,4 +197,101 @@ test("L10's escape hatch is set in the same body text it hides in", async ({ pag
     clause.evaluate((el) => getComputedStyle(el).color),
   ]);
   expect(link).toBe(body);
+});
+
+/*
+ * Locked content, and the two ways it opens.
+ *
+ * The share ladder is verified server-side and cannot be exercised from here
+ * without a second real player, which is the point of it — so these cover the
+ * client half: what a locked level looks like, that the secret is genuinely
+ * findable, and that a share link carries its own deck.
+ */
+test("locked levels say what they are and how they open, without spoiling them", async ({ page }) => {
+  await page.goto("/levels");
+
+  for (const level of LOCKED) {
+    const row = page.locator(`[data-level-id="${level.id}"]`);
+    await expect(row).toHaveAttribute("data-locked", "yes");
+    await expect(row).not.toHaveAttribute("href", /./);
+    /* Still shows what it pretends to be. Never what it does. */
+    await expect(row).toContainText(level.parodies);
+  }
+});
+
+test("the front page sheet hides a locked level's name, not its existence", async ({ page }) => {
+  await page.goto("/");
+  const locked = page.locator("[data-home-level][data-locked='yes']");
+  await expect(locked).toHaveCount(LOCKED.length);
+  await expect(locked.first()).toContainText("Locked");
+  /* And the secret does not even advertise a price. */
+  await expect(page.getByText("Not for sale. Found.")).toBeVisible();
+});
+
+/*
+ * The one secret in the game.
+ *
+ * Every level's footer has carried two "Careers" links since the first one
+ * shipped. The second is real, nothing says so, and clicking it is the only
+ * way in.
+ */
+test("the duplicate Careers link in the footer opens the hidden level", async ({ page }) => {
+  await page.goto("/levels/L05");
+  await expect(page.locator('[data-level="L05"]')).toBeVisible();
+
+  const careers = page.locator('[data-secret="careers"]');
+  await expect(careers).toHaveCount(1);
+  await expect(careers).toHaveText("Careers");
+
+  await careers.click();
+  await expect(page.getByText("You read the footer.")).toBeVisible();
+
+  /* And it stays open. */
+  await page.goto("/levels");
+  await expect(page.locator('[data-level-id="L49"]')).not.toHaveAttribute("data-locked", "yes");
+  await page.goto("/levels/L49");
+  await expect(page.locator('[data-level="L49"]')).toBeVisible();
+});
+
+test("the hidden level is the one exam the game has been setting all along", async ({ page }) => {
+  await page.goto("/levels/L05");
+  await page.locator('[data-secret="careers"]').click();
+  await page.goto("/levels/L49");
+
+  await expect(page.getByText(/You found this by reading a footer/)).toBeVisible();
+  await page.getByRole("button", { name: "The red one on the right" }).click();
+  await page
+    .getByRole("button", { name: /Read the body text and find the line/ })
+    .click();
+  await page.getByRole("button", { name: "Eight grey pixels below the fold" }).click();
+  await page.getByRole("button", { name: "Submit application" }).click();
+
+  await expect(page.getByTestId("final-score")).toHaveText("1/1");
+});
+
+/*
+ * A challenge link carries the sharer's unlock state, so their run reproduces
+ * exactly — which means whoever opens it gets to play a level they have not
+ * opened themselves. That is a much better advertisement than a description.
+ */
+test("a share link deals the sharer's deck, locked levels included", async ({ page }) => {
+  await page.goto("/play?seed=SHARE1&u=3&x=1");
+  await expect(page.getByTestId("clock")).toBeVisible();
+
+  /* Same link, same deck, every time — the promise the head-to-head rests on. */
+  const first = await page.locator("[data-level]").getAttribute("data-level");
+  await page.goto("/play?seed=SHARE1&u=3&x=1");
+  await expect(page.locator("[data-level]")).toHaveAttribute("data-level", first!);
+
+  /* And without the unlock params the same seed deals a different deck, which
+     is exactly why the params have to travel. */
+  await page.goto("/play?seed=SHARE1");
+  await expect(page.locator("[data-level]")).toBeVisible();
+});
+
+test("an unlocked run posts no score of its own — sharing is not pay-to-win", async ({ page }) => {
+  await page.goto("/levels");
+  await expect(
+    page.getByText(/A locked level is worth exactly what its tier is worth/),
+  ).toBeVisible();
 });

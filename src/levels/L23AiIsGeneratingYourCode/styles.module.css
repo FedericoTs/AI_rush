@@ -1,0 +1,90 @@
+.thread {
+  border: 1px solid var(--slop-line);
+  border-radius: 12px;
+  padding: 0.7rem;
+  background: var(--slop-soft);
+}
+
+.who {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.68rem; font-weight: 700; color: #4b5563; margin-bottom: 0.4rem;
+}
+.avatar {
+  width: 1.1rem; height: 1.1rem; border-radius: 50%;
+  background: var(--slop-grad); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem;
+}
+.typing {
+  margin-left: auto; font-family: var(--font-mono); font-size: 0.56rem;
+  font-weight: 400; color: #9ca3af;
+}
+
+.bubble {
+  background: #fff;
+  border: 1px solid var(--slop-line);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: #374151;
+  white-space: pre-wrap;
+  min-height: 8.5rem;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.42rem; height: 0.85rem;
+  background: var(--slop-1);
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: blink 1s steps(2) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+
+/*
+ * The solve.
+ *
+ * Nine pixels, grey, under the bubble, present from the first frame. It has to
+ * be legible — this is the honest path, not decoration — and it has to be the
+ * last thing anyone looks at, which is what the size and the colour buy.
+ */
+.sources {
+  margin-top: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.5;
+  color: #9ca3af;
+  word-break: break-all;
+}
+
+.label { display: block; font-size: 0.7rem; font-weight: 600; color: #374151; margin: 0.8rem 0 0.25rem; }
+
+.row { display: flex; gap: 0.5rem; }
+.input {
+  flex: 1; min-width: 0;
+  font: inherit; font-family: var(--font-mono); font-size: 1rem; letter-spacing: 0.1em;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--slop-line); border-radius: 10px;
+  background: #fff; color: var(--slop-ink);
+}
+.input:focus-visible { outline: 2px solid var(--slop-1); outline-offset: 1px; }
+
+.go {
+  border: none; border-radius: 10px; padding: 0.55rem 1rem;
+  background: var(--slop-grad); color: #fff; font-weight: 700; font-size: 0.85rem;
+}
+
+/* The way out that is not the way out. */
+.regen {
+  width: 100%;
+  margin-top: 0.5rem;
+  border: 1px solid var(--slop-line);
+  background: #fff;
+  color: #6b7280;
+  border-radius: 10px;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+}
+.regen:hover { color: var(--slop-1); border-color: var(--slop-1); }

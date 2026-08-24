@@ -15,6 +15,7 @@
 import type { CapabilityMark } from "./rng";
 import { streamFor, type Rng } from "./rng";
 import type { DealtLevel, InputCapability, LevelModule, ModifierId, Tier } from "./types";
+import { NOTHING_UNLOCKED, isUnlocked, type UnlockState } from "./unlocks";
 import {
   ALL_MODIFIERS, MAX_CONCURRENT_MODIFIERS, MERCY_SAFE_MODIFIERS, MODIFIERS_START_SEC,
 } from "./chaos/modifiers";
@@ -48,6 +49,12 @@ export interface DealOptions {
   registry: readonly LevelModule[];
   capabilities: CapabilitySet;
   mercy?: boolean;
+  /**
+   * What this deck is allowed to contain. Carried in the seed link so a
+   * challenge reproduces exactly — a run dealt with content you have opened
+   * plays the same for whoever follows the link.
+   */
+  unlocks?: UnlockState;
 }
 
 function tiersAt(sec: number): readonly Tier[] {
@@ -85,12 +92,13 @@ const CONSTRAINTS: ReadonlyArray<{
 ];
 
 export function dealDeck(opts: DealOptions): DealtLevel[] {
-  const { seed, registry, capabilities, mercy = false } = opts;
+  const { seed, registry, capabilities, mercy = false, unlocks = NOTHING_UNLOCKED } = opts;
   const rng = streamFor(seed, "deck");
 
   /* 1. What can this device and this player actually play? */
   const playable = registry.filter((mod) => {
     if (mod.meta.id === HONEST_LEVEL_ID) return false; // dealt separately
+    if (!isUnlocked(mod.meta, unlocks)) return false;
     const missing = missingCaps(mod, capabilities);
     if (missing.length > 0 && !mod.Fallback) return false;
     if (mercy && missing.length === 0 && needsPermission(mod)) return false;

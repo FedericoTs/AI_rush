@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { formatClock } from "@/engine/clock";
-import { ALL_LEVEL_IDS, META_BY_ID } from "@/levels/catalog";
+import { CATALOG, META_BY_ID } from "@/levels/catalog";
+import { isUnlocked } from "@/engine/unlocks";
+import { useUnlocks } from "@/lib/unlockStore";
 import type { LevelResult } from "@/engine/types";
 import s from "./endgame.module.css";
 
@@ -30,11 +32,20 @@ const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
  */
 export function PracticeEnd({ breakdown, elapsed, ids }: PracticeEndProps) {
   const solved = breakdown.filter((b) => !b.skipped);
+  const mine = useUnlocks();
+
+  /* `/levels/all` means "all of mine", so a play-all is however many this
+     browser has opened — not the size of the catalogue. Recognising it keeps
+     "run it again" a short link instead of twenty-five ids. */
+  const openIds = CATALOG.filter((m) =>
+    isUnlocked(m, { credits: mine.credits, secret: mine.secret }),
+  ).map((m) => m.id);
+  const wasAll = ids.length === openIds.length && ids.every((id, i) => id === openIds[i]);
+
   /* Deliberately without the seed: another go at a level you just lost to
      should deal you a different one of it, not a replay of the attempt you
      have already learned. */
-  const again =
-    ids.length === ALL_LEVEL_IDS.length ? "/levels/all" : `/levels/${ids.join(",")}`;
+  const again = wasAll ? "/levels/all" : `/levels/${ids.join(",")}`;
 
   return (
     <div className={s.wrap}>
