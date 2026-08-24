@@ -18,7 +18,8 @@ interface killed you.
 
 ## Status
 
-**Phase 1 complete.** The engine is built and tested; six levels are playable.
+**Live at [ai-rush.vercel.app](https://ai-rush.vercel.app).** Fourteen levels,
+a working leaderboard, seeded challenge links.
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what remains.
 
 ```bash
@@ -39,11 +40,11 @@ npm run e2e            # Playwright, desktop and mobile
 | Input adapters: pointer, keyboard, motion, mic, camera, haptics | `src/input/adapters/` |
 | Scripted traces, so sensor levels are testable in CI | `src/input/__mocks__/` |
 | The slop design system | `src/ui/slop/` |
-| L01, L02, L11, L12, L36, L37 | `src/levels/` |
+| 14 levels across all four tiers | `src/levels/` |
 
-Not built yet: no backend is provisioned, there is no leaderboard, no share
-card, no calibration screen, and no chaos modifier rendering — the schedule
-exists and is tested, but the visual effects are Phase 5.
+Not built yet: no calibration screen, no sensor levels, and no chaos modifier
+*rendering* — the schedule exists and is tested, but nothing draws the effects
+until Phase 5. Level submissions are specified and not yet built.
 
 The original single-file prototype stays in [`prototype/`](prototype/) as the
 reference these were ported from.

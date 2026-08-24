@@ -1,0 +1,20 @@
+.target {
+  font-size: 0.82rem; color: var(--slop-ink); background: var(--slop-soft);
+  border: 1px solid var(--slop-line); border-radius: 9px; padding: 0.55rem 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.target b { color: var(--slop-1); }
+.input {
+  width: 100%; font: inherit; font-size: 0.95rem; padding: 0.62rem 0.7rem;
+  border: 1.5px solid var(--slop-line); border-radius: 9px 9px 0 0; background: #fff; color: var(--slop-ink);
+}
+.input:focus { outline: none; border-color: var(--slop-1); }
+.list { border: 1.5px solid var(--slop-line); border-top: none; border-radius: 0 0 9px 9px; overflow: hidden; }
+.option {
+  display: block; width: 100%; text-align: left; border: none; background: #fff;
+  padding: 0.5rem 0.7rem; font-size: 0.8rem; color: var(--slop-ink); cursor: pointer;
+  border-bottom: 1px solid #f1f2f5;
+}
+.option:last-child { border-bottom: none; }
+.option:hover, .option:focus-visible { background: var(--slop-soft); }
+.empty { padding: 0.6rem 0.7rem; font-size: 0.78rem; color: var(--slop-dim); background: #fff; }

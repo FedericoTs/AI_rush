@@ -1,0 +1,23 @@
+.maze {
+  position: relative; width: 100%; border: 1px solid var(--slop-line);
+  border-radius: 12px; background: var(--slop-soft); overflow: hidden;
+  touch-action: none; user-select: none; aspect-ratio: 12 / 5;
+}
+.cell { position: absolute; background: #e7e3f8; }
+.done { background: #cfc4f2; }
+.goal { background: #b9a9ee; }
+
+.handle {
+  position: absolute; border-radius: 50%; background: linear-gradient(180deg, #fff, #e7e2f7);
+  border: 1.5px solid var(--slop-1); box-shadow: 0 1px 4px rgba(80, 50, 160, 0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; color: var(--slop-1); cursor: grab; z-index: 2;
+}
+.handle:active { cursor: grabbing; }
+.handle:focus-visible { outline: 2px solid var(--hazard); outline-offset: 2px; }
+
+.progress {
+  font-family: var(--font-mono); font-size: 0.64rem; color: var(--slop-dim);
+  display: flex; justify-content: space-between; margin-top: 0.5rem;
+}
+.slipped { color: #dc2626; }

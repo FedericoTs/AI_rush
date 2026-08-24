@@ -46,7 +46,8 @@ reproduction. 98 unit tests, 10 e2e.
 - [x] `input/__mocks__/scripted.ts` — recorded traces for motion/audio/camera
 - [x] `engine/sfx.ts` — WebAudio, gesture unlock, plus a silent test double
 - [x] `ui/slop/` — the design system and the seeded phrase bank
-- [x] Six real levels instead of three placeholders: L01, L02, L11, L12, L36, L37
+- [x] Fourteen real levels instead of three placeholders, covering every tier:
+      L01, L02, L04, L05, L11, L12, L16, L18, L22, L27, L28, L36, L37, L42
 
 **The tests that matter most:**
 

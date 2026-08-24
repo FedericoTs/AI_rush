@@ -1,0 +1,27 @@
+.arena {
+  position: relative; height: 200px; margin-top: 0.7rem;
+  border: 1px dashed var(--slop-line); border-radius: 12px; background: var(--slop-soft);
+  overflow: hidden; touch-action: none;
+}
+.countdown {
+  position: absolute; top: 0.5rem; left: 0; right: 0; text-align: center;
+  font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700;
+  color: var(--slop-dim); font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.urgent { color: #dc2626; }
+.yes {
+  position: absolute; border: none; border-radius: 10px; padding: 0.6rem 1.1rem;
+  background: #10b981; color: #fff; font-weight: 700; font-size: 0.9rem;
+  box-shadow: 0 4px 12px -4px rgba(16, 185, 129, 0.7); cursor: pointer;
+  transition: left 0.18s ease-out, top 0.18s ease-out;
+}
+.calm { transition: left 0.6s ease-out, top 0.6s ease-out; }
+.no {
+  position: absolute; right: 0.6rem; bottom: 0.6rem; border: 1px solid var(--slop-line);
+  background: #fff; color: var(--slop-dim); border-radius: 10px;
+  padding: 0.5rem 0.9rem; font-size: 0.8rem; cursor: pointer;
+}
+.tip {
+  position: absolute; left: 0.6rem; bottom: 0.7rem;
+  font-family: var(--font-mono); font-size: 0.56rem; color: #c3c8d0;
+}

@@ -1,0 +1,16 @@
+.field { margin-bottom: 0.7rem; }
+.field label {
+  display: block; font-size: 0.74rem; font-weight: 600; color: var(--slop-dim); margin-bottom: 0.25rem;
+}
+.field input {
+  width: 100%; font: inherit; font-family: var(--font-mono); font-size: 0.95rem;
+  padding: 0.6rem 0.7rem; border: 1.5px solid var(--slop-line); border-radius: 9px;
+  background: #fff; color: var(--slop-ink); letter-spacing: 0.08em;
+}
+.field input:focus { outline: 2px solid var(--slop-1); outline-offset: 1px; border-color: var(--slop-1); }
+.match {
+  font-size: 0.74rem; font-weight: 500; margin-top: 0.5rem;
+  display: flex; align-items: center; gap: 0.35rem;
+}
+.no { color: #dc2626; }
+.yes { color: #128a6a; }

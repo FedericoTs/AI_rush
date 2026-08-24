@@ -1,0 +1,31 @@
+.readout {
+  display: flex; align-items: baseline; justify-content: center; gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+.value {
+  font-family: var(--font-mono); font-size: 2rem; font-weight: 800;
+  font-variant-numeric: tabular-nums; color: var(--slop-ink); line-height: 1;
+}
+.unit { font-size: 0.78rem; color: var(--slop-dim); }
+.ok .value { color: #128a6a; }
+
+.track { width: 100%; margin: 0.2rem 0 0.4rem; accent-color: var(--slop-1); }
+.scale {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 0.56rem; color: #b6bcc7;
+}
+
+/* The escape hatch. Present from the start, but quiet enough that nobody
+   finds it before they have suffered a little. */
+.fine {
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  margin-top: 0.7rem; opacity: 0; transition: opacity 0.6s ease-in;
+}
+.fineOn { opacity: 1; }
+.fine button {
+  border: 1px solid var(--slop-line); background: #fff; border-radius: 7px;
+  padding: 0.3rem 0.7rem; font-size: 0.85rem; line-height: 1; color: var(--slop-dim);
+  cursor: pointer; font-family: var(--font-mono);
+}
+.fine button:active { background: var(--slop-soft); }
+.fine span { font-family: var(--font-mono); font-size: 0.58rem; color: #b6bcc7; }

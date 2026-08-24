@@ -65,17 +65,24 @@ test("the runner keeps its state across a clock second boundary", async ({ page 
 test("the canvas is actually being drawn", async ({ page }) => {
   test.skip(!(await reachRunner(page)), "L11 not in this deck");
 
+  /* Compare the pixels, not their encoded length — two different frames
+     encode to the same byte count often enough to make that a flake. */
   const frame = () =>
     page.evaluate(() => {
-      const c = document.querySelector("canvas");
-      return c ? (c as HTMLCanvasElement).toDataURL().length : 0;
+      const c = document.querySelector("canvas") as HTMLCanvasElement | null;
+      return c ? c.toDataURL() : "";
     });
 
-  const a = await frame();
-  await page.waitForTimeout(350);
-  const b = await frame();
-  expect(a).toBeGreaterThan(0);
-  expect(b).not.toBe(a);
+  const first = await frame();
+  expect(first.length).toBeGreaterThan(0);
+
+  /* Sample a few times: the scene is briefly static right after a death. */
+  let changed = false;
+  for (let i = 0; i < 6 && !changed; i++) {
+    await page.waitForTimeout(200);
+    changed = (await frame()) !== first;
+  }
+  expect(changed).toBe(true);
 });
 
 test("keyboard jumps reach the level rather than scrolling the page", async ({ page }) => {
