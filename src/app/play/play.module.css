@@ -5,7 +5,7 @@
   border-bottom: 1px solid var(--chrome-line); background: var(--chrome);
   position: sticky; top: 0; z-index: 20;
 }
-.mark { font-weight: 800; font-size: 0.78rem; letter-spacing: -0.01em; }
+.mark { display: flex; align-items: center; gap: 0.35rem; font-weight: 800; font-size: 0.78rem; letter-spacing: -0.01em; }
 .mark i { font-style: normal; color: var(--hazard); }
 .spacer { flex: 1; }
 .stat { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.72rem; color: var(--chrome-dim); }

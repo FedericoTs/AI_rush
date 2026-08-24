@@ -1,0 +1,23 @@
+.logo { display: block; flex: none; }
+
+.frame { fill: var(--chrome-ink); }
+.text { fill: #5d6a7a; }
+.good { fill: var(--good); }
+.hazard { fill: var(--hazard); }
+
+/*
+ * The button that does not fit, blinking.
+ *
+ * Slow and low-contrast on purpose: it is the only moving thing on the mark,
+ * and a logo that flashes at you is a logo people learn to look away from.
+ */
+.blink .hazard { animation: wink 4.2s steps(1, end) infinite; }
+@keyframes wink {
+  0%, 92% { opacity: 1; }
+  94%, 98% { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blink .hazard { animation: none; }
+}

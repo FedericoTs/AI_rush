@@ -3,6 +3,7 @@ import { TIER_BASE } from "@/engine/scoring";
 import type { InputCapability, LevelMeta, Tier } from "@/engine/types";
 import { CATALOG } from "@/levels/catalog";
 import { LockedRow } from "./LockedRow";
+import { Logo } from "@/ui/logo/Logo";
 import s from "./levels.module.css";
 
 export const metadata = {
@@ -46,6 +47,7 @@ export default function Levels() {
   return (
     <main className={s.shell}>
       <div className={s.head}>
+        <Logo size={22} />
         <h1>
           AI <i>RUSH</i>
         </h1>

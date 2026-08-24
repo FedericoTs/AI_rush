@@ -1,6 +1,6 @@
 .shell { width: 100%; max-width: 620px; flex: 1; display: flex; flex-direction: column; padding: 1rem 0.75rem 3rem; gap: 1rem; }
 
-.head { display: flex; align-items: baseline; gap: 0.6rem; }
+.head { display: flex; align-items: center; gap: 0.5rem; }
 .head h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; }
 .head h1 i { font-style: normal; color: var(--hazard); }
 .sp { flex: 1; }

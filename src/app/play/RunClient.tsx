@@ -15,6 +15,7 @@ import type { DealtLevel, InputCapability } from "@/engine/types";
 import { Endgame, type Challenge } from "./Endgame";
 import { PracticeEnd } from "./PracticeEnd";
 import { Handle } from "@/ui/Handle";
+import { Logo } from "@/ui/logo/Logo";
 import { MODIFIERS } from "@/engine/chaos/modifiers";
 import { SECRET_FOUND } from "@/ui/slop/Slop";
 import { detectPassive } from "@/input/capabilities";
@@ -383,6 +384,7 @@ function RunStage(props: {
         */}
       <div className={s.hud}>
         <div className={s.mark}>
+          <Logo size={13} />
           AI&nbsp;<i>RUSH</i>
         </div>
         {practice ? (

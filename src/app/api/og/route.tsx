@@ -1,21 +1,27 @@
 import { ImageResponse } from "next/og";
 import { CATALOG } from "@/levels/catalog";
+import { CURSOR_H, CURSOR_W, cursorSvg } from "@/ui/logo/cursor";
+import { logoSvg } from "@/ui/logo/pixels";
 import { ARCHIVO_BLACK, INTER_REGULAR } from "./font";
 
 /**
  * The share card.
  *
  * It gets about a second in a timeline, next to somebody's post that already
- * carries the personal detail — the score, the level that killed them. So the
- * card's job is not to repeat that. It is to make a stranger understand what
- * they are looking at before they scroll past.
+ * carries the score and the level that killed them. So its job is not to
+ * repeat that — it is to make a stranger understand, before they scroll past,
+ * that this is a game about interfaces behaving badly.
  *
- * Deliberately not a centred wordmark on a gradient. That is the look of every
- * interface inside this game, and it is also the look of every other card in
- * the timeline. This one is a pinboard: ruled paper, a heavy poster wordmark,
- * a sticker at an angle a grid would never produce, and the specimen sheet
- * along the bottom — the same object the front page is built around, so the
- * card and the site are recognisably the same place.
+ * Which is why it is not a wordmark on a background. It is a desktop that has
+ * gone wrong: four slop dialogs thrown across it at angles nothing laid out,
+ * overlapping, each one a real level's worth of nonsense — a green Cancel next
+ * to a red Continue, a progress bar going backwards, a password field that
+ * cannot be satisfied, a verification code the assistant has changed its mind
+ * about twice. The pixel cursor is parked on the red button.
+ *
+ * The wordmark sits under all of it on a hazard slab, because the card has to
+ * survive being 300px wide in a feed, and at that size the only things left
+ * are the shape of the pile and the two words.
  */
 
 const WRITTEN = 48;
@@ -25,12 +31,7 @@ const HAZARD = "#FF4A2B";
 const LINE = "#232B37";
 const BG = "#0B0E13";
 
-const TIER_COLOR: Record<string, string> = {
-  annoying: "#8593A5",
-  cursed: "#F0A12E",
-  unhinged: "#FF4A2B",
-  forbidden: "#A855F7",
-};
+const dataUri = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
 /** Ruled paper, drawn as real lines: satori has no repeating-gradient. */
 function grid() {
@@ -39,7 +40,7 @@ function grid() {
     lines.push(
       <div
         key={`v${x}`}
-        style={{ position: "absolute", left: x, top: 0, width: 1, height: 675, background: "rgba(233,238,244,0.030)" }}
+        style={{ position: "absolute", left: x, top: 0, width: 1, height: 675, background: "rgba(233,238,244,0.028)" }}
       />,
     );
   }
@@ -47,18 +48,49 @@ function grid() {
     lines.push(
       <div
         key={`h${y}`}
-        style={{ position: "absolute", left: 0, top: y, width: 1200, height: 1, background: "rgba(233,238,244,0.030)" }}
+        style={{ position: "absolute", left: 0, top: y, width: 1200, height: 1, background: "rgba(233,238,244,0.028)" }}
       />,
     );
   }
   return lines;
 }
 
+/** One slop dialog, thrown down at whatever angle it landed at. */
+function Card({
+  x, y, rot, w, title, children,
+}: {
+  x: number; y: number; rot: number; w: number; title: string; children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: w,
+        display: "flex",
+        flexDirection: "column",
+        transform: `rotate(${rot}deg)`,
+        background: "#FFFFFF",
+        borderRadius: 14,
+        padding: "16px 18px",
+        boxShadow: "0 24px 60px -20px rgba(0,0,0,0.85)",
+      }}
+    >
+      <div style={{ display: "flex", fontSize: 20, fontWeight: 700, color: "#111827", marginBottom: 10 }}>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Big enough to read at 300px wide, which is the size that actually ships. */
+const CURSOR_SCALE = 3.4;
+
 export function GET() {
-  /* One row of the sheet. Five rather than the whole catalogue: at this size
-     more tiles means every title truncated to nonsense, and the strip only has
-     to read as a sample of a bigger collection. */
-  const strip = CATALOG.slice(0, 5);
+  const cursor = dataUri(cursorSvg());
+  const mark = dataUri(logoSvg());
 
   return new ImageResponse(
     (
@@ -67,7 +99,6 @@ export function GET() {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
           background: BG,
           position: "relative",
           fontFamily: "Inter",
@@ -75,122 +106,168 @@ export function GET() {
       >
         {grid()}
 
-        {/* Masthead, same words as the site's */}
+        {/* ── the pile ─────────────────────────────────────────── */}
+
+        {/* A progress bar that has gone backwards. */}
+        <Card x={628} y={46} rot={-7} w={330} title="Loading your dashboard…">
+          <div style={{ display: "flex", width: "100%", height: 12, borderRadius: 6, background: "#E5E7EB" }}>
+            <div style={{ display: "flex", width: "13%", height: 12, borderRadius: 6, background: "#7C3AED" }} />
+          </div>
+          <div style={{ display: "flex", fontSize: 15, color: "#9CA3AF", marginTop: 8 }}>
+            99% · 12% · almost there!
+          </div>
+        </Card>
+
+        {/* Requirements that cannot all be true at once. */}
+        <Card x={846} y={286} rot={6} w={318} title="Password requirements">
+          {[
+            ["✅", "At least 8 characters", "#059669"],
+            ["⬜", "A prime number of vowels", "#9CA3AF"],
+            ["⬜", "Must not contain today", "#9CA3AF"],
+          ].map(([mark_, text, colour]) => (
+            <div key={text} style={{ display: "flex", fontSize: 16, color: colour, marginBottom: 4 }}>
+              {mark_} {text}
+            </div>
+          ))}
+        </Card>
+
+        {/* An assistant that has changed its mind twice. */}
+        <Card x={598} y={452} rot={3} w={342} title="Your verification code">
+          <div style={{ display: "flex", fontSize: 16, color: "#4B5563", lineHeight: 1.4 }}>
+            Your code is 481516. Wait — actually 233761. Apologies, one correction: 902244.
+          </div>
+        </Card>
+
+        {/* The thesis, on top of the pile, with the cursor on the red one. */}
+        <Card x={548} y={168} rot={-2} w={368} title="Ready to get started? ✨">
+          <div style={{ display: "flex", gap: 12 }}>
+            <div
+              style={{
+                display: "flex", flex: 1, justifyContent: "center",
+                background: "#DCFCE7", color: "#15803D", borderRadius: 10,
+                padding: "12px 0", fontSize: 19, fontWeight: 700,
+              }}
+            >
+              Cancel
+            </div>
+            <div
+              style={{
+                display: "flex", flex: 1, justifyContent: "center",
+                background: "#EF4444", color: "#FFFFFF", borderRadius: 10,
+                padding: "12px 0", fontSize: 19, fontWeight: 700,
+              }}
+            >
+              ⚠ Continue
+            </div>
+          </div>
+        </Card>
+
+        {/*
+          * Parked on the destructive button, because that is the answer.
+          *
+          * The tip is the top-left pixel of the sprite, so the coordinates
+          * below are where it is *pointing* — the lower right of the red
+          * button, clear of its label and unambiguously inside it.
+          */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={cursor}
+          width={CURSOR_W * CURSOR_SCALE}
+          height={CURSOR_H * CURSOR_SCALE}
+          alt=""
+          style={{ position: "absolute", left: 870, top: 243 }}
+        />
+
+        {/* ── the mark, under all of it ────────────────────────── */}
         <div
           style={{
+            position: "absolute",
+            left: 56,
+            top: 132,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={mark} width={54} height={54} alt="" />
+            <div style={{ display: "flex", fontSize: 19, letterSpacing: "0.2em", color: DIM }}>
+              HOSTILE INTERFACE SPEEDRUN
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              fontFamily: "Archivo Black",
+              fontSize: 116,
+              letterSpacing: "-0.03em",
+              lineHeight: 0.9,
+              color: INK,
+            }}
+          >
+            AI
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontFamily: "Archivo Black",
+              fontSize: 116,
+              letterSpacing: "-0.03em",
+              lineHeight: 0.96,
+              color: HAZARD,
+            }}
+          >
+            RUSH
+          </div>
+
+          <div style={{ display: "flex", fontSize: 27, color: INK, marginTop: 22, maxWidth: 430, lineHeight: 1.3 }}>
+            Every one is solvable. None of them are fair.
+          </div>
+        </div>
+
+        {/* The sticker. The only thing on the card that ignores the grid. */}
+        <div
+          style={{
+            position: "absolute",
+            left: 384,
+            top: 58,
+            display: "flex",
+            transform: "rotate(9deg)",
+            background: HAZARD,
+            color: "#140603",
+            fontFamily: "Archivo Black",
+            fontSize: 52,
+            letterSpacing: "-0.02em",
+            padding: "12px 20px",
+            borderRadius: 6,
+          }}
+        >
+          5:00
+        </div>
+
+        {/* ── the footer strip ─────────────────────────────────── */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            bottom: 0,
+            width: 1200,
             display: "flex",
             alignItems: "center",
-            padding: "20px 56px",
-            borderBottom: `1px solid ${LINE}`,
+            padding: "18px 56px",
+            borderTop: `1px solid ${LINE}`,
             background: "#141922",
-            fontSize: 19,
-            letterSpacing: "0.22em",
+            fontSize: 20,
+            letterSpacing: "0.12em",
             color: DIM,
           }}
         >
-          <div style={{ display: "flex" }}>HOSTILE INTERFACE SPEEDRUN</div>
+          <div style={{ display: "flex" }}>
+            {CATALOG.length}/{WRITTEN} BUILT · SOLVE OR SKIP · THE CLOCK DOES NOT STOP
+          </div>
           <div style={{ display: "flex", flex: 1 }} />
-          <div style={{ display: "flex", color: INK }}>
-            {CATALOG.length}/{WRITTEN} BUILT
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flex: 1, padding: "44px 56px 0", position: "relative" }}>
-          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                fontFamily: "Archivo Black",
-                fontSize: 116,
-                letterSpacing: "-0.03em",
-                lineHeight: 0.86,
-              }}
-            >
-              <div style={{ display: "flex", color: INK }}>AI</div>
-              <div style={{ display: "flex", color: HAZARD }}>RUSH</div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 26, maxWidth: 760 }}>
-              <div style={{ display: "flex", fontSize: 30, color: INK, lineHeight: 1.3 }}>
-                Interfaces built by something that has seen a million forms and understood
-                none of them.
-              </div>
-              <div style={{ display: "flex", fontSize: 23, color: DIM }}>
-                Every one is solvable. None of them are fair.
-              </div>
-            </div>
-          </div>
-
-          {/* The sticker. The only thing on the card that ignores the grid. */}
-          <div
-            style={{
-              position: "absolute",
-              top: 52,
-              right: 56,
-              display: "flex",
-              transform: "rotate(7deg)",
-              background: HAZARD,
-              color: "#140603",
-              fontFamily: "Archivo Black",
-              fontSize: 58,
-              letterSpacing: "-0.02em",
-              padding: "14px 24px",
-              borderRadius: 6,
-            }}
-          >
-            5:00
-          </div>
-          <div
-            style={{
-              position: "absolute",
-              top: 152,
-              right: 74,
-              display: "flex",
-              transform: "rotate(-3deg)",
-              background: INK,
-              color: BG,
-              fontSize: 20,
-              letterSpacing: "0.16em",
-              padding: "8px 14px",
-              borderRadius: 4,
-            }}
-          >
-            NO PAUSE
-          </div>
-        </div>
-
-        {/* The sheet */}
-        <div style={{ display: "flex", flexDirection: "column", padding: "0 56px 34px" }}>
-          <div style={{ display: "flex", border: `1px solid ${LINE}` }}>
-            {strip.map((m, i) => (
-              <div
-                key={m.id}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  flex: 1,
-                  gap: 4,
-                  padding: "12px 10px",
-                  borderLeft: `3px solid ${TIER_COLOR[m.tier] ?? DIM}`,
-                  ...(i > 0 ? { marginLeft: 1 } : {}),
-                }}
-              >
-                <div style={{ display: "flex", fontSize: 15, letterSpacing: "0.1em", color: TIER_COLOR[m.tier] ?? DIM }}>
-                  {m.id}
-                </div>
-                <div style={{ display: "flex", fontSize: 19, color: INK, lineHeight: 1.2 }}>
-                  {m.title}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: "flex", marginTop: 16, fontSize: 21, letterSpacing: "0.12em", color: DIM }}>
-            <div style={{ display: "flex" }}>SOLVE OR SKIP · THE CLOCK DOES NOT STOP EITHER WAY</div>
-            <div style={{ display: "flex", flex: 1 }} />
-            <div style={{ display: "flex", color: INK }}>ai-rush.vercel.app</div>
-          </div>
+          <div style={{ display: "flex", color: INK }}>ai-rush.vercel.app</div>
         </div>
       </div>
     ),

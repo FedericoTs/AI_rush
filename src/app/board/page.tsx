@@ -2,6 +2,7 @@ import Link from "next/link";
 import { boardTop, dbConfigured, liveStats } from "@/lib/db";
 import { Handle } from "@/ui/Handle";
 import { LiveDot } from "@/ui/LiveDot";
+import { Logo } from "@/ui/logo/Logo";
 import s from "./board.module.css";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export default async function Board({
   return (
     <main className={s.shell}>
       <div className={s.head}>
+        <Logo size={22} />
         <h1>
           AI <i>RUSH</i>
         </h1>

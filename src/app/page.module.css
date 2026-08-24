@@ -49,10 +49,26 @@
 }
 
 /* ─── hero ───────────────────────────────────────────────── */
-.hero { position: relative; padding: 0.2rem 0 0.4rem; }
+.hero {
+  position: relative;
+  padding: 0.2rem 0 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
 
+/*
+ * The wordmark, arriving badly.
+ *
+ * One 700ms glitch on load and then it never moves again: a channel split, a
+ * couple of dropped frames, and it settles. It is the only thing on the page
+ * that behaves like the interfaces inside the game, and it does it once, on
+ * the way in, before anything is being timed.
+ */
 .title {
   margin: 0;
+  animation: arrive 700ms steps(1, end) both;
   font-family: var(--font-display);
   font-size: clamp(3.6rem, 21vw, 6.4rem);
   line-height: 0.82;
@@ -346,3 +362,69 @@
 }
 .lockedTile .tileId { color: var(--t-cursed); }
 .lockedTile .tileTitle { color: var(--chrome-dim); }
+
+
+/* ─── motion, all of it optional ─────────────────────────── */
+
+@keyframes arrive {
+  0%   { opacity: 0; transform: translateX(-6px); }
+  20%  { opacity: 1; transform: translateX(5px); text-shadow: -4px 0 var(--hazard), 4px 0 #2563eb; }
+  40%  { transform: translateX(-2px); text-shadow: 3px 0 var(--hazard), -3px 0 #2563eb; }
+  55%  { opacity: 0.4; transform: translateX(1px); text-shadow: none; }
+  70%  { opacity: 1; transform: translateX(-1px); text-shadow: -1px 0 var(--hazard); }
+  100% { opacity: 1; transform: translateX(0); text-shadow: none; }
+}
+
+/* The stickers were put there by hand, so they settle like it. */
+.sticker { animation: peel 520ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both; }
+.stickerTwo { animation: peel 520ms cubic-bezier(0.16, 1, 0.3, 1) 400ms both; }
+@keyframes peel {
+  from { opacity: 0; transform: rotate(0deg) scale(0.86); }
+}
+
+/*
+ * The sheet, filling in.
+ *
+ * Twelve staggered rows and then it stops — enough that the grid reads as
+ * being laid out rather than appearing, and short enough that nobody scrolling
+ * fast ever sees a half-built page.
+ */
+.tile, .lockedTile, .ghostTile { animation: pin 340ms ease-out both; }
+.tiles > *:nth-child(1)  { animation-delay: 20ms; }
+.tiles > *:nth-child(2)  { animation-delay: 45ms; }
+.tiles > *:nth-child(3)  { animation-delay: 70ms; }
+.tiles > *:nth-child(4)  { animation-delay: 95ms; }
+.tiles > *:nth-child(5)  { animation-delay: 120ms; }
+.tiles > *:nth-child(6)  { animation-delay: 145ms; }
+.tiles > *:nth-child(7)  { animation-delay: 170ms; }
+.tiles > *:nth-child(8)  { animation-delay: 195ms; }
+.tiles > *:nth-child(9)  { animation-delay: 220ms; }
+.tiles > *:nth-child(10) { animation-delay: 245ms; }
+.tiles > *:nth-child(11) { animation-delay: 270ms; }
+.tiles > *:nth-child(n + 12) { animation-delay: 290ms; }
+@keyframes pin {
+  from { opacity: 0; transform: translateY(5px); }
+}
+
+/* The tile you are pointing at lifts a pixel. One pixel. */
+.tile { transition: transform 120ms ease-out, background 120ms ease-out; }
+.tile:hover { transform: translateY(-1px); }
+
+/*
+ * START, breathing.
+ *
+ * A destructive button that will not sit still is the correct amount of wrong
+ * for the one control on this page that is lying to you.
+ */
+.danger { animation: breathe 3.4s ease-in-out infinite; }
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 4px 14px -4px rgba(239, 68, 68, 0.7); }
+  50% { box-shadow: 0 6px 26px -4px rgba(239, 68, 68, 0.95); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title, .sticker, .stickerTwo, .tile, .lockedTile, .ghostTile, .danger {
+    animation: none;
+  }
+  .title { opacity: 1; transform: none; text-shadow: none; }
+}

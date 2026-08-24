@@ -11,10 +11,38 @@ import type { Page } from "@playwright/test";
 
 const SEED = "ABC123";
 
+/**
+ * The id of whatever level is on screen, or null once the run is over.
+ *
+ * It has to wait rather than sample: a level mounts a beat after the
+ * navigation or the previous skip, and an instant `count()` reads zero during
+ * that beat and reports the run finished when it has not started. So this
+ * races the two states that are actually possible — a level, or the tally —
+ * and only calls it null when the tally wins.
+ */
 async function currentLevel(page: Page): Promise<string | null> {
   const el = page.locator("[data-level]").first();
-  if ((await el.count()) === 0) return null;
-  return el.getAttribute("data-level");
+
+  await Promise.race([
+    el.waitFor({ state: "attached" }).catch(() => {}),
+    page.getByTestId("final-score").waitFor({ state: "visible" }).catch(() => {}),
+  ]);
+
+  return (await el.count()) === 0 ? null : el.getAttribute("data-level");
+}
+
+/**
+ * Wait for the stage to actually turn over after a solve or a skip.
+ *
+ * Not a fixed timeout: the next level deals instantly on a warm page and
+ * slowly on a cold one, so any constant is both too long and too short. The
+ * run ending is the other legitimate outcome, hence the race.
+ */
+async function advance(page: Page, from: string) {
+  await Promise.race([
+    page.locator(`[data-level="${from}"]`).waitFor({ state: "detached" }).catch(() => {}),
+    page.getByTestId("final-score").waitFor({ state: "visible" }).catch(() => {}),
+  ]);
 }
 
 async function solveOrSkip(page: Page, id: string) {
@@ -71,7 +99,7 @@ test("a seeded run plays, scores, and reaches the tally", async ({ page }) => {
     if (!id) break;
     seen.push(id);
     if ((await solveOrSkip(page, id)) === "solved") solved++;
-    await page.waitForTimeout(120);
+    await advance(page, id);
   }
 
   expect(seen.length).toBeGreaterThan(2);
@@ -97,7 +125,7 @@ test("the same seed deals the same run", async ({ page }) => {
       if (!id) break;
       ids.push(id);
       await page.getByRole("button", { name: "SKIP THIS LEVEL" }).click();
-      await page.waitForTimeout(80);
+      await advance(page, id);
     }
     return ids;
   };

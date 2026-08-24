@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CATALOG } from "@/levels/catalog";
 import { SheetTile } from "./SheetTile";
+import { Logo } from "@/ui/logo/Logo";
 import { SUBHEADS } from "@/ui/slop/phrases";
 import { boardTop, liveStats } from "@/lib/db";
 import { Handle } from "@/ui/Handle";
@@ -44,6 +45,7 @@ export default async function Home() {
     <main className={s.shell}>
       {/* Masthead. A byline and a build number, because a person made this. */}
       <div className={s.masthead}>
+        <Logo size={14} blink />
         <span className={s.mastLeft}>HOSTILE INTERFACE SPEEDRUN</span>
         <span className={s.mastSp} />
         <span className={s.mastRight}>
@@ -53,6 +55,7 @@ export default async function Home() {
 
       <div className={s.screen}>
         <header className={s.hero}>
+          <Logo size={64} blink />
           <h1 className={s.title}>
             AI<i>RUSH</i>
           </h1>
