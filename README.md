@@ -27,11 +27,12 @@ what order.
 | Doc | What's in it |
 | --- | --- |
 | [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | Pillars, run loop, scoring, tone, difficulty ramp, the rules of the joke |
-| [`docs/LEVELS.md`](docs/LEVELS.md) | The level catalog — 36 designed levels + the chaos modifier system |
+| [`docs/LEVELS.md`](docs/LEVELS.md) | The level catalog — 48 designed levels across six input families, + 12 chaos modifiers |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Stack, the `LevelModule` contract, the input abstraction layer, mobile path |
 | [`docs/BACKEND.md`](docs/BACKEND.md) | Supabase schema, RLS, score validation, API surface |
 | [`docs/VIRALITY.md`](docs/VIRALITY.md) | Share cards, seeded runs, ghost challenges, the X.com loop |
 | [`docs/COMMUNITY_LEVELS.md`](docs/COMMUNITY_LEVELS.md) | Player-submitted levels, credit, moderation, the Lab |
+| [`docs/AGENT_ARENA.md`](docs/AGENT_ARENA.md) | The MCP server that lets AI agents play — and the spectator page where their reasoning is the show |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases 0–8, with exit criteria per phase |
 
 ## Decisions already made
@@ -45,11 +46,17 @@ what order.
   clipboard, gamepad.
 - **Mobile is a first-class target**, not a responsive afterthought. PWA first,
   Capacitor wrapper after.
+- **Anyone can submit a level idea**, from the end of their very first run.
+  Ideas are perishable, so intake ships with the leaderboard in Phase 3 — long
+  before the gallery that shows them off.
+- **Agents can play too**, over MCP, in a mode where the point isn't their
+  score. It's watching them confidently explain a wrong theory about a red
+  Continue button.
 
 ## Stack
 
 Next.js 15 (App Router) · React 19 · TypeScript · Tailwind v4 · Zustand ·
-Framer Motion · Supabase (Postgres + Edge Functions) · Vercel
+Framer Motion · Supabase (Postgres + Edge Functions) · Vercel · MCP
 
 ## License
 

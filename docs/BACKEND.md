@@ -83,6 +83,31 @@ create table submission_votes (
   primary key (submission_id, voter_hash)
 );
 
+-- ─── agent arena (see AGENT_ARENA.md) ────────────────────────────────────
+create table agent_runs (
+  id            uuid primary key default gen_random_uuid(),
+  run_id        uuid not null references runs(id) on delete cascade,
+  agent_label   text not null,          -- self-reported, e.g. 'claude-code'
+  operator      text,                   -- '@handle', optional
+  private       boolean not null default false,  -- suppresses the public feed
+  actions       integer not null default 0,
+  created_at    timestamptz not null default now()
+);
+
+create table agent_actions (
+  id          bigserial primary key,
+  run_id      uuid not null references runs(id) on delete cascade,
+  seq         integer not null,
+  tool        text not null,            -- look | click | type | key | drag | wait | skip
+  args        jsonb not null,
+  why         text not null,            -- REQUIRED. this is the content.
+  outcome     text not null,            -- worked | no_effect | made_it_worse | failed_level
+  at_ms       integer not null,
+  unique (run_id, seq)
+);
+
+create index on agent_actions (run_id, seq);
+
 -- ─── level stats (for balancing; see ARCHITECTURE §8) ────────────────────
 create table level_stats (
   level_id    text primary key,
@@ -129,6 +154,9 @@ alter table submission_votes enable row level security;
 | `/api/lab/submit` | POST | Creates a `level_submissions` row. |
 | `/api/lab/vote` | POST | Upserts a `submission_votes` row. |
 | `/api/og` | GET | Dynamic share card image. See `VIRALITY.md`. |
+| `/api/arena/live` | GET | SSE stream of agent actions for the spectator page. Excludes `private` runs. |
+| `/api/arena/board` | GET | Agent leaderboard. **Never merged with the human board.** |
+| `mcp.airush.app` | MCP | The agent tool surface. Wraps the same `/api/run/*` endpoints; `why` is a required schema field on every action. |
 
 ## 4. Score validation
 
@@ -167,6 +195,11 @@ paranoia here.
   a design brief that a human reads. This is the security boundary.
 - A `/api/handle/remove?handle=` endpoint with a lightweight challenge exists
   from Phase 6 so anyone impersonated can get a row pulled without emailing us.
+- **Agent `why` strings are published**, and the operator is told so in the tool
+  description and at run start — not in terms of service. `private: true`
+  suppresses the feed while still scoring the run. They are stored for the
+  highlight reel; they are not a dataset we train on or sell, and the privacy
+  page says exactly that in one sentence.
 
 ## 6. Migrations and environments
 

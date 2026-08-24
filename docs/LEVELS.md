@@ -1,6 +1,7 @@
 # Level Catalog
 
-36 designed levels across 4 tiers, plus the chaos modifier system.
+**48 human levels** across 4 tiers, plus 12 chaos modifiers. Six additional
+agent-only levels live in `AGENT_ARENA.md`.
 
 Each entry gives the **bit** (what the player discovers), the **honest solve**
 (the intended path, which must always exist and always be discoverable within
@@ -10,6 +11,24 @@ players that can't use the primary input.
 Format:
 
 > **NN · Title** — `tier` · inputs · par · *what real UI it parodies*
+
+**How this catalog is organized.** L01–L36 are grouped by tier. L37–L48 are
+grouped as the **coupled mechanisms** family, because they share an engine and
+were designed together — but tier is a property of a level, not of where it sits
+in this document, and the deck builder only ever reads the tier. A level's
+*family* describes what it does to you; its *tier* describes how much it costs
+you.
+
+The six input families across the catalog:
+
+| Family | Levels | The move |
+| --- | --- | --- |
+| **Text entry** | 06, 15, 16, 42 | The field fights what you type |
+| **Selection & pickers** | 03, 04, 05, 08, 10, 24, 27 | The set of choices misbehaves |
+| **Coupled mechanisms** | 37–48 | Controls change other controls |
+| **Motor skill** | 07, 11, 18, 21, 25, 28, 31, 32, 33 | Your hands are the problem |
+| **Sensors** | 13, 14, 19, 20, 26, 35 | The device itself is the input |
+| **Meta / fourth wall** | 09, 17, 22, 23, 30, 34, 36 | The chrome is the level |
 
 ---
 
@@ -696,6 +715,338 @@ ship in Phase 2 as a morale-boosting freebie.
 
 ---
 
+## Family: COUPLED MECHANISMS (L37–L48)
+
+A whole vein the first 36 barely touched: **controls that change other
+controls.** Every level here is a small dependency graph wearing the costume of
+an ordinary form widget.
+
+Why this family is worth 12 levels:
+
+- **It's the most authentic slop.** Cascading dropdowns that populate one step
+  behind, steppers that carry wrong, sliders that redistribute — these are real
+  bugs in real shipped software. We're not inventing cruelty, we're documenting
+  it and turning up the gain.
+- **It's readable at a glance and deep underneath.** Four dials satisfy P1
+  instantly. That turning dial 1 also turns dials 2, 3 and 4 is discovered in
+  one action, and then the player has an actual puzzle.
+- **It scales difficulty without adding steps.** Coupling strength is a single
+  number. The same level is `annoying` at ratio 0 and `unhinged` at ratio 3.
+- **Almost all of it is keyboard- and screen-size-agnostic**, which makes this
+  the cheapest family to build and the safest on small viewports.
+
+**The design rule for the whole family:** every coupled system must be
+**solvable by ordering**, not by trial and error. There is always a sequence —
+usually last-to-first — in which each move is final. Discovering that ordering
+*is* the level. A coupled system without a clean solve order is a slot machine,
+and slot machines aren't funny.
+
+---
+
+### 37 · Set Your Security PIN
+`cursed` · pointer, keyboard · par 30s · *4-digit PIN entry* — **flagship**
+
+**The bit.** Four brass dials, side by side, each 0–9, styled like a padlock or
+a briefcase latch dropped into an otherwise flat SaaS form. Turning dial 1 also
+turns dial 2 by +1 per notch. Dial 2 drives dial 3 the same way. Dial 3 drives
+dial 4. It is a **gear train**: every turn propagates rightward, forever.
+
+The target PIN is displayed above, cheerfully, as though this were normal.
+
+**Honest solve.** Set it **right to left**. Dial 4 is affected by everything and
+affects nothing, so it must be set last; dial 1 affects everything and is
+affected by nothing, so it goes first. Solve order is 1 → 2 → 3 → 4 and each
+one, once placed and never revisited, stays correct as long as you only move
+dials to its *right*. It takes about 12 seconds to realize and 8 to execute.
+
+**Fail state.** Wrong PIN → *"Incorrect. For your security, the dials have been
+re-seeded. 🔒"* — and they randomize. No escalation of the ratio; the puzzle
+stays the same shape.
+
+**Degraded path.** Keyboard: `Tab` between dials, `↑`/`↓` to turn, and the
+propagation is identical. Genuinely equivalent, which matters — this is the
+level most likely to be played on a laptop.
+
+**Why it's a flagship.** It's the clearest, most teachable puzzle in the game,
+it's beautiful on screen, and "the PIN field was four gears that turned each
+other" is a perfect P2 sentence.
+
+---
+
+### 38 · Human Verification Required
+`unhinged` · pointer · par 40s · *CAPTCHA widget*
+
+**The bit.** The gear train, made literal and mechanical. Six interlocking
+gears of different tooth counts, rendered properly, meshing correctly. One has a
+red-painted tooth. *"Rotate the marked tooth to the top position."* You may drag
+**only the largest gear**, and the ratios mean the marked tooth moves at 1/7th
+your input and in the opposite direction.
+
+**Honest solve.** Work out the direction (it's the opposite of what you want) and
+commit to a long drag. The ratio is fixed and displayed, in tiny mono type, in a
+"technical specifications" footer nobody reads until minute four.
+
+**Fail state.** No fail — it's a positioning task. The clock is the pressure.
+
+**Degraded path.** Keyboard: arrows rotate the drive gear one tooth per press.
+Slow but exact, and on a long enough run it's the *better* strategy.
+
+**Build note.** Real gear geometry on canvas — involute teeth, correct meshing.
+This is the one level where being mechanically accurate is the entire joke, and
+a fake approximation will read as a bug rather than a bit.
+
+---
+
+### 39 · Where Are You Located?
+`cursed` · pointer · par 30s · *country / state / city cascade*
+
+**The bit.** Three dependent dropdowns. Two things are wrong, and they compound:
+
+1. The child list populates from the **previous** parent value, always one
+   selection behind. Pick Italy and the region list is still showing the states
+   of whatever was selected before.
+2. Picking a **city** overwrites the **country** with the country that city
+   belongs to — a "helpful" reverse-lookup, firing at exactly the wrong time.
+
+**Honest solve.** Select each dropdown **twice**. The second selection reads the
+now-correct list. Every human who has fought a broken address form has done this
+by instinct, which is what makes it satisfying rather than arbitrary. The
+city→country writeback is harmless once you know to set the city first and let
+it fill the country in for you — so the fastest solve is *backwards*: city,
+then region, then confirm the country it guessed.
+
+**Fail state.** Submitting a mismatched triple → *"We couldn't verify this
+address. Showing results for: Antarctica."*
+
+**Degraded path.** None needed.
+
+---
+
+### 40 · Confirm Quantity
+`annoying` · pointer · par 20s · *numeric stepper*
+
+**The bit.** A five-digit odometer, the kind on a car dashboard, with a `+`
+under each column. There is **no minus**. Rolling a column past 9 carries into
+the column to its left, disturbing a digit you already set.
+
+Target: `04128`. Start: `07935`.
+
+**Honest solve.** Left to right — the opposite of L37, because here the carry
+propagates *leftward*, so the leftmost digit must be settled last. Each column
+needs `(target − current) mod 10` presses. It's arithmetic, it's completely
+fair, and under a clock people still get it wrong.
+
+**Fail state.** Overshoot just means going around again. Nothing is ever lost
+except time, which makes this a good early-run level.
+
+**Degraded path.** Keyboard: number row jumps a focused column directly to that
+digit — a shortcut that exists, works, and is signposted nowhere.
+
+---
+
+### 41 · Rank Your Priorities
+`unhinged` · pointer · par 45s · *drag-to-reorder list*
+
+**The bit.** Five items, drag to reorder, target order shown alongside. Every
+drag you perform **also swaps two other items** — specifically the two adjacent
+to the gap you left behind. You are not sorting a list, you are solving a
+permutation puzzle with a fixed generator set.
+
+**Honest solve.** It's reachable in at most four moves from any starting
+permutation, and the level guarantees a solvable seed. The trick most people
+find: move items into place from the **ends inward**, since the parasitic swap
+only ever touches the interior.
+
+**Fail state.** No fail. But it is genuinely possible to wander, so a `Reset`
+button returns to the seeded start — and using it is often correct.
+
+**Degraded path.** Keyboard: focus an item, `↑`/`↓` to move it, same parasitic
+swap. Fully playable without a pointer.
+
+**Build note.** The reachability guarantee needs a real check at deal time —
+generate the start state by applying N random legal moves to the *solved* state,
+never by shuffling. This is the standard fix and skipping it ships an
+unsolvable level.
+
+---
+
+### 42 · Confirm Your Password
+`annoying` · keyboard · par 20s · *password + confirm pair*
+
+**The bit.** Two fields. Typing into **Password** mirrors your input into
+**Confirm Password** with a one-character delay. They can never match. The
+validation message updates live and is always, infuriatingly, correct:
+*"Passwords do not match."*
+
+**Honest solve.** Two clean routes, both discoverable: type into **Confirm**
+first (the mirroring is one-directional and nobody checks), or finish typing in
+Password and then add the one missing character to Confirm by hand. The second
+is what most people find, and it feels like getting away with something.
+
+**Fail state.** None. Submit is simply disabled.
+
+**Degraded path.** None needed. Works identically on a phone keyboard.
+
+---
+
+### 43 · Select Your Seats
+`cursed` · pointer · par 35s · *seat map*
+
+**The bit.** A seat map, three passengers to place. Selecting a seat for
+passenger 2 **relocates passenger 1** to the seat directly behind whatever you
+just picked. Placing 3 relocates 2 the same way. It is a chain, and the chain
+runs backwards through everyone already seated.
+
+Target: three specific seats, shown highlighted.
+
+**Honest solve.** Place the passengers in **reverse order** — 3, then 2, then 1
+— because each placement only disturbs those placed *before* it. Same family
+logic as L37, different costume; by this point in a run the player may have seen
+one of these and the transfer is a real, earned moment.
+
+**Fail state.** Submitting a wrong arrangement → the plane silently gains a row
+and everyone shifts back one.
+
+**Degraded path.** Keyboard: arrows to move a cursor over the map, `Enter` to
+place.
+
+---
+
+### 44 · Display Settings
+`unhinged` · pointer · par 40s · *three settings sliders*
+
+**The bit.** Brightness, Contrast, Saturation. They **sum to a constant**. Raise
+one and the other two fall to compensate, split proportionally to their current
+values. Target: a specific triple, shown as three small target markers on the
+tracks.
+
+This is a simplex — you have two real degrees of freedom, not three, and the
+proportional redistribution means the *order* you approach the target in
+determines whether you can reach it at all.
+
+**Honest solve.** Set the **largest** target value first and work down. Because
+redistribution is proportional, adjusting a small value barely perturbs a large
+one, but not vice versa — so descending order converges and ascending order
+oscillates. It's a real property of the system, not a rule we bolted on, and
+players find it by feel long before they could articulate it.
+
+**Fail state.** None. It's a convergence task and the markers make progress
+legible at all times.
+
+**Degraded path.** Keyboard arrows nudge by 1 unit with the same redistribution.
+
+---
+
+### 45 · Add Some Tags
+`unhinged` · keyboard, pointer · par 40s · *tag / chip input*
+
+**The bit.** *"Add these four interests to your profile."* The field holds four
+tags. It is already full of four wrong ones. Adding a tag **evicts** one of the
+existing tags — and the eviction policy is **least recently added**, so your own
+correct tags start getting thrown out as you add more.
+
+**Honest solve.** LRA eviction means the four tags you add *last*, consecutively,
+are the four that survive. So: add all four correct tags in a row and the
+originals are gone by the fourth. The trap is adding them one at a time while
+checking, which lets the wrong ones cycle back around. Four decisive actions
+beat eight careful ones — an unusual and pleasing lesson for this game to teach.
+
+**Fail state.** No hard fail. The set just churns.
+
+**Degraded path.** None needed.
+
+---
+
+### 46 · Choose Your Dates
+`cursed` · pointer · par 30s · *date range picker*
+
+**The bit.** A From/To range. The two are **locked to a fixed duration** —
+moving From drags To along with it, preserving the gap. Moving To changes the
+gap. You need a specific range whose length is different from the current one.
+
+**Honest solve.** Set **To** first (which is the only control that can change
+the duration), then set **From** — but moving From drags To again, so you must
+set From by the *offset* you want and then correct To once. Two moves if you see
+it, seven if you don't. A running "duration: N nights" readout tells you
+everything, in 10px grey, next to the fold.
+
+**Fail state.** Submitting the wrong range → *"That's a 412-night stay. Great
+choice! ✨"*
+
+**Degraded path.** Keyboard: `Tab` and arrows step days.
+
+---
+
+### 47 · Match This Colour
+`unhinged` · pointer · par 40s · *colour picker*
+
+**The bit.** Match a target swatch using three sliders. The sliders are
+**HSL**; the target is stated as an **RGB hex** in a label above it. Worse, they
+behave as a coupled system perceptually: dragging Hue visibly changes how
+saturated and light the swatch looks even though S and L haven't moved, so
+players "correct" for a change that didn't happen and chase their own tail.
+
+**Honest solve.** Ignore the hex, ignore perception, use the **live delta
+readout** in the corner — a single number that falls as you get closer. It's
+present from the first frame. This level punishes trusting your eyes and rewards
+trusting the instrument, which is a nasty and completely fair thing to teach in
+a game about interfaces that lie.
+
+**Fail state.** Submit within tolerance or keep going. Tolerance is generous
+(ΔE < 12); the difficulty is entirely in not thrashing.
+
+**Degraded path.** None needed. Fully colour-blind-safe: the delta readout is
+sufficient to solve without perceiving the colours at all — worth stating,
+because a colour-matching level that *requires* colour vision would be a
+genuinely bad thing to ship.
+
+---
+
+### 48 · Notification Preferences
+`annoying` · pointer · par 20s · *accordion settings panel*
+
+**The bit.** Six collapsible sections. Opening one collapses its siblings — and
+because the page height changes, the section you just opened **scrolls out of
+view**. You must toggle one switch in each of three sections.
+
+**Honest solve.** Open the sections **bottom to top**. Collapsing a section
+above your target pulls content up; collapsing one below doesn't move it. Order
+makes it trivial. Everyone starts at the top.
+
+**Fail state.** None. Pure layout cruelty.
+
+**Degraded path.** Keyboard: `Tab` follows DOM order and focus-scroll keeps the
+target on screen, which makes this substantially easier with a keyboard. That
+asymmetry is fine — it's a 100-point level.
+
+---
+
+### Coupled family — build notes
+
+All twelve share one engine: a **small directed dependency graph** with typed
+edges (`propagate`, `evict`, `redistribute`, `writeback`, `relayout`) evaluated
+after every input.
+
+```ts
+type Coupling = {
+  from: ControlId
+  to: ControlId
+  kind: 'propagate' | 'evict' | 'redistribute' | 'writeback' | 'relayout'
+  ratio?: number
+}
+```
+
+Build the graph evaluator once, in Phase 5, and eleven of these levels become a
+config object plus a skin. L38 (real gear geometry) is the only one that needs
+bespoke rendering.
+
+**Mandatory test for every coupled level:** a solver that proves the seeded
+start state is reachable to the target in ≤ N moves. It runs at deal time in
+dev and in CI over 10,000 seeds. Shipping an unsolvable seed is the single
+worst failure this game can have — it turns the joke into a bug report.
+
+---
+
 ## Chaos Modifiers
 
 Applied from minute 2:00, up to **2 concurrent**, drawn from the run seed. They
@@ -727,10 +1078,16 @@ mechanic it duplicates (no `Lag` on #32, no `Mirror` on #31, no `Fleeing` on
 
 | Tier | Count | Build cost each | Notes |
 | --- | --- | --- | --- |
-| annoying | 10 | 0.5–1 day | Mostly CSS and state; #05 and #10 are copy-heavy |
-| cursed | 11 | 1–2 days | #11 needs a small game loop; #14/#19 need the sensor layer |
-| unhinged | 9 | 1.5–2 days | #29 needs WebAudio; #34 needs drag-and-drop |
+| annoying | 13 | 0.5–1 day | Mostly CSS and state; #05 and #10 are copy-heavy |
+| cursed | 15 | 1–2 days | #11 needs a small game loop; #14/#19 need the sensor layer |
+| unhinged | 14 | 1.5–2 days | #29 needs WebAudio; #34 needs drag-and-drop |
 | forbidden | 6 | 1–2 days | #31–33 are mostly modifier infrastructure reused at full strength |
+
+Eleven of the twelve coupled levels (#37–#48, excluding #38) come in at roughly
+**half a day each** once the dependency-graph evaluator exists, because they are
+a config object and a skin over shared machinery. That makes this family by far
+the cheapest content in the game per unit of cruelty, and it is why Phase 5
+builds the evaluator first.
 
 Ship order is in `ROADMAP.md`. The first eight built are #01, #02, #11, #12,
 #28, #36, #22, #05 — because those eight alone constitute a playable, funny,

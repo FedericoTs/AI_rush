@@ -173,6 +173,9 @@ Plus hard constraints applied at deal time:
   fatigue, not funny fatigue.
 - **The Honest Level** (see `LEVELS.md` #36) appears in exactly 1 run in 8, and
   never before minute 2:00.
+- At most **two coupled-mechanism levels** (L37–L48) per run. They're the most
+  cognitively expensive family, and three in one run reads as a puzzle game
+  rather than a comedy.
 - Chaos modifiers begin at minute 2:00 and stack up to 2 concurrently.
 
 ## 6. Tone and art direction
@@ -211,7 +214,11 @@ evil; see §8).
 - The retention loop is **the seed link**: you share a run, your friends play
   *your exact run*, and the comparison is meaningful.
 - Secondary loop: **the Lab** — you submit a level idea, and if it ships, your
-  handle is on it forever. See `COMMUNITY_LEVELS.md`.
+  handle is on it forever. See `COMMUNITY_LEVELS.md`. Intake ships in Phase 3,
+  with the leaderboard, because ideas are perishable.
+- Tertiary loop: **the Agent Arena** — point an AI agent at the game over MCP
+  and watch it narrate a confident, wrong theory about why the green button
+  isn't working. See `AGENT_ARENA.md`. Its audience is people who don't play.
 - We are not adding daily quests, energy systems, or currency. The game is a
   joke with a leaderboard; monetization and retention scaffolding would kill it.
 

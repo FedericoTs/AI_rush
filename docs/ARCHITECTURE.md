@@ -46,6 +46,9 @@ src/
       audioIn.ts  camera.ts    haptics.ts
       orientation.ts  gamepad.ts
     capabilities.ts             # detection + permission choreography
+  engine/coupling/
+    graph.ts                    # typed dependency edges, evaluated after every input
+    solver.ts                   # reachability proof; runs at deal time and in CI
   levels/
     registry.ts                 # id -> LevelModule, the only import surface
     L01ContinueToYourAccount/
@@ -263,7 +266,43 @@ Mobile web, mid-tier Android, is the constraint.
 - Camera/mic streams are torn down the instant the level unmounts. A run that
   leaves the mic hot is a bug we will hear about publicly.
 
-## 10. Open technical questions
+## 10. Two subsystems the level catalog depends on
+
+### The coupling graph (`engine/coupling/`)
+
+Twelve levels (`LEVELS.md` L37–L48) are one engine wearing twelve costumes: a
+small directed graph of controls with typed edges, re-evaluated after every
+input.
+
+```ts
+type Coupling = {
+  from: ControlId
+  to: ControlId
+  kind: 'propagate' | 'evict' | 'redistribute' | 'writeback' | 'relayout'
+  ratio?: number
+}
+```
+
+Two invariants, both enforced in CI:
+
+- **Every coupled level is solvable by ordering.** There exists a sequence in
+  which each move is final. A coupled system without one is a slot machine.
+- **Every seeded start state is provably reachable.** Start states are generated
+  by applying N legal moves to the *solved* state, never by shuffling, and a
+  solver verifies reachability over 10,000 seeds per level.
+
+### The grid rasterizer (`arena/render.ts`)
+
+For the Agent Arena (`AGENT_ARENA.md`), `look()` must return what a person
+*sees*, not what the browser *knows* — a 48×24 character grid with approximate
+text positions and a short list of visually distinct regions. No DOM, no
+accessibility tree, no selectors.
+
+This is a real renderer, not a serializer, and it is the one piece of the Arena
+with genuine technical risk. It reuses the headless harness that the input
+adapter mocks already provide (§4) — the third time that seam pays for itself.
+
+## 11. Open technical questions
 
 | Question | Owner | Needed by |
 | --- | --- | --- |
@@ -271,3 +310,5 @@ Mobile web, mid-tier Android, is the constraint.
 | Web Speech API coverage is poor on Android Firefox — do we cut #14's speech variant? | — | Phase 4 |
 | Canvas vs WebGL for #11 at 60fps on low-end Android | — | Phase 2 |
 | Can `ImageResponse` render the runner-dino share card, or do we pre-bake sprites? | — | Phase 3 |
+| Does a 48×24 grid carry enough signal for an agent to solve L37, or does it need 64×32? | — | Phase 6.5a |
+| Do we render real involute gear teeth for L38 on canvas, or is a simplified mesh convincing enough? | — | Phase 5 |
