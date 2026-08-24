@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { LevelModule, LevelProps } from "@/engine/types";
+import { meta } from "./meta";
 import { CouplingGraph, type ControlState } from "@/engine/coupling/graph";
 import { scrambleFrom } from "@/engine/coupling/solver";
 import { SlopBadge, SlopCard, SlopCta, SlopError, SlopFooter, SlopHeading, SlopHint, SlopMicrocopy } from "@/ui/slop/Slop";
@@ -153,15 +154,6 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
 }
 
 export const L37: LevelModule = {
-  meta: {
-    id: "L37",
-    slug: "set-your-security-pin",
-    title: "Set Your Security PIN",
-    tier: "cursed",
-    family: "coupled",
-    parSeconds: 30,
-    requires: ["pointer"],
-    incompatibleModifiers: ["slippery"],
-  },
+  meta,
   Component,
 };

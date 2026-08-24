@@ -1,0 +1,27 @@
+.shell { width: 100%; max-width: 560px; flex: 1; display: flex; flex-direction: column; padding: 1rem 0.75rem 3rem; gap: 1rem; }
+.head { display: flex; align-items: baseline; gap: 0.6rem; }
+.head h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; }
+.head h1 i { font-style: normal; color: var(--hazard); }
+.sp { flex: 1; }
+.tabs { display: flex; gap: 0.4rem; }
+.tab {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.35rem 0.6rem; border: 1px solid var(--chrome-line); border-radius: 4px;
+  color: var(--chrome-dim); text-decoration: none;
+}
+.tabOn { background: var(--chrome-ink); color: var(--chrome); border-color: var(--chrome-ink); }
+.lede { margin: 0; font-size: 0.8rem; color: var(--chrome-dim); }
+
+.board { display: grid; gap: 1px; background: var(--chrome-line); border: 1px solid var(--chrome-line); border-radius: 12px; overflow: hidden; }
+.row {
+  background: var(--chrome-2); padding: 0.65rem 0.75rem; display: grid;
+  grid-template-columns: 3rem 1fr auto; align-items: center; gap: 0.6rem; font-size: 0.88rem;
+}
+.rank { font-family: var(--font-mono); font-size: 0.78rem; color: var(--chrome-dim); font-variant-numeric: tabular-nums; }
+.top .rank { color: var(--hazard); font-weight: 700; }
+.handle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.death { display: block; font-size: 0.66rem; color: #63707e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.score { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+.empty { border: 1px dashed var(--chrome-line); border-radius: 12px; padding: 1.6rem 1rem; text-align: center; color: var(--chrome-dim); font-size: 0.85rem; line-height: 1.6; }
+.cta { display: block; text-align: center; text-decoration: none; border-radius: 12px; padding: 0.85rem; background: #fff; color: #0b0e13; font-weight: 700; font-size: 0.92rem; }

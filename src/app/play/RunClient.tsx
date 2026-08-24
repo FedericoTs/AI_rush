@@ -7,7 +7,8 @@ import { capabilityMarks } from "@/engine/deck";
 import { encodeSeed, streamFor } from "@/engine/rng";
 import { createSfx, type SfxHandle } from "@/engine/sfx";
 import { currentLevel, useRun } from "@/engine/store";
-import type { DealtLevel, InputCapability, LevelResult } from "@/engine/types";
+import type { DealtLevel, InputCapability } from "@/engine/types";
+import { Endgame } from "./Endgame";
 import { MODIFIERS } from "@/engine/chaos/modifiers";
 import { detectPassive } from "@/input/capabilities";
 import { useInput } from "@/input/useInput";
@@ -45,11 +46,39 @@ export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
   const [remaining, setLocalRemaining] = useState(RUN_DURATION_MS);
   const [muted, setMuted] = useState(false);
   const [flash, setFlash] = useState(0);
+  const [run, setRun] = useState<{ id: string; secret: string } | null>(null);
   const clock = useRef<GameClock | null>(null);
+  const events = useRun((r) => r.events);
+  const elapsedMs = useRun((r) => r.elapsedMs);
 
   useEffect(() => {
     startRun({ seed, registry: REGISTRY, capabilities, mercy });
   }, [startRun, seed, capabilities, mercy]);
+
+  /* Open the run server-side in the background. If this fails — no database,
+     offline, rate limited — the game is unaffected and the score is simply
+     never posted. A leaderboard is not allowed to stand between a player and
+     five minutes of interfaces. */
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/run/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        seed: encodeSeed(seed, capabilityMarks(capabilities)),
+        caps: capabilityMarks(capabilities).join(""),
+        mercy,
+      }),
+    })
+      .then((r) => r.json())
+      .then((r: { runId?: string; runSecret?: string }) => {
+        if (!cancelled && r.runId && r.runSecret) setRun({ id: r.runId, secret: r.runSecret });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [seed, capabilities, mercy]);
 
   /* One clock for the whole run. Started on mount, never paused — not for
      permission prompts, not for popups. */
@@ -74,13 +103,19 @@ export function RunClient({ seed, mercy }: { seed: number; mercy: boolean }) {
 
   if (phase === "tally") {
     return (
-      <Tally
-        score={score}
-        breakdown={breakdown}
-        killedBy={killedBy}
-        elapsed={RUN_DURATION_MS - remaining}
-        seedText={encodeSeed(seed, capabilityMarks(capabilities))}
-      />
+      <div className={s.shell}>
+        <Endgame
+          score={score}
+          breakdown={breakdown}
+          killedBy={killedBy}
+          elapsed={Math.max(elapsedMs, RUN_DURATION_MS - remaining)}
+          seedText={encodeSeed(seed, capabilityMarks(capabilities))}
+          mercy={mercy}
+          events={events}
+          runId={run?.id ?? null}
+          runSecret={run?.secret ?? null}
+        />
+      </div>
     );
   }
 
@@ -191,79 +226,6 @@ function RunStage(props: {
       </div>
 
       <div key={`flash-${flash}`} className={`${s.flash} ${flash > 0 ? s.flashOn : ""}`} />
-    </div>
-  );
-}
-
-function Tally({
-  score, breakdown, killedBy, elapsed, seedText,
-}: {
-  score: number;
-  breakdown: LevelResult[];
-  killedBy: string | null;
-  elapsed: number;
-  seedText: string;
-}) {
-  const [shown, setShown] = useState(0);
-
-  /* Overshoot into absurdity, then snap back to the truth. */
-  useEffect(() => {
-    const t0 = performance.now();
-    const DUR = 1700;
-    let raf = 0;
-    const step = (t: number) => {
-      const p = Math.min(1, (t - t0) / DUR);
-      const over = score * 1.6 + 99_000;
-      setShown(
-        p < 0.62
-          ? Math.floor((p / 0.62) * over)
-          : Math.floor(over + (score - over) * (1 - Math.pow(1 - (p - 0.62) / 0.38, 3))),
-      );
-      if (p < 1) raf = requestAnimationFrame(step);
-      else setShown(score);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [score]);
-
-  const solved = breakdown.filter((b) => !b.skipped).length;
-  const skipped = breakdown.filter((b) => b.skipped).length;
-  const best = breakdown.reduce((m, b) => Math.max(m, b.combo), 1);
-
-  return (
-    <div className={s.shell}>
-      <div className={s.stage} style={{ justifyContent: "center", gap: "0.9rem" }}>
-        <div className={s.stamp}>{killedBy ? "TIME" : "DECK CLEARED"}</div>
-        <div className={s.tallyScore} data-testid="final-score">
-          {shown.toLocaleString()}
-        </div>
-
-        <div className={s.rows}>
-          {breakdown.map((b, i) => (
-            <div key={`${b.id}-${i}`} className={s.row}>
-              <span>
-                {b.id} · {b.title}
-              </span>
-              <span>{b.skipped ? "skipped" : `${b.points.toLocaleString()} ×${b.combo}`}</span>
-            </div>
-          ))}
-          <div className={s.row}><span>Levels solved</span><span>{solved} / {breakdown.length}</span></div>
-          <div className={s.row}><span>Skipped</span><span>{skipped}</span></div>
-          <div className={s.row}><span>Best combo</span><span>×{best}</span></div>
-          <div className={s.row}><span>Elapsed</span><span>{formatClock(elapsed)}</span></div>
-          <div className={s.row}><span>Seed</span><span>{seedText}</span></div>
-          {killedBy && (
-            <div className={`${s.row} ${s.death}`}>
-              <span>Cause of death</span>
-              <span>&ldquo;{killedBy}&rdquo;</span>
-            </div>
-          )}
-        </div>
-
-        <button className={s.again} onClick={() => window.location.reload()}>
-          Run it again
-        </button>
-      </div>
     </div>
   );
 }

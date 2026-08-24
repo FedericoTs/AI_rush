@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { LevelModule, LevelProps } from "@/engine/types";
+import { meta } from "./meta";
 import { SlopCard, SlopHeading, SlopMicrocopy } from "@/ui/slop/Slop";
 import s from "./styles.module.css";
 
@@ -114,20 +115,6 @@ function Component({ onSolve }: LevelProps) {
 }
 
 export const L36: LevelModule = {
-  meta: {
-    id: "L36",
-    slug: "sign-in",
-    title: "Sign In",
-    tier: "forbidden",
-    family: "meta",
-    parSeconds: 20,
-    requires: ["pointer"],
-    /* Nothing may be layered on top of this one. A modifier would be a tell,
-       and the level is worth 1000 points precisely because it is untouched. */
-    incompatibleModifiers: [
-      "drift", "confetti", "rainbow", "shrink", "comic", "slippery",
-      "popups", "whisper", "fleeing", "lag", "mirror", "rotate",
-    ],
-  },
+  meta,
   Component,
 };

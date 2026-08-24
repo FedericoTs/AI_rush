@@ -1,0 +1,86 @@
+.wrap { display: flex; flex-direction: column; gap: 0.9rem; padding: 0.75rem; }
+
+.stamp { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.18em; color: var(--hazard); }
+.score {
+  font-size: clamp(3rem, 17vw, 4.6rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+  font-variant-numeric: tabular-nums; font-family: var(--font-mono);
+}
+.verdict { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--chrome-dim); }
+
+.rows { display: grid; gap: 1px; background: var(--chrome-line); border: 1px solid var(--chrome-line); border-radius: 10px; overflow: hidden; }
+.row { background: var(--chrome-2); padding: 0.5rem 0.7rem; display: flex; justify-content: space-between; gap: 1rem; font-size: 0.78rem; }
+.row span:first-child { color: var(--chrome-dim); }
+.row span:last-child { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.death span:last-child { color: var(--hazard); }
+
+/* ─── claim ─────────────────────────────────────────────── */
+.claim { background: var(--chrome-2); border: 1px solid var(--chrome-line); border-radius: 12px; padding: 0.9rem; }
+.claim h3 { margin: 0 0 0.2rem; font-size: 0.95rem; font-weight: 700; }
+.claim p { margin: 0 0 0.7rem; font-size: 0.75rem; color: var(--chrome-dim); }
+.handleRow { display: flex; gap: 0.5rem; }
+.handleRow input {
+  flex: 1; min-width: 0; font: inherit; font-family: var(--font-mono); font-size: 0.95rem;
+  padding: 0.6rem 0.7rem; border-radius: 9px; border: 1px solid var(--chrome-line);
+  background: var(--chrome); color: var(--chrome-ink);
+}
+.handleRow input:focus { outline: 2px solid var(--good); outline-offset: 1px; }
+.handleRow button {
+  border: none; border-radius: 9px; padding: 0.6rem 0.95rem; font-weight: 700;
+  font-size: 0.85rem; background: var(--good); color: #04140f;
+}
+.handleRow button:disabled { opacity: 0.45; }
+.anon { background: none; border: none; color: var(--chrome-dim); font-size: 0.72rem; padding: 0.5rem 0 0; text-decoration: underline; }
+.claimErr { font-size: 0.72rem; color: var(--hazard); margin-top: 0.5rem; }
+
+/* ─── the slam ──────────────────────────────────────────── */
+.board { display: grid; gap: 1px; background: var(--chrome-line); border: 1px solid var(--chrome-line); border-radius: 12px; overflow: hidden; }
+.bRow {
+  background: var(--chrome-2); padding: 0.6rem 0.75rem; display: grid;
+  grid-template-columns: 3.2rem 1fr auto; align-items: center; gap: 0.6rem; font-size: 0.85rem;
+}
+.bRank { font-family: var(--font-mono); font-size: 0.78rem; color: var(--chrome-dim); font-variant-numeric: tabular-nums; }
+.bHandle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bScore { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Your row rises through the stack and lands. Rank stamps a beat later. */
+.bMine { background: #1c2530; box-shadow: inset 3px 0 0 var(--hazard); animation: slam 900ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.bMine .bHandle { font-weight: 700; }
+.bMine .bScore { color: var(--hazard); font-weight: 700; }
+@keyframes slam {
+  0%   { transform: translateY(180%); opacity: 0; }
+  55%  { transform: translateY(-8%);  opacity: 1; }
+  72%  { transform: translateY(3%); }
+  100% { transform: translateY(0); }
+}
+.shoved { animation: shove 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes shove {
+  0%   { transform: translateX(0); }
+  35%  { transform: translateX(-10px); }
+  100% { transform: translateX(0); }
+}
+.bStamp {
+  font-family: var(--font-mono); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em;
+  animation: stamp 340ms cubic-bezier(0.16, 1, 0.3, 1) 820ms both;
+}
+@keyframes stamp {
+  0% { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ─── share ─────────────────────────────────────────────── */
+.actions { display: flex; flex-direction: column; gap: 0.5rem; }
+.primary {
+  display: block; text-align: center; text-decoration: none; border: none; border-radius: 12px;
+  padding: 0.85rem; background: #fff; color: #0b0e13; font-weight: 700; font-size: 0.92rem;
+}
+.secondary {
+  border: 1px solid var(--chrome-line); background: none; color: var(--chrome-dim);
+  border-radius: 12px; padding: 0.7rem; font-size: 0.8rem; font-family: var(--font-mono);
+  text-align: center; text-decoration: none; display: block;
+}
+.secondary:hover { color: var(--chrome-ink); border-color: var(--chrome-dim); }
+.offline { font-size: 0.7rem; color: #6b7280; font-family: var(--font-mono); line-height: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bMine, .shoved, .bStamp { animation: none !important; }
+}

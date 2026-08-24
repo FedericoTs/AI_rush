@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { LevelModule, LevelProps } from "@/engine/types";
+import { meta } from "./meta";
 import { SlopBadge, SlopCard, SlopFooter, SlopHeading, SlopHint, SlopMicrocopy } from "@/ui/slop/Slop";
 import { FOOTER_LINKS, slopSubhead } from "@/ui/slop/phrases";
 import s from "./styles.module.css";
@@ -59,15 +60,6 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
 }
 
 export const L01: LevelModule = {
-  meta: {
-    id: "L01",
-    slug: "continue-to-your-account",
-    title: "Continue To Your Account",
-    tier: "annoying",
-    family: "meta",
-    parSeconds: 10,
-    requires: ["pointer"],
-    incompatibleModifiers: ["fleeing"],
-  },
+  meta,
   Component,
 };

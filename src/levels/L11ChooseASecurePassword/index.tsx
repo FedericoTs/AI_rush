@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { LevelModule, LevelProps } from "@/engine/types";
+import { meta } from "./meta";
 import { SlopBadge, SlopCard, SlopFooter, SlopHeading, SlopHint, SlopMicrocopy } from "@/ui/slop/Slop";
 import { FOOTER_LINKS, slopSubhead } from "@/ui/slop/phrases";
 import s from "./styles.module.css";
@@ -268,16 +269,6 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
 }
 
 export const L11: LevelModule = {
-  meta: {
-    id: "L11",
-    slug: "choose-a-secure-password",
-    title: "Choose A Secure Password 🦖",
-    tier: "cursed",
-    family: "motor",
-    parSeconds: 25,
-    requires: ["pointer"],
-    /* Real-time reactions plus artificial input delay is not a level, it's a wall. */
-    incompatibleModifiers: ["lag", "mirror", "slippery", "shrink"],
-  },
+  meta,
   Component,
 };

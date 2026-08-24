@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { LevelModule, LevelProps } from "@/engine/types";
+import { meta } from "./meta";
 import { SlopBadge, SlopCard, SlopCta, SlopError, SlopFooter, SlopHeading, SlopHint, SlopMicrocopy } from "@/ui/slop/Slop";
 import { FOOTER_LINKS, slopSubhead } from "@/ui/slop/phrases";
 import s from "./styles.module.css";
@@ -106,15 +107,6 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
 }
 
 export const L02: LevelModule = {
-  meta: {
-    id: "L02",
-    slug: "one-time-passcode",
-    title: "One-Time Passcode",
-    tier: "annoying",
-    family: "text",
-    parSeconds: 20,
-    requires: ["pointer"],
-    incompatibleModifiers: [],
-  },
+  meta,
   Component,
 };

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LevelModule, LevelProps } from "@/engine/types";
+import { meta } from "./meta";
 import { SlopBadge, SlopCard, SlopCta, SlopError, SlopFooter, SlopHeading, SlopHint, SlopMicrocopy } from "@/ui/slop/Slop";
 import { FOOTER_LINKS, slopSubhead } from "@/ui/slop/phrases";
 import s from "./styles.module.css";
@@ -186,15 +187,6 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
 }
 
 export const L12: LevelModule = {
-  meta: {
-    id: "L12",
-    slug: "enter-your-phone-number",
-    title: "Enter Your Phone Number",
-    tier: "cursed",
-    family: "coupled",
-    parSeconds: 25,
-    requires: ["pointer"],
-    incompatibleModifiers: ["slippery"],
-  },
+  meta,
   Component,
 };

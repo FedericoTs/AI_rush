@@ -7,8 +7,9 @@ import { L36 } from "./L36SignIn";
 import { L37 } from "./L37SetYourSecurityPin";
 
 /**
- * The only import surface for level content. The deck reads this; nothing
- * else should reach into a level directory.
+ * The only import surface for playable level content. Client-side only — the
+ * server reads `catalog.ts` instead, which carries the metadata without
+ * dragging in React components.
  */
 export const REGISTRY: readonly LevelModule[] = [L01, L02, L11, L12, L36, L37];
 
