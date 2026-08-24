@@ -1,0 +1,40 @@
+/* L36 is the one place in the product with no bit. Everything here is meant
+   to be genuinely good: real labels, visible focus rings, sane tab order,
+   honest error copy. The joke only works if the form actually works. */
+
+.field { margin-bottom: 0.9rem; }
+.field label {
+  display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem;
+}
+.field input {
+  width: 100%; font: inherit; font-size: 0.95rem; padding: 0.68rem 0.7rem;
+  border: 1px solid #9aa3b0; border-radius: 8px; background: #fff; color: #111827;
+}
+.field input:focus { outline: 2px solid #1d4ed8; outline-offset: 1px; border-color: #1d4ed8; }
+.error { font-size: 0.74rem; color: #b91c1c; margin-top: 0.28rem; font-weight: 500; }
+
+.pwRow { position: relative; }
+.pwRow input { padding-right: 4.2rem; }
+.pwRow button {
+  position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; font-size: 0.76rem; color: #1d4ed8;
+  font-weight: 600; padding: 0.35rem 0.4rem; cursor: pointer;
+}
+
+.submit {
+  width: 100%; border: none; border-radius: 8px; padding: 0.78rem; background: #1d4ed8;
+  color: #fff; font-weight: 600; font-size: 0.95rem; margin-top: 0.2rem; cursor: pointer;
+}
+.submit:hover { background: #1e3fa8; }
+
+.links { display: flex; justify-content: space-between; margin-top: 0.85rem; font-size: 0.82rem; }
+.links button {
+  color: #1d4ed8; background: none; border: none; padding: 0; font: inherit;
+  font-weight: 500; cursor: pointer;
+}
+.links button:hover { text-decoration: underline; }
+
+.note {
+  margin-top: 0.75rem; font-size: 0.78rem; color: #374151; background: #f3f4f6;
+  border-radius: 6px; padding: 0.55rem 0.65rem; line-height: 1.45;
+}

@@ -1,0 +1,106 @@
+/* The slop. Deliberately, expensively deranged. */
+
+.card {
+  background: var(--slop-bg);
+  color: var(--slop-ink);
+  border-radius: 18px;
+  padding: 1.1rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 40px -12px rgba(124, 58, 237, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient border, three corner radii, glass over opaque. All on purpose. */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  padding: 1.5px;
+  background: var(--slop-grad);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* L36 opts out of all of it. See the level for why. */
+.plain { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); border: 1px solid #d6dbe3; }
+.plain::before { display: none; }
+
+.badge {
+  display: inline-block;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--slop-grad);
+  padding: 0.22rem 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+}
+
+.heading {
+  margin: 0 0 0.3rem;
+  font-size: 1.22rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  background: var(--slop-grad);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+.plain .heading {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: #111827;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.sub { margin: 0 0 1rem; font-size: 0.82rem; color: var(--slop-dim); line-height: 1.45; }
+.plain .sub { color: #4b5563; }
+
+.hint { margin-top: 0.6rem; font-size: 0.68rem; color: #9ca3af; line-height: 1.45; }
+
+.err {
+  margin-top: 0.7rem;
+  font-size: 0.76rem;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-weight: 500;
+}
+
+.cta {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin-top: 0.9rem;
+  background: var(--slop-grad);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 4px 14px -4px rgba(124, 58, 237, 0.6);
+}
+.cta:disabled { opacity: 0.4; box-shadow: none; }
+.cta:active:not(:disabled) { transform: translateY(1px); }
+
+.foot {
+  margin-top: 1rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--slop-line);
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  font-size: 0.58rem;
+  color: #c3c8d0;
+}

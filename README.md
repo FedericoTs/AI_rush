@@ -18,9 +18,35 @@ interface killed you.
 
 ## Status
 
-**Planning.** No code yet. This repository currently contains the design and
-build plan. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what gets built and in
-what order.
+**Phase 1 complete.** The engine is built and tested; six levels are playable.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what remains.
+
+```bash
+npm install
+npm run dev            # http://localhost:3000
+npm run check          # typecheck + lint + 98 unit tests
+npm run e2e            # Playwright, desktop and mobile
+```
+
+| Built | Where |
+| --- | --- |
+| Seeded RNG, shareable seed links | `src/engine/rng.ts` |
+| The run clock — one owner for time | `src/engine/clock.ts` |
+| Scoring, pure and shared with the server | `src/engine/scoring.ts` |
+| The dealer, with every constraint from the design doc | `src/engine/deck.ts` |
+| The coupling engine and its ordering solver | `src/engine/coupling/` |
+| Run state machine and the append-only event log | `src/engine/store.ts` |
+| Input adapters: pointer, keyboard, motion, mic, camera, haptics | `src/input/adapters/` |
+| Scripted traces, so sensor levels are testable in CI | `src/input/__mocks__/` |
+| The slop design system | `src/ui/slop/` |
+| L01, L02, L11, L12, L36, L37 | `src/levels/` |
+
+Not built yet: no backend is provisioned, there is no leaderboard, no share
+card, no calibration screen, and no chaos modifier rendering — the schedule
+exists and is tested, but the visual effects are Phase 5.
+
+The original single-file prototype stays in [`prototype/`](prototype/) as the
+reference these were ported from.
 
 ## The documents
 
@@ -55,8 +81,26 @@ what order.
 
 ## Stack
 
-Next.js 15 (App Router) · React 19 · TypeScript · Tailwind v4 · Zustand ·
-Framer Motion · Supabase (Postgres + Edge Functions) · Vercel · MCP
+Next.js 16 (App Router) · React 19 · TypeScript strict · Tailwind v4 ·
+Zustand · Vitest · Playwright · Supabase (Postgres) · Vercel · MCP
+
+Two deviations from the plan, both deliberate. **Next 16, not 15** — it was
+stable by the time the scaffold went in. **CSS Modules rather than Tailwind
+utilities for levels and the slop system** — brass dial gradients, fader
+tracks and canvas containers are miserable as utility strings, and the slop
+design system is bespoke by definition. Tailwind stays for page and layout
+work.
+
+### The level sandbox
+
+A level is a pure function of its props, and ESLint enforces it on
+`src/levels/**`:
+
+- `Math.random()`, `Date.now()` and `new Date()` are errors. A level takes an
+  `rng` seeded from `(runSeed, levelId)`, because a seed link that does not
+  reproduce a run exactly is a lie.
+- Importing the run store or the router is an error. Levels receive
+  `onSolve` / `onFail` and never reach back into the run.
 
 ## License
 

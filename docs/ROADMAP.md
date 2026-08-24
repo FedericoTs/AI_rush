@@ -13,37 +13,51 @@ volume.
 ## Phase 0 — Foundations
 **Exit:** a URL exists, CI is green, and the landing page is already a joke.
 
-- [ ] Next.js 15 + TS strict + Tailwind v4 scaffold
-- [ ] ESLint rules: no `Math.random()` in `src/levels/**`, no store imports in `src/levels/**`
-- [ ] Vitest + Playwright wired, one trivial test each
-- [ ] GitHub Actions: typecheck, lint, test on PR
-- [ ] Vercel project, preview deploys on PR
-- [ ] Supabase dev + prod projects, CLI migrations in CI
-- [ ] A "coming soon" page that is itself a cursed interface (email signup where
-      the submit button is red and on the left) — ships day one, collects
-      signups, and is the first content test
+- [x] Next.js 16 + TS strict + Tailwind v4 scaffold
+- [x] ESLint rules: no `Math.random()`/`Date.now()` and no store or router
+      imports in `src/levels/**` — verified to fire there and nowhere else
+- [x] Vitest + Playwright wired, real suites in both
+- [x] GitHub Actions: typecheck, lint, test, build, e2e on PR
+- [ ] Vercel project, preview deploys on PR — **needs a human**: provisioning
+      attaches billing to an account
+- [x] Supabase migration written (`supabase/migrations/0001_init.sql`) with RLS
+- [ ] Supabase dev + prod projects provisioned — **needs a human**, same reason
+- [x] A landing page that is already a joke: START is red and on the right
 
 ---
 
-## Phase 1 — The engine
-**Exit:** a run of 3 placeholder levels plays start-to-finish with a working
-clock, score, skip, and seed reproduction.
+## Phase 1 — The engine ✅
+**Exit met:** a six-level run plays start to finish in a real browser, on
+desktop and mobile, with a working clock, scoring, skip, and exact seed
+reproduction. 98 unit tests, 10 e2e.
 
-- [ ] `engine/rng.ts` — mulberry32, per-level streams, unit tested for determinism
-- [ ] `engine/clock.ts` — single rAF loop, `useGameClock()`, time-scalable for tests
-- [ ] `engine/store.ts` — Zustand run state machine (title → calibration → level → tally → …)
-- [ ] `engine/scoring.ts` — **pure**, shared with the server, exhaustively unit tested
-- [ ] `engine/deck.ts` — seeded deal + all constraints from `GAME_DESIGN.md` §5
-- [ ] `engine/chaos/` — modifier provider, CSS-variable wrapper, composition rules
-- [ ] `input/` — the full adapter layer + capability detection (`ARCHITECTURE.md` §4)
-- [ ] `input/adapters/__mocks__/` — scripted traces for motion/audio/camera, so
-      sensor levels are testable in CI from day one
-- [ ] `SfxManager` — preload, gesture unlock, buses
-- [ ] `ui/slop/` — the slop design system + seeded phrase bank
-- [ ] 3 placeholder levels exercising: pointer-only, keyboard-only, sensor+fallback
+- [x] `engine/rng.ts` — mulberry32, per-level streams, seed-link encoding
+- [x] `engine/clock.ts` — injectable time and scheduling, so tests drive a run
+      in microseconds and a headless agent harness can step it
+- [x] `engine/store.ts` — run state machine and the append-only event log
+- [x] `engine/scoring.ts` — pure, shared with the server
+- [x] `engine/deck.ts` — seeded deal, every constraint from `GAME_DESIGN.md` §5
+- [x] `engine/coupling/` — the graph engine and its ordering solver
+- [x] `engine/chaos/modifiers.ts` — specs, mercy flags, schedule
+- [ ] `engine/chaos/ChaosProvider` — the CSS-variable wrapper that *renders*
+      the effects. Deferred to Phase 5 with the levels that need it; the
+      schedule is built and tested, nothing draws it yet
+- [x] `input/` — pointer, keyboard, motion, audioIn, camera, haptics + detection
+- [x] `input/__mocks__/scripted.ts` — recorded traces for motion/audio/camera
+- [x] `engine/sfx.ts` — WebAudio, gesture unlock, plus a silent test double
+- [x] `ui/slop/` — the design system and the seeded phrase bank
+- [x] Six real levels instead of three placeholders: L01, L02, L11, L12, L36, L37
+
+**The tests that matter most:**
+
+- Client score and server recompute agree across 40 seeds and mixed
+  solve/fail/skip orders. If those ever diverge, every leaderboard row is wrong.
+- The coupling solver proves 10,000 seeds reachable on both shipped coupled
+  levels, and refuses a cyclic graph outright.
+- A run with every permission denied still deals a full, fair five minutes.
 
 > **Do not skip the input layer here.** Building it after the levels means
-> rewriting 36 levels for the Capacitor port. This phase is the one place where
+> rewriting 48 levels for the Capacitor port. This phase is the one place where
 > being slow is correct.
 
 ---

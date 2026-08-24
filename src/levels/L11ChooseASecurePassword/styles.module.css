@@ -1,0 +1,19 @@
+.field {
+  display: flex; align-items: center; gap: 0.5rem; border: 1.5px solid var(--slop-line);
+  border-radius: 10px; padding: 0.6rem 0.7rem; background: var(--slop-soft);
+}
+.value {
+  font-family: var(--font-mono); font-size: 1.15rem; font-weight: 500; letter-spacing: 0.22em;
+  flex: 1; min-width: 0; color: var(--slop-ink);
+}
+.ghost { color: #d1d5db; }
+.strength { font-size: 0.72rem; color: #9ca3af; }
+.meter { height: 5px; border-radius: 3px; background: var(--slop-line); margin-top: 0.55rem; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--slop-grad); transition: width 0.2s; }
+.stage {
+  margin-top: 0.8rem; border: 1px solid var(--slop-line); border-radius: 12px;
+  background: linear-gradient(180deg, #fbfaff 0%, #f4f2fe 100%); overflow: hidden;
+  touch-action: manipulation; user-select: none; position: relative;
+}
+.stage canvas { display: block; width: 100%; height: auto; }
+.tip { position: absolute; left: 8px; bottom: 6px; font-family: var(--font-mono); font-size: 0.56rem; color: #b9b2e0; }

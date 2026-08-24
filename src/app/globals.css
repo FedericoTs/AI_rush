@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  /* App chrome — the honest part. The timer never lies. */
+  --chrome: #0b0e13;
+  --chrome-2: #141922;
+  --chrome-line: #232b37;
+  --chrome-ink: #e9eef4;
+  --chrome-dim: #8593a5;
+  --hazard: #ff4a2b;
+  --good: #28c08a;
+
+  /* The slop. */
+  --slop-bg: #ffffff;
+  --slop-ink: #111827;
+  --slop-dim: #6b7280;
+  --slop-line: #e5e7eb;
+  --slop-soft: #f9fafb;
+  --slop-1: #7c3aed;
+  --slop-2: #2563eb;
+  --slop-3: #db2777;
+  --slop-grad: linear-gradient(135deg, #7c3aed 0%, #2563eb 50%, #db2777 100%);
+
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--chrome);
+  color: var(--chrome-ink);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--hazard); outline-offset: 2px; }
+
+/* The chrome always respects this. Level interiors are exempt — that's the game. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,19 @@
+.code {
+  font-family: var(--font-mono); font-size: 1.55rem; font-weight: 700;
+  letter-spacing: 0.34em; text-align: center; color: var(--slop-1);
+  margin-bottom: 1rem; text-indent: 0.34em;
+}
+.cells { display: flex; gap: 0.4rem; justify-content: center; position: relative; padding: 0.5rem 0; }
+.cell {
+  flex: 1; max-width: 46px; height: 56px; border: 2px solid var(--slop-line);
+  border-radius: 10px; background: #fff; position: relative; cursor: text;
+}
+.on { border-color: var(--slop-1); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16); z-index: 2; }
+/* A stuffed cell draws over its neighbours. The overflow is the entire point. */
+.stuffed { z-index: 4; }
+.cell span {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700;
+  white-space: nowrap; color: var(--slop-ink); pointer-events: none;
+}
+.catcher { position: absolute; left: 50%; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }

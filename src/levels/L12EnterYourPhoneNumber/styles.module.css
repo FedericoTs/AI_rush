@@ -1,0 +1,30 @@
+.target {
+  font-family: var(--font-mono); font-size: 1rem; font-weight: 500; letter-spacing: 0.06em;
+  text-align: center; margin-bottom: 0.7rem; color: var(--slop-ink);
+}
+.target b { color: var(--slop-1); }
+.bank {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  background: var(--slop-soft); border: 1px solid var(--slop-line); border-radius: 12px;
+  padding: 0.7rem 0.35rem 0.5rem; touch-action: none; user-select: none;
+}
+.fader { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.35rem; min-width: 0; }
+.track {
+  width: 100%; max-width: 26px; height: 120px; border-radius: 7px; background: #eae7f6;
+  position: relative; border: 1px solid #ddd8f0; cursor: grab;
+}
+.track:active { cursor: grabbing; }
+.fill { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0 0 6px 6px; background: var(--slop-grad); opacity: 0.28; }
+.knob {
+  position: absolute; left: -3px; right: -3px; height: 16px; border-radius: 5px;
+  background: linear-gradient(180deg, #fff, #e7e2f7); border: 1px solid #b9aee8;
+  box-shadow: 0 1px 3px rgba(80, 50, 160, 0.28);
+}
+.inverted .knob { border-color: #f0a0c0; }
+.digit { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--slop-ink); }
+.ok .digit { color: #128a6a; }
+.idx { font-family: var(--font-mono); font-size: 0.5rem; color: #b6bcc7; }
+.readout {
+  font-family: var(--font-mono); font-size: 0.98rem; text-align: center; margin-top: 0.6rem;
+  letter-spacing: 0.06em; color: var(--slop-dim); font-variant-numeric: tabular-nums;
+}
