@@ -1,0 +1,107 @@
+/*
+ * The facilitator's chrome.
+ *
+ * It looks like a tool, not like the game — mono, high contrast, a green that
+ * belongs to no tier. Someone glancing at a screen recording should be able to
+ * tell instantly which frames had an observer attached, and nobody should ever
+ * mistake this bar for part of a level.
+ */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem calc(0.5rem + env(safe-area-inset-bottom));
+  background: #07120f;
+  border-top: 1px solid var(--good);
+  box-shadow: 0 -14px 36px -20px rgba(0, 0, 0, 0.9);
+}
+
+.tag {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  color: var(--good);
+}
+.tag b { font-size: 0.7rem; letter-spacing: 0; color: var(--chrome-ink); }
+.tag i { font-style: normal; font-size: 0.56rem; color: var(--chrome-dim); }
+
+.keys { display: flex; gap: 0.35rem; flex: 1; min-width: 0; }
+
+/* On a phone the label and four targets do not both fit on one line, and the
+   targets are the half that must not shrink — they are being hit by someone
+   who is looking at a person rather than at the screen. */
+@media (max-width: 560px) {
+  .tag { flex-basis: 100%; }
+}
+
+.key {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  /* Big enough to hit without looking, because the facilitator is watching a
+     face rather than a screen. */
+  padding: 0.5rem 0.3rem;
+  border: 1px solid var(--chrome-line);
+  border-radius: 8px;
+  background: #0d1a16;
+  color: var(--chrome-ink);
+}
+.key:active { background: #12241d; }
+
+.keyLabel { font-size: 0.7rem; font-weight: 600; }
+.keyHint { font-family: var(--font-mono); font-size: 0.5rem; color: #4b5563; }
+.keyCount {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 0.78rem; color: var(--good);
+}
+
+.key[data-kind="confused"] .keyCount { color: #f5b942; }
+.key[data-kind="rage"] .keyCount { color: var(--hazard); }
+.key[data-kind="note"] .keyCount { color: var(--chrome-dim); }
+
+/* ─── the end of a session ────────────────────────────────── */
+
+.export {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 1px solid var(--good);
+  border-radius: 12px;
+  background: #0a1512;
+}
+.exportHead { display: flex; align-items: baseline; gap: 0.5rem; }
+.exportHead b { font-size: 0.85rem; color: var(--good); }
+.exportHead span { font-family: var(--font-mono); font-size: 0.62rem; color: var(--chrome-dim); }
+
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.field span { font-size: 0.68rem; color: var(--chrome-dim); }
+.field input {
+  border: 1px solid var(--chrome-line); border-radius: 8px; padding: 0.55rem 0.6rem;
+  background: var(--chrome-2); color: var(--chrome-ink); font-size: 0.85rem;
+}
+.field input:focus { outline: 2px solid var(--good); outline-offset: 1px; }
+
+.save {
+  border: none; border-radius: 10px; padding: 0.7rem;
+  background: var(--good); color: #062018; font-weight: 700; font-size: 0.85rem;
+}
+
+.exportNote { margin: 0; font-size: 0.66rem; color: var(--chrome-dim); line-height: 1.5; }
+.exportNote code {
+  font-family: var(--font-mono); font-size: 0.62rem;
+  background: var(--chrome-2); border-radius: 3px; padding: 0.05rem 0.25rem;
+}

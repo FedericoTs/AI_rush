@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "playtest:report": "node scripts/playtest-report.mjs",
     "check": "npm run typecheck && npm run lint && npm run test"
   },
   "dependencies": {

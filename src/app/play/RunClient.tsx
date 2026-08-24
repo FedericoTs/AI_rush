@@ -22,6 +22,11 @@ import { detectPassive } from "@/input/capabilities";
 import { Calibrate } from "./Calibrate";
 import { useInput } from "@/input/useInput";
 import { REGISTRY } from "@/levels/registry";
+import { ObserverBar, ObserverExport } from "./Observer";
+import {
+  downloadSession, sessionFilename,
+  type Mark, type MarkKind, type PlaytestSession,
+} from "@/lib/playtest";
 import s from "./play.module.css";
 
 /**
@@ -42,10 +47,17 @@ export function RunClient({
   practice = null,
   unlocks: linkUnlocks = NOTHING_UNLOCKED,
   ref = null,
+  observe = false,
 }: {
   seed: number;
   mercy: boolean;
   challenge?: Challenge | null;
+  /**
+   * Attach the playtest observer bar (`docs/PLAYTEST.md`). Nothing about the
+   * run changes — the clock does not pause, no marks reach the event log, and
+   * the session file is downloaded rather than uploaded.
+   */
+  observe?: boolean;
   /**
    * What the link says this deck may contain. A bare /play uses whatever this
    * browser has opened; a challenge link uses the sharer's, so their run
@@ -110,6 +122,14 @@ export function RunClient({
   const clock = useRef<GameClock | null>(null);
   const events = useRun((r) => r.events);
   const elapsedMs = useRun((r) => r.elapsedMs);
+
+  /* The observer's marks. Kept here rather than in the store because they are
+     not part of the run: the server never sees them, they do not affect the
+     score, and a run that happened to be watched must score identically to one
+     that was not. */
+  const [marks, setMarks] = useState<Mark[]>([]);
+  const [subject, setSubject] = useState("");
+  const [saved, setSaved] = useState(false);
 
   /* The selection arrives as a fresh array on every render of the route, and a
      run must not restart because an array changed identity. The list is short
@@ -264,6 +284,60 @@ export function RunClient({
     });
   }, [sfx]);
 
+  /*
+   * A mark, timed against the clock rather than against the HUD.
+   *
+   * The HUD deliberately only re-renders on second boundaries, so a laugh
+   * tagged from `remaining` could land most of a second away from the solve it
+   * belongs to — and "did they laugh before or after they got it" is precisely
+   * the distinction the whole exercise is trying to record.
+   */
+  const observedId = deck[index]?.module.meta.id ?? "—";
+  const mark = useCallback(
+    (kind: MarkKind) => {
+      const rem = clock.current?.remainingMs;
+      const atMs = rem === undefined ? Math.round(elapsedMs) : Math.round(durationMs - rem);
+      setMarks((prev) => [...prev, { atMs, kind, levelId: observedId }]);
+    },
+    [durationMs, elapsedMs, observedId],
+  );
+
+  /* The deck travels with the session, so a report read in three months does
+     not need this commit checked out to know what L24's par was at the time. */
+  const exportSession = useCallback(() => {
+    if (!capabilities) return;
+    const session: PlaytestSession = {
+      version: 1,
+      subject,
+      seed: encodeSeed(seed, capabilityMarks(capabilities)),
+      mercy,
+      durationMs,
+      score,
+      killedBy,
+      levels: deck.map((d) => ({
+        id: d.module.meta.id,
+        title: d.module.meta.title,
+        tier: d.module.meta.tier,
+        parSeconds: d.module.meta.parSeconds,
+      })),
+      marks,
+      events,
+      breakdown,
+    };
+    downloadSession(session, sessionFilename(session, new Date()));
+    setSaved(true);
+  }, [capabilities, subject, seed, mercy, durationMs, score, killedBy, deck, marks, events, breakdown]);
+
+  const observerExport = observe ? (
+    <ObserverExport
+      subject={subject}
+      onSubject={setSubject}
+      onExport={exportSession}
+      saved={saved}
+      marks={marks}
+    />
+  ) : null;
+
   if (!capabilities) {
     return (
       <div className={s.shell}>
@@ -283,6 +357,7 @@ export function RunClient({
           elapsed={Math.round(Math.max(elapsedMs, durationMs - remaining))}
           ids={only}
         />
+        {observerExport}
       </div>
     );
   }
@@ -304,6 +379,7 @@ export function RunClient({
           unlocks={unlocks}
           ref={ref}
         />
+        {observerExport}
       </div>
     );
   }
@@ -311,27 +387,30 @@ export function RunClient({
   if (!current) return <div className={s.shell} />;
 
   return (
-    <RunStage
-      key={current.module.meta.id}
-      current={current}
-      seed={seed}
-      remaining={remaining}
-      elapsed={durationMs - remaining}
-      score={score}
-      combo={combo}
-      muted={muted}
-      flash={flash}
-      capabilities={capabilities}
-      sfx={sfx}
-      challenge={challenge}
-      practice={only !== undefined}
-      position={only ? `${index + 1}/${deck.length}` : null}
-      secretFound={foundSecret}
-      onSolve={handleSolve}
-      onFail={handleFail}
-      onSkip={handleSkip}
-      onToggleMute={handleToggleMute}
-    />
+    <>
+      {observe && <ObserverBar levelId={current.module.meta.id} marks={marks} onMark={mark} />}
+      <RunStage
+        key={current.module.meta.id}
+        current={current}
+        seed={seed}
+        remaining={remaining}
+        elapsed={durationMs - remaining}
+        score={score}
+        combo={combo}
+        muted={muted}
+        flash={flash}
+        capabilities={capabilities}
+        sfx={sfx}
+        challenge={challenge}
+        practice={only !== undefined}
+        position={only ? `${index + 1}/${deck.length}` : null}
+        secretFound={foundSecret}
+        onSolve={handleSolve}
+        onFail={handleFail}
+        onSkip={handleSkip}
+        onToggleMute={handleToggleMute}
+      />
+    </>
   );
 }
 

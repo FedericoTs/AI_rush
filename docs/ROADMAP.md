@@ -83,6 +83,15 @@ explanation beyond "play this." Count laughs. Note every moment of *confused
 silence* — confused silence is the failure mode, not difficulty. Rebalance par
 times from the recordings before Phase 3.
 
+- [x] **The kit** (`docs/PLAYTEST.md`) — the facilitator script, the observer
+      bar at `/play?observe=1` that timestamps laughs and confusion against the
+      run's own clock, the session file, and `npm run playtest:report`, which
+      turns five of them into a pass/fail on the gate and a list of par
+      changes. Nothing is uploaded; the marks cannot touch a run
+- [ ] **The playtest itself** — *needs humans*. Five people who have never seen
+      it, an evening, and a recording. This is the gate and it is the one thing
+      in the project that cannot be built
+
 If Phase 2 doesn't produce laughs, **stop and fix the levels.** Do not build a
 leaderboard for a game nobody enjoys.
 

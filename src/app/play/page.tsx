@@ -19,6 +19,7 @@ export default async function Play({
     u?: string;
     x?: string;
     k?: string;
+    observe?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -58,6 +59,10 @@ export default async function Play({
       practice={practice}
       unlocks={unlocks}
       ref={ref}
+      /* The Phase 2 playtest kit (`docs/PLAYTEST.md`). Opt-in by URL and by
+         URL only: it is a facilitator's clipboard, not a feature, and a player
+         who has not typed this has no idea it exists. */
+      observe={params.observe === "1"}
     />
   );
 }
