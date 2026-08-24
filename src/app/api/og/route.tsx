@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { CATALOG } from "@/levels/catalog";
+import { siteHost } from "@/lib/site";
 import { CURSOR_H, CURSOR_W, cursorSvg } from "@/ui/logo/cursor";
 import { logoSvg } from "@/ui/logo/pixels";
 import { ARCHIVO_BLACK, INTER_REGULAR } from "./font";
@@ -267,7 +268,7 @@ export function GET() {
             {CATALOG.length}/{WRITTEN} BUILT · SOLVE OR SKIP · THE CLOCK DOES NOT STOP
           </div>
           <div style={{ display: "flex", flex: 1 }} />
-          <div style={{ display: "flex", color: INK }}>ai-rush.vercel.app</div>
+          <div style={{ display: "flex", color: INK }}>{siteHost()}</div>
         </div>
       </div>
     ),
