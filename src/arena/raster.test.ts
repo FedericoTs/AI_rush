@@ -334,3 +334,50 @@ describe("every advertised coordinate is one you can actually click", () => {
     expect(look.grid.join("\n")).toContain("0.00 %");
   });
 });
+
+/**
+ * Controls with no words on them.
+ *
+ * Two blind runs died on L05 the same way. Its six consent toggles are buttons
+ * whose only child is the knob, so the own-text walk returned nothing and every
+ * one of them was dropped — leaving six category names with no switch anywhere
+ * near them. The second agent guessed the truth and could not act on it:
+ *
+ *   turn 6 · "Guessing the six category rows have toggle switches drawn off to
+ *   the right past the visible text"
+ *
+ * They were exactly there. Not a hard level — a level with no legal move.
+ */
+describe("an unlabelled control", () => {
+  const toggle: Box = { text: "", x: 406, y: 216, w: 34, h: 19, kind: "button" };
+
+  it("is drawn as something you can press", () => {
+    const look = rasterize([toggle], VIEW);
+    expect(look.grid.join("\n")).toMatch(/\[-*\]/);
+  });
+
+  it("is listed as a region, so there is somewhere to aim", () => {
+    expect(rasterize([toggle], VIEW).regions).toHaveLength(1);
+  });
+
+  it("says nothing about which way the switch is thrown", () => {
+    /* That is state. It is legible on screen, and inferring it from a knob's
+       offset would be reading the DOM on the agent's behalf. L05 prints
+       "46 of 47 partners enabled" in plain text; finding the odd one out is
+       the level. */
+    const serialised = JSON.stringify(rasterize([toggle], VIEW));
+    for (const leak of ["true", "false", "checked", "on", "off"]) {
+      expect(serialised.toLowerCase()).not.toContain(`"${leak}"`);
+    }
+  });
+
+  it("does not swallow a backdrop, which is not a control at all", () => {
+    /* A modal backdrop is also a textless clickable rectangle. Announcing it
+       would have the agent clicking the dark area behind a dialog because we
+       called it a button. */
+    const backdrop: Box = {
+      text: "", x: 0, y: 0, w: VIEW.width, h: VIEW.height, kind: "button", opaque: true,
+    };
+    expect(rasterize([backdrop], VIEW).regions).toHaveLength(0);
+  });
+});

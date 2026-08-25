@@ -40,6 +40,13 @@ export const VIEWPORT = { width: 480, height: 720 };
     short enough that L22's infinite progress bar stays a joke and not a hang. */
 export const MAX_WAIT_MS = 10_000;
 
+/**
+ * Grid rows one `scroll` may move. A full screen is 24, and a person flicking
+ * a long consent list covers about that in one go; more than that in a single
+ * action stops being a hand and starts being a jump-to-offset.
+ */
+export const MAX_SCROLL_ROWS = 24;
+
 /** The keys an agent may press. Every transport offers exactly these. */
 export const KEYS = [
   "Tab", "Enter", "Escape", "Backspace",
@@ -185,6 +192,38 @@ export class Arena {
        level is specifically about where your cursor came from. */
     await this.page.mouse.move(to.px, to.py, { steps: 12 });
     await this.page.mouse.up();
+    return this.look();
+  }
+
+  /**
+   * Scroll whatever is under a grid coordinate.
+   *
+   * Added because two blind runs died on L05 in exactly the same way: its
+   * forty-seven consent partners scroll inside a fixed box, the extractor
+   * correctly withholds the rows below the fold, and the agent had no action
+   * that could bring them into view. It poked six controls, got nothing, and
+   * skipped — twice. That is not a hard level, it is a level with no legal
+   * move, and there is one in the catalogue called *Scroll To Accept*.
+   *
+   * Aimed at a coordinate rather than applied to the page, because that is the
+   * distinction that matters: a person puts a finger on the list and moves
+   * *that*, while the page behind it stays put. Scrolling the window instead
+   * would leave L05 exactly as unplayable as it was.
+   *
+   * It hands over no structure. Where the scrollable regions are, how far they
+   * go, and whether anything moved at all remain things to work out by looking.
+   */
+  async scroll(x: number, y: number, rows: number): Promise<string> {
+    if (!this.page) return NO_RUN;
+    const { px, py } = this.toPixels(x, y);
+    const clamped = Math.max(-MAX_SCROLL_ROWS, Math.min(MAX_SCROLL_ROWS, Math.round(rows)));
+    /* The pointer has to be over the thing first — `wheel` goes wherever the
+       mouse currently is, which is the same rule a trackpad follows. */
+    await this.page.mouse.move(px, py);
+    await this.page.mouse.wheel(0, clamped * (VIEWPORT.height / ROWS));
+    /* A beat for smooth-scrolling containers to land, or the agent reads the
+       screen mid-flight and concludes nothing happened. */
+    await this.page.waitForTimeout(220);
     return this.look();
   }
 

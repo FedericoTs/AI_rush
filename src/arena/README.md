@@ -40,6 +40,7 @@ click(x, y, why)      → click at grid coordinates
 type(text, why)       → types into whatever has focus
 key(name, why)        → Tab, Enter, Escape, arrows, Backspace, Space
 drag(x1,y1,x2,y2,why) → press, move, release
+scroll(x,y,rows,why)  → scrolls what is under (x,y); negative is up
 wait(ms, why)         → up to ten seconds
 skip(why)             → ten seconds and the combo, same as a human pays
 ```

@@ -89,6 +89,27 @@ export interface Look {
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /**
+ * A button with no words on it — a switch, a stepper, a bare icon.
+ *
+ * Worth reporting, because a person sees one and can press it: L05's six
+ * consent toggles are exactly this, and dropping them left the agent reading
+ * six category names with no control anywhere near them.
+ *
+ * The size ceiling is the whole subtlety. A modal backdrop is also a textless
+ * clickable rectangle, and it is emphatically *not* something to aim at —
+ * announcing it would have the agent clicking the dark area behind a dialog
+ * because we called it a button. A control is a thing the size of a thumb; at
+ * a quarter of the screen it has stopped being one.
+ */
+function isUnlabelledControl(box: Box, view: Viewport): boolean {
+  return (
+    box.kind === "button" &&
+    !box.text.trim() &&
+    box.w * box.h < view.width * view.height * 0.25
+  );
+}
+
+/**
  * Where a pixel rectangle lands on the grid.
  *
  * The invariant, and it is the whole reason this function is not two lines of
@@ -197,10 +218,30 @@ function paint(rows: string[][], claimed: boolean[][], box: Box, view: Viewport)
    * broken channel. Underscores are the character-cell way to draw a field and
    * are instantly legible.
    */
-  const text =
-    box.kind === "field" && !box.text.trim()
-      ? "_".repeat(Math.max(1, x1 - x0 + 1))
-      : box.text.replace(/\s+/g, " ").trim();
+  const width = Math.max(1, x1 - x0 + 1);
+
+  /*
+   * An unlabelled button is drawn as one, for the same reason an empty field
+   * is drawn as underscores: a person sees a switch there, and reporting a
+   * blank leaves an agent reading a category name with nothing to press.
+   *
+   * Brackets rather than a fill, so it reads as a control rather than as the
+   * `░` of something unreadable. What it does NOT say is which way the switch
+   * is thrown — that is state, it is legible on screen, and inferring it from
+   * a knob's offset would be us reading the DOM on the agent's behalf. L05
+   * prints "46 of 47 partners enabled" in plain text; working out which one is
+   * the odd one is the level.
+   */
+  const empty =
+    box.kind === "field"
+      ? "_".repeat(width)
+      : isUnlabelledControl(box, view)
+        ? width >= 3
+          ? `[${"-".repeat(width - 2)}]`
+          : "[]".slice(0, width)
+        : "";
+
+  const text = box.text.trim() ? box.text.replace(/\s+/g, " ").trim() : empty;
 
   if (text) {
     const row = rows[y0]!;
@@ -255,7 +296,8 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
     .map((box, i) => ({ box, i }))
     /* Three things with no text still matter: an opaque panel, which hides
        what is behind it; an empty field, which is a rectangle somebody can see
-       and click; and a drawing, which is a thing on the screen that happens
+       and click; an unlabelled button, which is a switch somebody can see and
+       press; and a drawing, which is a thing on the screen that happens
        not to be made of words. Everything else with nothing to say is layout,
        and the agent never hears of it. */
     .filter(
@@ -265,7 +307,8 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
         (box.text.trim().length > 0 ||
           box.opaque === true ||
           box.kind === "field" ||
-          box.kind === "drawing"),
+          box.kind === "drawing" ||
+          isUnlabelledControl(box, view)),
     )
     /* Descending: higher z first, and within one z the later element, because
        later in the document is what sits on top when nothing says otherwise. */
@@ -280,7 +323,10 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
     .filter(
       ({ box }) =>
         box.kind !== "text" &&
-        (box.text.trim().length > 0 || box.kind === "field" || box.kind === "drawing"),
+        (box.text.trim().length > 0 ||
+          box.kind === "field" ||
+          box.kind === "drawing" ||
+          isUnlabelledControl(box, view)),
     )
     .map(({ box }) => {
       const { x0, y0, x1, y1 } = toCells(box, view);

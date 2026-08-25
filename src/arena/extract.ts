@@ -216,9 +216,55 @@ export function extractBoxes(): Extracted {
        not a thing anybody plays against, and a screen of `░` where the slop
        kit put decoration would be worse than the omission it fixes. */
     const drawn = kind === "drawing" && rect.width >= 24 && rect.height >= 24;
-    if (!text && !drawn && !(opaque && rect.width > view.width * 0.4 && rect.height > 40)) continue;
+
+    /*
+     * A control with no words on it is still a control.
+     *
+     * L05's six consent toggles are buttons whose only child is the knob, so
+     * the own-text walk returns nothing and every one of them was thrown away
+     * — leaving six category names with no switch anywhere near them. Two
+     * blind runs died on that level in the same way, and the second one
+     * guessed the truth without being able to act on it:
+     *
+     *   turn 6 · "Guessing the six category rows have toggle switches drawn
+     *   off to the right past the visible text"
+     *
+     * They were exactly there, and they were pressable, and we had not
+     * mentioned them. Same failure as the dropdowns: not a hard level, a level
+     * with no legal move.
+     *
+     * The size floor is what stops this filling the grid with decoration.
+     */
+    const pressable = kind === "button" && rect.width >= 14 && rect.height >= 10;
+
+    if (
+      !text &&
+      !drawn &&
+      !pressable &&
+      !(opaque && rect.width > view.width * 0.4 && rect.height > 40)
+    ) {
+      continue;
+    }
 
     seen.add(el);
+
+    /*
+     * A control reported once, not once per part it is built from.
+     *
+     * A toggle switch is a button wrapping a knob, and the knob is itself
+     * framed and carries a pointer cursor — so `kindOf` calls it a button too
+     * and L05 came back with twelve overlapping regions for six switches. To
+     * anybody looking at the screen there are six things there.
+     *
+     * Only for a control with no words of its own: a button whose child says
+     * "Continue" already reports through that child's text, and swallowing
+     * labelled descendants wholesale would lose text a person can plainly
+     * read.
+     */
+    if (!text && kind === "button") {
+      for (const child of Array.from(el.querySelectorAll("*"))) seen.add(child);
+    }
+
     boxes.push({
       text,
       x: Math.round(rect.left),

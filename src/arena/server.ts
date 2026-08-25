@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { COLS, ROWS } from "./raster";
-import { Arena, KEYS, MAX_WAIT_MS, NO_RUN, WHO } from "./arena";
+import { Arena, KEYS, MAX_SCROLL_ROWS, MAX_WAIT_MS, NO_RUN, WHO } from "./arena";
 
 /**
  * The Agent Arena, cheap first version — over MCP.
@@ -166,6 +166,34 @@ server.tool(
   async ({ x1, y1, x2, y2, why }) => {
     arena.record("drag", why);
     return text(arena.current() ? await arena.drag(x1, y1, x2, y2) : NO_RUN);
+  },
+);
+
+server.tool(
+  "scroll",
+  [
+    "Scroll whatever sits under a grid coordinate.",
+    "",
+    "Negative rows scroll up, positive scroll down. This moves the thing you",
+    "point at, not the page — a list inside a panel scrolls on its own while",
+    "everything around it stays put, exactly as it would under a finger.",
+    "",
+    "Nothing tells you what is scrollable, how far it goes, or whether you",
+    "moved it. Look and find out.",
+  ].join("\n"),
+  {
+    ...COORD,
+    rows: z
+      .number()
+      .int()
+      .min(-MAX_SCROLL_ROWS)
+      .max(MAX_SCROLL_ROWS)
+      .describe(`Grid rows to scroll by; negative is up. At most ${MAX_SCROLL_ROWS}.`),
+    why: WHY,
+  },
+  async ({ x, y, rows, why }) => {
+    arena.record("scroll", why);
+    return text(arena.current() ? await arena.scroll(x, y, rows) : NO_RUN);
   },
 );
 

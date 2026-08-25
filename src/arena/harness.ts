@@ -1,7 +1,7 @@
 #!/usr/bin/env -S npx tsx
 import { createServer } from "node:http";
 import { writeFileSync } from "node:fs";
-import { Arena, GAME_URL, KEYS, MAX_WAIT_MS, type KeyName } from "./arena";
+import { Arena, GAME_URL, KEYS, MAX_SCROLL_ROWS, MAX_WAIT_MS, type KeyName } from "./arena";
 import { COLS, ROWS } from "./raster";
 
 /**
@@ -44,6 +44,7 @@ interface Act {
   text?: string;
   name?: string;
   ms?: number;
+  rows?: number;
 }
 
 const HELP = [
@@ -55,6 +56,9 @@ const HELP = [
   `           {"tool":"type","text":"...","why":"..."}`,
   `           {"tool":"key","name":"Enter","why":"..."}`,
   `           {"tool":"drag","x1":0,"y1":0,"x2":0,"y2":0,"why":"..."}`,
+  `           {"tool":"scroll","x":0,"y":0,"rows":6,"why":"..."}`,
+  `                                                   scrolls what is under (x,y);`,
+  `                                                   negative is up, at most ${MAX_SCROLL_ROWS} rows`,
   `           {"tool":"wait","ms":2000,"why":"..."}   up to ${MAX_WAIT_MS}ms`,
   `           {"tool":"skip","why":"..."}             costs ten seconds`,
   "",
@@ -107,6 +111,14 @@ async function act(body: Act): Promise<{ status: number; text: string }> {
         await arena.drag(
           clamp(body.x1, 0, COLS - 1), clamp(body.y1, 0, ROWS - 1),
           clamp(body.x2, 0, COLS - 1), clamp(body.y2, 0, ROWS - 1),
+        ),
+      );
+    case "scroll":
+      return stamp(
+        await arena.scroll(
+          clamp(body.x, 0, COLS - 1),
+          clamp(body.y, 0, ROWS - 1),
+          clamp(body.rows, -MAX_SCROLL_ROWS, MAX_SCROLL_ROWS),
         ),
       );
     case "wait":

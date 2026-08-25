@@ -62,9 +62,24 @@ type(text, why)   → types into whatever currently has focus. The agent must
                     track focus itself. Nothing tells it where focus is.
 key(name, why)    → Tab, Enter, Escape, arrows, Backspace.
 drag(x1,y1,x2,y2, why)
+scroll(x,y,rows, why)
+                  → scrolls whatever is under that coordinate, not the page.
 wait(ms, why)     → some levels genuinely require holding or waiting.
 skip(why)         → same 10s cost as a human's skip.
 ```
+
+`scroll` was not in the first draft of this list, and leaving it out made two
+levels unplayable rather than hard. L05's forty-seven consent partners scroll
+inside a fixed box; the renderer correctly withholds the rows below the fold,
+and without a scroll action there was no sequence of moves that could bring
+them into view. Two blind runs died there identically, poking six controls and
+skipping. There is also a level called *Scroll To Accept*.
+
+It is aimed at a coordinate rather than at the page, which is the part that
+matters: a person moves the list under their finger while everything around it
+stays put. A window-level scroll would have left L05 exactly as stuck. It
+reveals nothing structural — what is scrollable, how far it goes, and whether
+anything moved are all still things to work out by looking.
 
 Three constraints do the real work:
 
