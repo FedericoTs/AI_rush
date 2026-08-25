@@ -279,3 +279,58 @@ describe("a drawing", () => {
     expect(look.grid[12]).toContain("░");
   });
 });
+
+/**
+ * The invariant that makes a region list mean anything.
+ *
+ * Every coordinate the grid advertises gets turned back into a pixel by
+ * `Arena.toPixels`, which takes the *centre* of that cell. So a cell whose
+ * centre falls outside the box is not a near miss — it is a coordinate we
+ * published and the mouse then lands somewhere else entirely.
+ *
+ * A blind run found this by losing to it for four minutes: L27's address input
+ * spans y 239–284, its top edge sat one pixel inside the row spanning 210–240,
+ * and the old outward rounding advertised that row. Its centre is 225px. Every
+ * click missed the field, focus never moved, and the agent reasonably concluded
+ * that typing was broken in this game. Any control whose top edge fell in the
+ * lower half of a row was unclickable — a coin flip per field, on every text
+ * level in the catalogue.
+ */
+describe("every advertised coordinate is one you can actually click", () => {
+  /* What the harness does with a grid coordinate. Duplicated from
+     `Arena.toPixels` on purpose: if that mapping ever changes, this test
+     should fail rather than quietly keep passing against a stale copy. */
+  const toPixels = (cx: number, cy: number) => ({
+    px: Math.round((cx + 0.5) * (VIEW.width / COLS)),
+    py: Math.round((cy + 0.5) * (VIEW.height / ROWS)),
+  });
+
+  it("holds for a field at every vertical offset within a row", () => {
+    /* The real L27 geometry, walked across a whole row. The failing case was
+       an offset of 29 out of 30, which is exactly the kind of number nobody
+       picks by hand. */
+    for (let offset = 0; offset < 30; offset++) {
+      const box: Box = {
+        text: "",
+        x: 35, y: 210 + offset, w: 300, h: 45,
+        kind: "field",
+      };
+      const region = rasterize([box], VIEW).regions[0]!;
+      const { px, py } = toPixels(region.x, region.y);
+
+      expect(py, `offset ${offset}: click above the box`).toBeGreaterThanOrEqual(box.y);
+      expect(py, `offset ${offset}: click below the box`).toBeLessThanOrEqual(box.y + box.h);
+      expect(px, `offset ${offset}: click left of the box`).toBeGreaterThanOrEqual(box.x);
+      expect(px, `offset ${offset}: click right of the box`).toBeLessThanOrEqual(box.x + box.w);
+    }
+  });
+
+  it("still places text too small to hold a cell centre", () => {
+    /* L22's nine-pixel number is the whole level. A rule that only kept cells
+       whose centres a box contains would drop it entirely, which is why the
+       fallback exists. */
+    const tiny: Box = { text: "0.00 %", x: 411, y: 268, w: 36, h: 9, kind: "text" };
+    const look = rasterize([tiny], VIEW);
+    expect(look.grid.join("\n")).toContain("0.00 %");
+  });
+});

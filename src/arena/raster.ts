@@ -91,20 +91,48 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 /**
  * Where a pixel rectangle lands on the grid.
  *
- * Rounded outward — a box that covers any part of a cell owns that cell —
- * because the agent clicks at grid coordinates, and a control rounded *in* to
- * nothing is a control it can see and cannot press.
+ * The invariant, and it is the whole reason this function is not two lines of
+ * `Math.floor`: **a cell this returns must be a cell you can click.** The
+ * agent is handed grid coordinates and the harness turns each one back into
+ * the pixel at that cell's *centre*, so a cell whose centre falls outside the
+ * box is a coordinate we advertised and the mouse then misses.
+ *
+ * Rounding outward gets that wrong, and a blind run found it the expensive
+ * way. L27's address input spans y 239–284; its top edge sits one pixel inside
+ * the row that spans 210–240, so the old `floor` advertised row 7 — whose
+ * centre is 225px, fourteen pixels above the field. Every click landed on the
+ * page body, focus never moved, and the agent spent four minutes concluding
+ * that typing was broken in this game:
+ *
+ *   turn 51 · "type has never worked once this whole run, so I suspect clicks
+ *   are not actually setting keyboard focus"
+ *
+ * It was right, and it was our fault. Any control whose top edge happened to
+ * fall in the lower half of a row was unclickable, which is a coin flip per
+ * field on every text level in the catalogue.
+ *
+ * So a box owns the cells whose centres it actually contains. The fallback
+ * matters as much as the rule: something thinner than a cell that straddles a
+ * boundary contains no centre at all, and the honest answer for it is the cell
+ * holding its own middle. That is what keeps L22's nine-pixel number — one
+ * cell, and the entire mechanic of the level — on the grid at all.
  */
 function toCells(box: Box, view: Viewport) {
-  const cw = view.width / COLS;
-  const ch = view.height / ROWS;
+  const span = (start: number, size: number, cell: number, max: number) => {
+    let a = Math.ceil(start / cell - 0.5);
+    let b = Math.floor((start + size) / cell - 0.5);
+    /* No cell centre inside it: too small to contain one. Use the cell its own
+       centre lands in, which is where a person would point at it. */
+    if (b < a) a = b = Math.floor((start + size / 2) / cell);
+    a = clamp(a, 0, max);
+    b = clamp(b, 0, max);
+    return { lo: a, hi: Math.max(a, b) };
+  };
 
-  const x0 = clamp(Math.floor(box.x / cw), 0, COLS - 1);
-  const y0 = clamp(Math.floor(box.y / ch), 0, ROWS - 1);
-  const x1 = clamp(Math.ceil((box.x + box.w) / cw) - 1, x0, COLS - 1);
-  const y1 = clamp(Math.ceil((box.y + box.h) / ch) - 1, y0, ROWS - 1);
+  const x = span(box.x, box.w, view.width / COLS, COLS - 1);
+  const y = span(box.y, box.h, view.height / ROWS, ROWS - 1);
 
-  return { x0, y0, x1, y1 };
+  return { x0: x.lo, y0: y.lo, x1: x.hi, y1: y.hi };
 }
 
 /**
