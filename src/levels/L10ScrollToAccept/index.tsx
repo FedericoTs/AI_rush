@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { LevelModule, LevelProps } from "@/engine/types";
 import { meta } from "./meta";
 import { SlopBadge, SlopCard, SlopFooter, SlopHeading, SlopHint } from "@/ui/slop/Slop";
@@ -25,9 +25,28 @@ const CLAUSES = [
   "We may email you. Opting out opts you into a different list.",
 ];
 
-/** The escape, hidden in the body copy at roughly three-fifths depth. */
+/** The escape, hidden in the body copy a little under halfway down. */
 const ESCAPE_AT = 9;
 const GROW_AT = 0.8;
+const GROW_BY = 1.2;
+/*
+ * Where growing stops and the rubber band takes over.
+ *
+ * Twenty percent compounding is exponential in the number of times a player
+ * flicks, and players flick a lot: fifteen seconds of honest scrolling crosses
+ * eighty percent twenty-seven times, which is twenty-six paragraphs becoming
+ * three thousand eight hundred. That is not a joke about terms of service, it
+ * is a phone browser dying.
+ *
+ * `LEVELS.md` already describes the way out and it had never been built —
+ * "it also has rubber-band overscroll that throws you back up". Past the cap
+ * the document stops growing and starts throwing, which costs the player
+ * exactly what another twenty percent would have and costs the browser
+ * nothing. The end stays unreachable either way, which is the only property
+ * the level actually needs.
+ */
+const MAX_CLAUSES = 220;
+const SNAP_BACK_TO = 0.45;
 
 function paragraph(i: number): string {
   return `${i + 1}. ${CLAUSES[i % CLAUSES.length]!} ${CLAUSES[(i * 7 + 3) % CLAUSES.length]!}`;
@@ -54,18 +73,71 @@ function Component({ onSolve, onFail, sfx }: LevelProps) {
   const [pct, setPct] = useState(0);
   const [grows, setGrows] = useState(0);
   const boxRef = useRef<HTMLDivElement | null>(null);
+  /*
+   * One growth per pass of eighty percent — which is what the level claims to
+   * do, and what it did not.
+   *
+   * `scroll` fires many times per gesture and React batches the state it
+   * produces, so every event in a batch measured the same un-grown document,
+   * saw the same eighty percent, and called the same functional update. They
+   * compounded. Measured: a single flick of the wheel grew the document six
+   * times, and fifteen seconds of honest scrolling turned twenty-six
+   * paragraphs into three thousand eight hundred — enough to make a phone
+   * unusable, and enough to shove the solve far above the reader before they
+   * could read it.
+   *
+   * The latch is cleared below, after the browser has actually laid the
+   * bigger document out. Until then no amount of scrolling can grow it again,
+   * which is the whole point: the document grows when the player travels, not
+   * when the event loop is busy.
+   */
+  const armed = useRef(true);
+
+  const measure = (box: HTMLDivElement) => {
+    const max = box.scrollHeight - box.clientHeight;
+    return max > 0 ? box.scrollTop / max : 0;
+  };
+
+  /*
+   * Re-measure once the longer document exists, and re-arm.
+   *
+   * This is also what keeps the accept button out of reach. `pct` is state,
+   * set from whatever the document was at the moment of the scroll — so after
+   * a growth it still read the pre-growth number, and a player who slammed to
+   * the bottom four times rendered "100%" over a document that was nowhere
+   * near its end, with the button enabled and wired to a fail. The comment on
+   * that button said it was reachable only if the document stopped growing.
+   * It was reachable in about four seconds.
+   *
+   * Layout effect rather than effect: this runs before the browser paints, so
+   * the enabled button never appears for even one frame.
+   */
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    if (box) setPct(measure(box));
+    armed.current = true;
+  }, [count]);
 
   const onScroll = () => {
     const box = boxRef.current;
     if (!box) return;
-    const max = box.scrollHeight - box.clientHeight;
-    const p = max > 0 ? box.scrollTop / max : 0;
+    const p = measure(box);
     setPct(p);
 
-    if (p >= GROW_AT) {
-      setCount((n) => Math.ceil(n * 1.2));
+    if (p >= GROW_AT && armed.current) {
+      armed.current = false;
       setGrows((n) => n + 1);
       sfx.blip();
+
+      if (count < MAX_CLAUSES) {
+        setCount((n) => Math.ceil(n * GROW_BY));
+      } else {
+        /* Nothing new to render, so nothing re-arms the latch — do it here.
+           The throw itself fires another scroll event, which measures the
+           document honestly and puts the bar back where the player now is. */
+        box.scrollTop = box.scrollHeight * SNAP_BACK_TO;
+        armed.current = true;
+      }
     }
   };
 
@@ -108,7 +180,9 @@ function Component({ onSolve, onFail, sfx }: LevelProps) {
       </div>
       {grows > 0 && (
         <div className={s.grew} role="status">
-          Additional terms loaded ({grows}). Please continue reading. 📄
+          {count < MAX_CLAUSES
+            ? `Additional terms loaded (${grows}). Please continue reading. 📄`
+            : `Additional terms loaded (${grows}). Restoring your place. 📄`}
         </div>
       )}
 
@@ -117,9 +191,11 @@ function Component({ onSolve, onFail, sfx }: LevelProps) {
         className={s.cta}
         disabled={!atBottom}
         onClick={() => {
-          /* Reachable only if the document ever stops growing, which it does
-             not. Left in and wired to a fail so the button is honest about
-             being a button rather than decoration. */
+          /* Unreachable: every scroll that arrives at the end grows the
+             document past it, and the percentage is re-measured against the
+             longer one before paint. Left wired to a fail rather than deleted
+             so the button is honest about being a button, and so that any
+             future path to it is a loss rather than a silent win. */
           sfx.fail();
           onFail("scrolled");
         }}

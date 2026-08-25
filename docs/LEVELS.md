@@ -270,15 +270,25 @@ it looks 6px, it taps at 24px. We are cruel to the eyes, not the thumbs.
 `annoying` · pointer · par 20s · *EULA scroll gate*
 
 **The bit.** Accept is disabled until you scroll to the bottom of the terms.
-The document **grows by 20% every time you pass 80%**. It also has rubber-band
-overscroll that throws you back up.
+The document **grows by 20% every time you pass 80%** — until it reaches 220
+clauses, after which it stops growing and starts **throwing you back up**
+instead. Both cost the player the same thing and the end stays out of reach
+either way; only the second one is survivable on a phone. Twenty percent
+compounding is exponential in the number of times somebody flicks, and
+twenty flicks at the bottom of an uncapped document is forty-one thousand
+paragraphs.
 
-**Honest solve.** Buried at ~60% is a line of body text reading *"By continuing
-to not read this, you agree anyway — click here."* It's a real link. Scrolling
-is a trap; reading is the solve. This is the level that teaches players to
-actually look at the slop text, which pays off in tiers 3 and 4.
+**Honest solve.** Buried a little under halfway down is a line of body text
+reading *"By continuing to not read this, you agree anyway — click here."*
+It's a real link. Scrolling is a trap; reading is the solve. This is the level
+that teaches players to actually look at the slop text, which pays off in
+tiers 3 and 4.
 
-**Fail state.** None. It just never ends if you keep scrolling.
+**Fail state.** None *reachable*. There is an accept button and it is wired to
+a loss, but every scroll that arrives at the end moves the end, and the
+progress is re-measured against the document that now exists rather than the
+one that did. It stays disabled. The button is left wired to a fail rather
+than deleted so that any future path to it is a loss and not a silent win.
 
 **Degraded path.** `End` key jumps to bottom — and the doc grows. Consistent.
 
