@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConfigured, rpc } from "@/lib/db";
-import { validateRun, type DeckEntry, type RunEvent } from "@/engine/scoring";
+import { MAX_RUN_EVENTS, validateRun, type DeckEntry, type RunEvent } from "@/engine/scoring";
 import { META_BY_ID } from "@/levels/catalog";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +38,9 @@ export async function POST(req: Request) {
     const whole = (v: unknown, max: number) =>
       Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
 
-    const events: RunEvent[] = (body.events ?? []).slice(0, 400).map((e) => ({
+    /* Same bound and the same reason as `finish` — see the comment there.
+       Shared through the constant so the two cannot drift apart. */
+    const events: RunEvent[] = (body.events ?? []).slice(0, MAX_RUN_EVENTS + 1).map((e) => ({
       seq: whole(e.seq, 100_000),
       kind: e.kind,
       levelId: String(e.levelId ?? "").slice(0, 16),

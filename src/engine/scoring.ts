@@ -144,13 +144,47 @@ export function scoreRun(events: readonly RunEvent[], deck: readonly DeckEntry[]
 
 export type RejectionReason =
   | "clock_overrun" | "impossible_speed" | "too_many_levels"
-  | "deck_mismatch" | "event_integrity";
+  | "deck_mismatch" | "event_integrity" | "too_many_events";
 
 /** Theoretical ceiling in five minutes, given the shortest par in the catalog. */
 export const MAX_LEVELS_PER_RUN = 14;
 export const CLOCK_GRACE_MS = 15_000;
 /** Below this, a level with a meaningful par probably was not actually played. */
 export const MIN_PLAUSIBLE_SOLVE_MS = 300;
+
+/**
+ * The most events a run may contain before it is refused outright.
+ *
+ * There has to be a bound — the route cannot map an unbounded array and the
+ * database cannot store one — and until now that bound was a `slice(0, 400)`
+ * in the submit route. Which is the worst of both: a run longer than 400
+ * events was neither rejected nor scored correctly. It was scored on its
+ * first 400 events, silently, and the player simply never received the points
+ * for anything after that. The server rescores from the log it was handed, so
+ * truncating the log truncates the run.
+ *
+ * L13 made that reachable. A device held past the spill angle produced a fail
+ * every 320ms with no pause — 187 a minute — so a player who never corrected
+ * their grip could cross 400 events in about two minutes and lose the rest of
+ * their run to arithmetic they could not see. That is fixed at the source, but
+ * the cap was wrong independently of what made it reachable.
+ *
+ * ── Why this number ─────────────────────────────────────────────────────
+ *
+ * Measured against real play: the largest run so far is 56 events and the 90th
+ * percentile is 37. This is 1,200 — twenty-one times the observed maximum, and
+ * four events every second, sustained, for the entire five minutes. A person
+ * cannot reach it by playing. A level failing on a loop can, which is the case
+ * worth hearing about, and a named rejection is exactly the signal L13's storm
+ * never sent.
+ *
+ * The lesson of `MAX_IMPLAUSIBLE_SOLVES` above is why it is set this high
+ * rather than close to the observed maximum: a validation bound tuned to the
+ * data you happen to have will one day throw out somebody's real run. This is
+ * not a cheat defence and does not need to be tight — a forged log still has
+ * its score recomputed here and capped at solves × 4,800 by `submit_run`.
+ */
+export const MAX_RUN_EVENTS = 1200;
 
 /**
  * How many suspiciously fast solves a run is allowed before it is thrown out.
@@ -175,6 +209,11 @@ export function validateRun(
   deck: readonly DeckEntry[],
   durationMs: number,
 ): RejectionReason | null {
+  /* First, because it is the most specific explanation available: a log this
+     long is not a log with a bad event in it, it is a log that should never
+     have been submitted. Checking it here rather than in the route means the
+     bound belongs to the one function that decides what a valid run is. */
+  if (events.length > MAX_RUN_EVENTS) return "too_many_events";
   if (durationMs > RUN_DURATION_MS + CLOCK_GRACE_MS) return "clock_overrun";
 
   const ids = new Set(deck.map((d) => d.levelId));

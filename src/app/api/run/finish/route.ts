@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConfigured, ipHash, rpc } from "@/lib/db";
-import { scoreRun, validateRun, type DeckEntry, type RunEvent } from "@/engine/scoring";
+import { MAX_RUN_EVENTS, scoreRun, validateRun, type DeckEntry, type RunEvent } from "@/engine/scoring";
 import { META_BY_ID } from "@/levels/catalog";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +44,19 @@ export async function POST(req: Request) {
     const whole = (v: unknown, max: number) =>
       Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
 
-    const events: RunEvent[] = (body.events ?? []).slice(0, 400).map((e) => ({
+    /*
+     * A bound on work, not a truncation.
+     *
+     * This was `slice(0, 400)`, and a run longer than that was neither
+     * rejected nor scored correctly — it was scored on its first 400 events
+     * and the player silently lost the rest, because the server rescores from
+     * the log it was handed. One event past the limit is now enough for
+     * `validateRun` to refuse the whole thing with `too_many_events`, so
+     * nothing that reaches this slice is ever scored; the extra element exists
+     * only so the overflow is detectable without mapping an unbounded array,
+     * and the bounded prefix is still stored for diagnosis.
+     */
+    const events: RunEvent[] = (body.events ?? []).slice(0, MAX_RUN_EVENTS + 1).map((e) => ({
       seq: whole(e.seq, 100_000),
       kind: e.kind,
       levelId: String(e.levelId ?? "").slice(0, 16),

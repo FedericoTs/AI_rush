@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  comboFor, scoreLevel, scoreRun, validateRun,
+  comboFor, MAX_RUN_EVENTS, scoreLevel, scoreRun, validateRun,
   RUN_DURATION_MS, TIER_BASE, type DeckEntry, type RunEvent,
 } from "./scoring";
 import { META_BY_ID } from "@/levels/catalog";
@@ -117,6 +117,47 @@ describe("validateRun", () => {
 
   it("passes an honest run", () => {
     expect(validateRun(ok, deck, 300_000)).toBeNull();
+  });
+
+  /*
+   * A log too long to store is refused, not quietly shortened.
+   *
+   * The submit route used to `slice(0, 400)` before scoring, so a longer run
+   * was neither rejected nor scored correctly: it was scored on its first 400
+   * events and the player never got the points for anything after. The server
+   * rescores from the log it is handed, so truncating the log truncates the
+   * run — silently, at the last step, after five minutes of play.
+   *
+   * L13 made it reachable. A device held past the spill angle failed every
+   * 320ms with no pause, so an uncorrected grip crossed 400 events in about
+   * two minutes.
+   */
+  const long = (n: number): RunEvent[] =>
+    Array.from({ length: n }, (_, i) =>
+      i === 0
+        ? { seq: 1, kind: "enter" as const, levelId: "L01", atMs: 0 }
+        : { seq: i + 1, kind: "fail" as const, levelId: "L01", atMs: i * 10 },
+    );
+
+  it("accepts a run right up to the ceiling", () => {
+    /* Set far above real play on purpose — the largest run recorded is 56
+       events. A bound tuned to the data you happen to have is how you throw
+       out somebody's real run later. */
+    expect(validateRun(long(MAX_RUN_EVENTS), deck, 300_000)).toBeNull();
+  });
+
+  it("refuses one event past it", () => {
+    expect(validateRun(long(MAX_RUN_EVENTS + 1), deck, 300_000)).toBe("too_many_events");
+  });
+
+  it("refuses a truncated log rather than scoring the prefix", () => {
+    /* The composition the routes actually perform: bound the work, then
+       validate. The slice keeps one event more than the ceiling precisely so
+       that an overflow is still visible to this function. */
+    const submitted = long(50_000).slice(0, MAX_RUN_EVENTS + 1);
+    expect(validateRun(submitted, deck, 300_000)).toBe("too_many_events");
+    /* And the thing that used to happen instead: a prefix that scores fine. */
+    expect(validateRun(long(50_000).slice(0, 400), deck, 300_000)).toBeNull();
   });
 
   it("rejects a clock that ran long", () => {
