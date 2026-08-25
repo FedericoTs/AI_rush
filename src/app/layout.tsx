@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo_Black, Inter, JetBrains_Mono } from "next/font/google";
 import { ogImage, siteUrl } from "@/lib/site";
 import { ServiceWorker } from "@/ui/ServiceWorker";
+import { Pageview } from "@/visits/Pageview";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -62,6 +63,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <ServiceWorker />
+        {/* Counts arrivals. No cookie, no fingerprint, no third party — see
+            `0009_page_views.sql` for what it deliberately does not collect. */}
+        <Pageview />
       </body>
     </html>
   );
