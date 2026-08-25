@@ -156,7 +156,11 @@ function Fallback(props: LevelProps) {
       onFail={props.onFail}
       rng={props.rng}
       sfx={props.sfx}
-      note="Your device has no motion sensor, so here is one. Drag it, or use the arrow keys."
+      /* The strategy half of this sentence is not decoration, and losing it is
+         exactly the drift the shared `Stage` exists to prevent: the physics
+         stayed identical while the guidance did not, and the slowest run in
+         production — 102 seconds and eight spills — was on this path. */
+      note="No motion sensor, so here is one. Drag it or use the arrow keys. Small movements — there is a lip, use it."
     >
       <div className={s.phoneWrap}>
         <div className={s.phone} style={{ transform: `rotate(${tilt}deg)` }} aria-hidden="true">

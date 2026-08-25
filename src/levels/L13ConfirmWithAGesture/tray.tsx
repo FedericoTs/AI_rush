@@ -103,6 +103,23 @@ export function useTray(
   const [tray, setTray] = useState<TrayState>(() => freshTray(digits.length));
   const overTilt = useRef(0);
   const done = useRef(false);
+  /*
+   * Milliseconds left of the refill, and the reason it is a real lockout.
+   *
+   * `LEVELS.md` has always said "digits spill; tray refills after 1s", and
+   * until now that second cost nothing: the spill reset the digits, set a
+   * display flag, and returned — and the very next tick, sixteen milliseconds
+   * later, started accumulating over-tilt again. A device held past the limit
+   * therefore spilled every 320ms without pause. Measured: 187 spills a
+   * minute, each one an `onFail`, each one a dent in the level's score and a
+   * row in the event log the server rescores from. That log is capped at 400
+   * events, so a long enough storm does not just cost points, it silently
+   * truncates the rest of the run.
+   *
+   * With the pause the tray behaves as documented and the player gets the
+   * beat they need to notice the readout and level off.
+   */
+  const refill = useRef(0);
   /* Latched, so a changed tilt or a re-created callback never restarts the
      physics mid-slide. See `useLatest` for why this is not a plain ref write. */
   const tiltRef = useLatest(tilt);
@@ -122,6 +139,20 @@ export function useTray(
   useEffect(() => {
     const id = setInterval(() => {
       if (done.current) return;
+
+      /* Refilling. No physics, and — the part that matters — no spill
+         detection either, so a tilt that is still too steep cannot spill a
+         tray that has not finished being refilled. */
+      if (refill.current > 0) {
+        refill.current -= STEP_MS;
+        if (refill.current <= 0) {
+          overTilt.current = 0;
+          live.current = { ...live.current, spilling: false };
+          setTray(live.current);
+        }
+        return;
+      }
+
       const now = tiltRef.current;
 
       /* Spilling needs to be sustained. A momentary jolt while you reach for
@@ -130,6 +161,7 @@ export function useTray(
       overTilt.current = Math.abs(now) > SPILL_DEG ? overTilt.current + STEP_MS : 0;
       if (overTilt.current >= SPILL_GRACE_MS) {
         overTilt.current = 0;
+        refill.current = REFILL_MS;
         live.current = {
           x: live.current.x.map((at, i) => (live.current.seated[i] ? null : at === null ? null : 0)),
           seated: live.current.seated,
@@ -137,10 +169,6 @@ export function useTray(
         };
         setTray(live.current);
         cbs.current.onSpill();
-        setTimeout(() => {
-          live.current = { ...live.current, spilling: false };
-          setTray(live.current);
-        }, REFILL_MS);
         return;
       }
 

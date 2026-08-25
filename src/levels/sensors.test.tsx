@@ -178,6 +178,47 @@ describe("L13 · Confirm With A Gesture", () => {
     expect(p.onFail).toHaveBeenCalled();
     vi.useRealTimers();
   });
+
+  /*
+   * A tilt held past the lip must not spill on a loop.
+   *
+   * `LEVELS.md` has always said the tray refills after a second, and until now
+   * that second cost nothing: the spill set a display flag and returned, and
+   * the next 16ms tick began accumulating over-tilt again. Holding a device a
+   * little too steep produced a spill every 320ms — 187 a minute — and every
+   * one of them is an `onFail`: points off the level, and a row in the event
+   * log the server rescores from. That log is truncated at 400 events, so a
+   * long enough storm stops costing points and starts costing the rest of the
+   * run.
+   */
+  it("does not spill again while the tray is still being refilled", () => {
+    vi.useFakeTimers();
+    const p = mount("L13", { fallback: true });
+    /* Held there and never corrected — a phone at a slightly wrong angle. */
+    fireEvent.change(screen.getByLabelText("Tilt the device"), { target: { value: "45" } });
+    act(() => vi.advanceTimersByTime(10_000));
+
+    const fails = (p.onFail as ReturnType<typeof vi.fn>).mock.calls.length;
+    /* Ten seconds buys at most one spill per grace-plus-refill, not one per
+       grace. Without the lockout this was 31. */
+    expect(fails).toBeGreaterThan(0);
+    expect(fails).toBeLessThanOrEqual(Math.ceil(10_000 / (320 + 900)) + 1);
+    vi.useRealTimers();
+  });
+
+  it("tells the fallback player the same strategy it tells the gyro player", () => {
+    /* The physics is shared precisely so the two paths cannot drift apart.
+       The guidance drifted anyway, and the slowest run in production — 102
+       seconds, eight spills — was on this path. */
+    mount("L13");
+    expect(document.body.textContent).toMatch(/small movements/i);
+    expect(document.body.textContent).toMatch(/lip/i);
+    cleanup();
+
+    mount("L13", { fallback: true });
+    expect(document.body.textContent).toMatch(/small movements/i);
+    expect(document.body.textContent).toMatch(/lip/i);
+  });
 });
 
 describe("L14 · Please Confirm Verbally", () => {
