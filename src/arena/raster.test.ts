@@ -480,3 +480,34 @@ describe("the coordinate a region publishes", () => {
     expect(r.y).toBeGreaterThanOrEqual(Math.floor(120 / (VIEW.height / ROWS)));
   });
 });
+
+/**
+ * Something you drag.
+ *
+ * The fifth blind run skipped L08 after ten turns and explained why: the three
+ * date wheels "appear in no region at all... there is nothing telling you the
+ * wheels are at x≈12 / 24 / 37 on row 7; I had to infer it from the rendered
+ * glyph positions." They are `div`s whose values live in child spans, so the
+ * own-text rule dropped them and only the bare numbers survived as text.
+ *
+ * A person gets an affordance the grid was throwing away: the browser paints
+ * `ns-resize` over them, which says "pull me" as plainly as a label.
+ */
+describe("a dial", () => {
+  const wheel: Box = { text: "31", x: 38, y: 208, w: 106, h: 53, kind: "dial" };
+
+  it("is a region with a place and a value", () => {
+    const r = rasterize([wheel], VIEW).regions[0]!;
+    expect(r.kind).toBe("dial");
+    expect(r.label).toBe("31");
+  });
+
+  it("says nothing about how it responds", () => {
+    /* That a flick has momentum, and that the momentum is non-linear, is the
+       level. The grid gives a place, not a manual. */
+    const serialised = JSON.stringify(rasterize([wheel], VIEW)).toLowerCase();
+    for (const leak of ["drag", "flick", "scroll", "spin", "resize", "cursor"]) {
+      expect(serialised, `must not contain ${leak}`).not.toContain(leak);
+    }
+  });
+});

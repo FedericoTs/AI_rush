@@ -87,6 +87,11 @@ region to aim at, with no label naming it.
   and listed with no label. Position only: never which way it is thrown.
 - **A control that looks unavailable** — marked `(greyed out)` in the region
   list, measured off how it is painted rather than off any attribute.
+- **A dial** — a wheel, slider or stepper, recognised by the drag cursor the
+  browser paints over it. A place and a value, never how it responds: that a
+  flick has momentum, and that the momentum is non-linear, stays the level.
+  Size-floored, because a nine-pixel readout is not something you put a finger
+  on and promoting L22's to a named region would solve that level outright.
 
 All four were missing, and blind runs found them the expensive way: L11's runner game arrived as five blank rows under the caption "tap /
 space to jump", and L39's three cascading dropdowns arrived as three blank rows

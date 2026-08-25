@@ -96,7 +96,7 @@ export function extractBoxes(): Extracted {
    * is a button to anybody looking at it, and the whole mode depends on the
    * agent seeing what is drawn rather than what is declared.
    */
-  const kindOf = (el: Element, style: CSSStyleDeclaration): Box["kind"] => {
+  const kindOf = (el: Element, style: CSSStyleDeclaration, rect: DOMRect): Box["kind"] => {
     const tag = el.tagName.toLowerCase();
     /*
      * Something is painted here and you cannot read it.
@@ -116,6 +116,39 @@ export function extractBoxes(): Extracted {
      */
     if (tag === "canvas" || tag === "img" || tag === "svg" || tag === "video") return "drawing";
     if (tag === "input" || tag === "textarea" || tag === "select") return "field";
+
+    /*
+     * Something you drag.
+     *
+     * The browser paints a different cursor over a draggable control, and that
+     * cursor is an affordance a person reads without thinking — `ns-resize`
+     * over L08's date wheels says "pull me up and down" as plainly as a label
+     * would. The grid was silent about it: the wheels are `div`s whose values
+     * live in child spans, so they appeared as three bare numbers in no region
+     * at all, and a blind run had to infer their bounds from glyph positions
+     * and then discover by trial that a drag only registers if it starts on
+     * exactly the right row.
+     *
+     * Reported as a place and a value, never as an instruction. How far a
+     * flick travels, and that the momentum is non-linear, stays the level.
+     *
+     * ── The size floor, which is not a detail ────────────────────────────
+     *
+     * The first version of this had none, and it immediately broke L22. That
+     * level's whole mechanic is a nine-pixel `0.00 %` you are supposed to
+     * *notice* next to a big friendly fake progress bar — and promoting it to
+     * a named region pointed straight at it. The README states the rule this
+     * violated: "the grid must not help. If L22's nine-pixel number arrives as
+     * prominent as the heading, the renderer has solved the level."
+     *
+     * A dial is something you could put a finger on. A nine-pixel readout is
+     * not, whatever cursor happens to sit over it.
+     */
+    const drag = style.cursor;
+    const grabbable =
+      drag === "ns-resize" || drag === "ew-resize" || drag === "row-resize" ||
+      drag === "col-resize" || drag === "grab" || drag === "grabbing" || drag === "move";
+    if (grabbable && rect.width >= 40 && rect.height >= 24) return "dial";
     if (tag === "button" || tag === "a" || el.getAttribute("role") === "button") return "button";
     if (/^h[1-6]$/.test(tag)) return "heading";
 
@@ -209,7 +242,7 @@ export function extractBoxes(): Extracted {
         .trim();
     }
 
-    const kind = kindOf(el, style);
+    const kind = kindOf(el, style, rect);
     const opaque = isOpaque(style.backgroundColor);
 
     /* Keep it if it says something, if it is a solid panel that hides what is
@@ -241,10 +274,20 @@ export function extractBoxes(): Extracted {
      */
     const pressable = kind === "button" && rect.width >= 14 && rect.height >= 10;
 
+    /* A dial's value almost always lives in a child element, so its own text
+       is empty and the own-text rule would throw the whole control away —
+       which is exactly what happened to the date wheels. Take the value from
+       inside it, and swallow the parts below so one wheel is one region. */
+    if (kind === "dial" && !text) {
+      text = (el.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 40);
+      for (const child of Array.from(el.querySelectorAll("*"))) seen.add(child);
+    }
+
     if (
       !text &&
       !drawn &&
       !pressable &&
+      kind !== "dial" &&
       !(opaque && rect.width > view.width * 0.4 && rect.height > 40)
     ) {
       continue;

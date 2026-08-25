@@ -47,8 +47,12 @@ export interface Box {
    * that responds to a click; the agent is not told the tag name, and a `div`
    * dressed as a button is reported as a button because that is what a person
    * would call it.
+   *
+   * `dial` is something you drag to change a value — a wheel, a slider, a
+   * stepper — recognised by the cursor the browser paints over it, which is
+   * the same affordance a person is reading.
    */
-  kind: "text" | "button" | "field" | "heading" | "drawing";
+  kind: "text" | "button" | "field" | "heading" | "drawing" | "dial";
   /** Painted on top of what it overlaps. Higher wins a collision. */
   z?: number;
   /**
@@ -387,6 +391,7 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
         (box.text.trim().length > 0 ||
           box.opaque === true ||
           box.kind === "field" ||
+          box.kind === "dial" ||
           box.kind === "drawing" ||
           isUnlabelledControl(box, view)),
     )
@@ -405,6 +410,7 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
         box.kind !== "text" &&
         (box.text.trim().length > 0 ||
           box.kind === "field" ||
+          box.kind === "dial" ||
           box.kind === "drawing" ||
           isUnlabelledControl(box, view)),
     )

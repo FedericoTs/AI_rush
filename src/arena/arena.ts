@@ -169,14 +169,73 @@ export class Arena {
     return this.look();
   }
 
+  /*
+   * ── Native dropdowns, and a headless browser's blind spot ──────────────
+   *
+   * A focused `<select>` in a real browser answers to the arrow keys and to
+   * typing the first letters of an option. Headless Chromium drops both,
+   * because the work is done by the operating system's popup and there isn't
+   * one — so a select could be focused by a click and then not respond to any
+   * honest verb. The fifth blind run found the only thing that did work, by
+   * accident, and could not explain it:
+   *
+   *   "with ~25 seconds left I guessed it was a flick-wheel like the previous
+   *   level — drag set it to Japan instantly"
+   *
+   * That is a headless artifact, not a level. These two helpers restore the
+   * behaviour a person gets in a real browser and nothing more: the value
+   * moves, the page hears `input` and `change`, and the agent still has to
+   * look to find out what it landed on. It is told no more about the list
+   * than a person sees.
+   */
+  private async selectStep(delta: number): Promise<boolean> {
+    return this.page!.evaluate((d) => {
+      const el = document.activeElement;
+      if (!el || el.tagName !== "SELECT") return false;
+      const sel = el as HTMLSelectElement;
+      const next = Math.max(0, Math.min(sel.options.length - 1, sel.selectedIndex + d));
+      if (next !== sel.selectedIndex) {
+        sel.selectedIndex = next;
+        sel.dispatchEvent(new Event("input", { bubbles: true }));
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      return true;
+    }, delta);
+  }
+
+  private async selectJump(prefix: string): Promise<boolean> {
+    return this.page!.evaluate((p) => {
+      const el = document.activeElement;
+      if (!el || el.tagName !== "SELECT") return false;
+      const sel = el as HTMLSelectElement;
+      const want = p.trim().toLowerCase();
+      if (!want) return true;
+      /* Type-ahead, exactly as a browser does it: first option whose label
+         starts with what was typed. */
+      const i = Array.from(sel.options).findIndex((o) =>
+        (o.textContent ?? "").trim().toLowerCase().startsWith(want),
+      );
+      if (i >= 0 && i !== sel.selectedIndex) {
+        sel.selectedIndex = i;
+        sel.dispatchEvent(new Event("input", { bubbles: true }));
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      return true;
+    }, prefix);
+  }
+
   async type(text: string): Promise<string> {
     if (!this.page) return NO_RUN;
+    if (await this.selectJump(text)) return this.look();
     await this.page.keyboard.type(text, { delay: 12 });
     return this.look();
   }
 
   async key(name: KeyName): Promise<string> {
     if (!this.page) return NO_RUN;
+    if (name === "ArrowDown" || name === "ArrowUp") {
+      if (await this.selectStep(name === "ArrowDown" ? 1 : -1)) return this.look();
+    }
     await this.page.keyboard.press(name);
     return this.look();
   }
