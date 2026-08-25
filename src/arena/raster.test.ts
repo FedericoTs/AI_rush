@@ -381,3 +381,43 @@ describe("an unlabelled control", () => {
     expect(rasterize([backdrop], VIEW).regions).toHaveLength(0);
   });
 });
+
+/**
+ * A control that looks unavailable.
+ *
+ * The third blind run lost L05 to the absence of this, and lost it *after
+ * solving it*. The level's honest exit is the Legitimate Interest tab, whose
+ * "Object to all" switches off all forty-seven partners and lights up Accept
+ * All. The agent found the tab, pressed the button, got back a screen with
+ * identical characters on it, and concluded:
+ *
+ *   "Object to all on the Legitimate Interest pane produces no state change
+ *   at all"
+ *
+ * It had won and could not see that it had. A greyed button turning solid is
+ * the most common state change in this catalogue, and the grid said nothing
+ * about any of it — which made the agent strictly worse off than a person for
+ * no design reason at all.
+ */
+describe("a control drawn faded", () => {
+  const cta = (dim: boolean): Box => ({
+    text: "Accept All", x: 240, y: 420, w: 200, h: 44, kind: "button", ...(dim ? { dim: true } : {}),
+  });
+
+  it("is marked when it looks greyed out, and not when it does not", () => {
+    expect(rasterize([cta(true)], VIEW).regions[0]!.dim).toBe(true);
+    expect(rasterize([cta(false)], VIEW).regions[0]!.dim).toBeUndefined();
+  });
+
+  it("says so where the agent is reading, not just in the data", () => {
+    expect(render(rasterize([cta(true)], VIEW))).toContain("(greyed out)");
+    expect(render(rasterize([cta(false)], VIEW))).not.toContain("(greyed out)");
+  });
+
+  it("keeps its words, because a greyed button is still readable", () => {
+    /* Fading is not hiding. A person reads the label on a disabled button
+       perfectly well, and the whole reason to press it is knowing what it
+       claims to do. */
+    expect(rasterize([cta(true)], VIEW).grid.join("\n")).toContain("Accept All");
+  });
+});

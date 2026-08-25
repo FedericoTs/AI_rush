@@ -61,6 +61,16 @@ export interface Box {
    * was visible is a bug.
    */
   opaque?: boolean;
+  /**
+   * Drawn faded — the way an unavailable control looks.
+   *
+   * Read off how it is painted, not off any attribute: this game greys a
+   * disabled button to `opacity: 0.4`, and a person sees that instantly and
+   * knows not to bother. Withholding it made the agent strictly worse off
+   * than a human for no design reason, and it cost a whole level. See
+   * `Region.dim`.
+   */
+  dim?: boolean;
 }
 
 export interface Viewport {
@@ -77,6 +87,27 @@ export interface Region {
   kind: Box["kind"];
   /** Trimmed to something a line of reasoning can refer to. */
   label: string;
+  /**
+   * It looks greyed out.
+   *
+   * Present only when true, and it is appearance rather than structure — the
+   * agent is told a control is *drawn* faded, exactly as a person sees it, and
+   * not that some attribute is set.
+   *
+   * A blind run lost L05 to the absence of this. The level's honest solve is
+   * the Legitimate Interest tab, whose "Object to all" switches off all
+   * forty-seven partners and lights up Accept All. The agent found the tab,
+   * pressed the button, saw a screen with identical characters on it, and
+   * concluded the control was inert:
+   *
+   *   "Object to all on the Legitimate Interest pane produces no state change
+   *   at all"
+   *
+   * It had just solved the level and could not see that it had. A greyed
+   * button turning solid is the single most common state change in this whole
+   * catalogue, and the grid was silent about all of it.
+   */
+  dim?: boolean;
 }
 
 export interface Look {
@@ -336,6 +367,9 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
         w: x1 - x0 + 1,
         h: y1 - y0 + 1,
         kind: box.kind,
+        /* Only when true, so a region carries the note exactly when a person
+           would see the fade. */
+        ...(box.dim ? { dim: true as const } : {}),
         /* Deliberately content-free for a drawing, and deliberately not
            "image" or "canvas" either — those are tag names, and the agent is
            never told a tag name. What a person gets is: there is something
@@ -367,7 +401,7 @@ export function render(look: Look): string {
 
   const regions = look.regions.length
     ? look.regions
-        .map((r) => `  (${r.x},${r.y}) ${r.kind.padEnd(7)} ${r.label}`)
+        .map((r) => `  (${r.x},${r.y}) ${r.kind.padEnd(7)} ${r.label}${r.dim ? "  (greyed out)" : ""}`)
         .join("\n")
     : "  (none)";
 

@@ -274,6 +274,18 @@ export function extractBoxes(): Extracted {
       kind,
       z: zOf(el),
       opaque,
+      /*
+       * Drawn faded.
+       *
+       * Measured off `opacity`, not off the `disabled` attribute, and the
+       * distinction is the whole point: this reports how the control is
+       * *painted*, so a `div` greyed out with a class reads exactly the same
+       * as a real disabled button, and a control that is somehow disabled
+       * without looking it stays silent. `visible()` has already rejected
+       * anything under 0.05, so this band is the deliberately-faded one —
+       * the slop kit greys an unavailable CTA to 0.4.
+       */
+      ...(Number(style.opacity) < 0.6 ? { dim: true } : {}),
     });
   }
 

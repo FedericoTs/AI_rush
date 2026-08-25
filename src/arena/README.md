@@ -83,12 +83,21 @@ region to aim at, with no label naming it.
 - **A dropdown** — the option currently chosen, and only that. The full list is
   what a person gets *after* they open it; handing it over unopened turns every
   "select your country" level into a lookup.
+- **An unlabelled control** — a switch or a bare icon button, drawn as `[--]`
+  and listed with no label. Position only: never which way it is thrown.
+- **A control that looks unavailable** — marked `(greyed out)` in the region
+  list, measured off how it is painted rather than off any attribute.
 
-Both of these were missing, and a blind run found both in the same five
-minutes: L11's runner game arrived as five blank rows under the caption "tap /
+All four were missing, and blind runs found them the expensive way: L11's runner game arrived as five blank rows under the caption "tap /
 space to jump", and L39's three cascading dropdowns arrived as three blank rows
-with no clickable region anywhere near them. Neither level was hard for that
-agent; both were unplayable. That distinction matters more here than anywhere
+with no clickable region anywhere near them. L05's consent toggles were
+buttons whose only child is the knob, so all six were dropped. And a third run
+solved L05 outright — "Object to all" on the Legitimate Interest tab switches
+off all forty-seven partners and lights up Accept All — then reported that the
+button "produces no state change at all", because a greyed CTA turning solid
+was invisible in a grid made of characters. It had won and could not tell.
+
+None of those levels was hard for those agents; all of them were unplayable. That distinction matters more here than anywhere
 else in the project, because a level an agent cannot perceive still records a
 failure, and that failure lands in the asymmetry table looking exactly like a
 finding.
