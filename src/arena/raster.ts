@@ -48,7 +48,7 @@ export interface Box {
    * dressed as a button is reported as a button because that is what a person
    * would call it.
    */
-  kind: "text" | "button" | "field" | "heading";
+  kind: "text" | "button" | "field" | "heading" | "drawing";
   /** Painted on top of what it overlaps. Higher wins a collision. */
   z?: number;
   /**
@@ -134,6 +134,32 @@ function paint(rows: string[][], claimed: boolean[][], box: Box, view: Viewport)
   if (x1 < x0) return;
 
   /*
+   * A drawing is an area, not a sentence.
+   *
+   * Filled with one character across its whole rectangle, so the agent
+   * perceives *that something occupies this space* and can aim at it, and
+   * learns nothing at all about what is in it. A canvas game stays exactly as
+   * unreadable as it is to a squinting person watching it move too fast to
+   * follow; it simply stops being invisible.
+   *
+   * Only unclaimed cells, like everything else — a caption drawn over a canvas
+   * was painted before this and keeps its characters.
+   */
+  if (box.kind === "drawing") {
+    for (let y = y0; y <= y1; y++) {
+      const row = rows[y];
+      const mark = claimed[y];
+      if (!row || !mark) continue;
+      for (let x = x0; x <= x1; x++) {
+        if (x >= COLS || mark[x]) continue;
+        row[x] = "░";
+        mark[x] = true;
+      }
+    }
+    return;
+  }
+
+  /*
    * An empty field is still a rectangle.
    *
    * A person looking at a sign-in form sees a labelled box waiting for a
@@ -199,15 +225,19 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
 
   const ordered = boxes
     .map((box, i) => ({ box, i }))
-    /* Two things with no text still matter: an opaque panel, which hides what
-       is behind it, and an empty field, which is a rectangle somebody can see
-       and click. Everything else with nothing to say is layout, and the agent
-       never hears of it. */
+    /* Three things with no text still matter: an opaque panel, which hides
+       what is behind it; an empty field, which is a rectangle somebody can see
+       and click; and a drawing, which is a thing on the screen that happens
+       not to be made of words. Everything else with nothing to say is layout,
+       and the agent never hears of it. */
     .filter(
       ({ box }) =>
         box.w > 0 &&
         box.h > 0 &&
-        (box.text.trim().length > 0 || box.opaque === true || box.kind === "field"),
+        (box.text.trim().length > 0 ||
+          box.opaque === true ||
+          box.kind === "field" ||
+          box.kind === "drawing"),
     )
     /* Descending: higher z first, and within one z the later element, because
        later in the document is what sits on top when nothing says otherwise. */
@@ -219,7 +249,11 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
      in — an agent scanning for a button should find them the way a person
      would, down the screen and then across it. */
   const regions: Region[] = ordered
-    .filter(({ box }) => box.kind !== "text" && (box.text.trim().length > 0 || box.kind === "field"))
+    .filter(
+      ({ box }) =>
+        box.kind !== "text" &&
+        (box.text.trim().length > 0 || box.kind === "field" || box.kind === "drawing"),
+    )
     .map(({ box }) => {
       const { x0, y0, x1, y1 } = toCells(box, view);
       return {
@@ -228,7 +262,14 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
         w: x1 - x0 + 1,
         h: y1 - y0 + 1,
         kind: box.kind,
-        label: box.text.replace(/\s+/g, " ").trim().slice(0, 40) || "(empty)",
+        /* Deliberately content-free for a drawing, and deliberately not
+           "image" or "canvas" either — those are tag names, and the agent is
+           never told a tag name. What a person gets is: there is something
+           here, it is not words, look at it. */
+        label:
+          box.kind === "drawing"
+            ? "something you cannot read"
+            : box.text.replace(/\s+/g, " ").trim().slice(0, 40) || "(empty)",
       };
     })
     .sort((a, b) => a.y - b.y || a.x - b.x);

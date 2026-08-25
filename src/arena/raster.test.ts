@@ -221,3 +221,61 @@ describe("what never reaches the agent", () => {
     expect(Object.keys(look.regions[0]!).sort()).toEqual(["h", "kind", "label", "w", "x", "y"]);
   });
 });
+
+/**
+ * Things on the screen that are not made of words.
+ *
+ * A blind run of the whole game found this one: L11's runner game is a canvas,
+ * a canvas has no text, and it was therefore dropped before it reached the
+ * grid. The agent got five blank rows under the caption "tap / space to jump",
+ * spent four turns pressing space at nothing, and skipped — recorded as a
+ * level an agent could not solve, when what actually happened is that we told
+ * it there was nothing there.
+ *
+ * The level is *meant* to be near-impossible for an agent (§4: "the flailing
+ * is the show"). Flailing at an interface you can see is the joke. Being
+ * unable to see it is our bug, and it is the kind that would have quietly
+ * filled the asymmetry table with failures that were never the agent's.
+ */
+describe("a drawing", () => {
+  const canvas: Box = { text: "", ...at(2, 8, 40), h: 5 * (720 / ROWS), kind: "drawing" };
+
+  it("occupies its area so the agent can see something is there", () => {
+    const look = rasterize([canvas], VIEW);
+    expect(look.grid[8]).toContain("░");
+    expect(look.grid[12]).toContain("░");
+    /* And nowhere it is not. */
+    expect(look.grid[7]!.trim()).toBe("");
+    expect(look.grid[13]!.trim()).toBe("");
+  });
+
+  it("is listed as a region, so there is somewhere to aim", () => {
+    const region = rasterize([canvas], VIEW).regions.find((r) => r.kind === "drawing");
+    expect(region).toBeTruthy();
+    expect(region!.y).toBe(8);
+  });
+
+  it("says nothing whatsoever about what is drawn in it", () => {
+    /* The whole value of the fix depends on this. A label naming the thing —
+       "canvas", "image", "a dinosaur" — would hand over exactly the perception
+       the agent is supposed to be failing at. */
+    const look = rasterize([canvas], VIEW);
+    const serialised = JSON.stringify(look);
+    for (const leak of ["canvas", "image", "img", "svg", "video", "picture"]) {
+      expect(serialised.toLowerCase(), `must not contain ${leak}`).not.toContain(leak);
+    }
+  });
+
+  it("never paints over a caption drawn on top of it", () => {
+    /* L11's "tap / space to jump" sits over the playfield. Painting top-most
+       first means the caption claims its cells and the fill goes around it —
+       losing the one instruction the level gives would turn a hard level into
+       an unexplained one. */
+    const look = rasterize(
+      [canvas, { text: "tap / space to jump", ...at(2, 12, 20), kind: "text" }],
+      VIEW,
+    );
+    expect(look.grid[12]).toContain("tap / space to jump");
+    expect(look.grid[12]).toContain("░");
+  });
+});

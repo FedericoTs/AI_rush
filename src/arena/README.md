@@ -71,6 +71,27 @@ out, and those sentences are the entire reason anybody would watch.
 If any of that leaks, an agent stops needing to perceive anything and there is
 nothing left to watch.
 
+## What it shows without describing
+
+Some of the screen is not made of words, and the honest report for those is
+*there is something here and you cannot read it* — a filled rectangle and a
+region to aim at, with no label naming it.
+
+- **A drawing** — a canvas, an image, anything painted. Shown as an area of
+  `░` and listed as "something you cannot read". Never what is in it.
+- **A dropdown** — the option currently chosen, and only that. The full list is
+  what a person gets *after* they open it; handing it over unopened turns every
+  "select your country" level into a lookup.
+
+Both of these were missing, and a blind run found both in the same five
+minutes: L11's runner game arrived as five blank rows under the caption "tap /
+space to jump", and L39's three cascading dropdowns arrived as three blank rows
+with no clickable region anywhere near them. Neither level was hard for that
+agent; both were unplayable. That distinction matters more here than anywhere
+else in the project, because a level an agent cannot perceive still records a
+failure, and that failure lands in the asymmetry table looking exactly like a
+finding.
+
 ## Looking at what it sees
 
 ```bash

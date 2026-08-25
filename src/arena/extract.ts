@@ -94,6 +94,23 @@ export function extractBoxes(): Extracted {
    */
   const kindOf = (el: Element, style: CSSStyleDeclaration): Box["kind"] => {
     const tag = el.tagName.toLowerCase();
+    /*
+     * Something is painted here and you cannot read it.
+     *
+     * A `canvas` has no text and no children, so it was dropped before it
+     * reached the grid — which is how L11's runner game arrived as five blank
+     * rows under the caption "tap / space to jump". The level is *meant* to be
+     * near-impossible for an agent (§4: "the flailing is the show"), but
+     * flailing at an interface you can see is a different thing from being
+     * told there is nothing there. The first is the joke; the second is us
+     * lying about the screen.
+     *
+     * So it is reported as an area with no content whatsoever. Not what is
+     * drawn in it, not a description, not a hint — a rectangle, and the fact
+     * that a person would see *something* in it. That keeps the level exactly
+     * as hard as it was designed to be while making it possible to play.
+     */
+    if (tag === "canvas" || tag === "img" || tag === "svg" || tag === "video") return "drawing";
     if (tag === "input" || tag === "textarea" || tag === "select") return "field";
     if (tag === "button" || tag === "a" || el.getAttribute("role") === "button") return "button";
     if (/^h[1-6]$/.test(tag)) return "heading";
@@ -126,6 +143,26 @@ export function extractBoxes(): Extracted {
     return el.value || el.placeholder || "";
   };
 
+  /*
+   * What a dropdown shows: the option currently chosen, and nothing else.
+   *
+   * A `select` has no text children — its content is `option` elements — so
+   * the own-text walk below returned an empty string for every one of them,
+   * the keep-check then dropped the box entirely, and three cascading
+   * dropdowns rendered as three blank rows with no clickable region anywhere
+   * near them. An agent playing L39 could not see that a control existed, let
+   * alone operate it. That is a broken channel rather than a hard level, and
+   * a blind run found it in four wasted turns.
+   *
+   * Only the selected label. The full option list is what a person gets after
+   * they open the thing, and handing it over unopened would turn every
+   * "select your country" level into a lookup.
+   */
+  const selectText = (el: HTMLSelectElement): string => {
+    const chosen = el.selectedIndex >= 0 ? el.options[el.selectedIndex] : null;
+    return (chosen?.textContent ?? "").replace(/\s+/g, " ").trim();
+  };
+
   const zOf = (el: Element): number => {
     let z = 0;
     let node: Element | null = el;
@@ -154,6 +191,8 @@ export function extractBoxes(): Extracted {
 
     if (tag === "input" || tag === "textarea") {
       text = fieldText(el as HTMLInputElement);
+    } else if (tag === "select") {
+      text = selectText(el as HTMLSelectElement);
     } else {
       /* Own text only. Taking `textContent` from every ancestor would report
          the same sentence a dozen times, once per wrapper, each at a different
@@ -169,9 +208,15 @@ export function extractBoxes(): Extracted {
     const kind = kindOf(el, style);
     const opaque = isOpaque(style.backgroundColor);
 
-    /* Keep it if it says something, or if it is a solid panel that hides what
-       is behind it. Everything else is layout and the agent never hears of it. */
-    if (!text && !(opaque && rect.width > view.width * 0.4 && rect.height > 40)) continue;
+    /* Keep it if it says something, if it is a solid panel that hides what is
+       behind it, or if it is a drawing big enough that a person would notice
+       it was there. Everything else is layout and the agent never hears of it.
+
+       The size floor keeps the grid from filling up with icons: a 16px logo is
+       not a thing anybody plays against, and a screen of `░` where the slop
+       kit put decoration would be worse than the omission it fixes. */
+    const drawn = kind === "drawing" && rect.width >= 24 && rect.height >= 24;
+    if (!text && !drawn && !(opaque && rect.width > view.width * 0.4 && rect.height > 40)) continue;
 
     seen.add(el);
     boxes.push({
