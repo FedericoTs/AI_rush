@@ -26,6 +26,7 @@ import { REGISTRY } from "@/levels/registry";
 import { ObserverBar, ObserverExport } from "./Observer";
 import { FakeNotice } from "./FakeNotice";
 import { useWakeLock } from "@/ui/useWakeLock";
+import { useRunBeacon } from "./useRunBeacon";
 import { agentIdentity } from "@/lib/agent";
 import {
   downloadSession, sessionFilename,
@@ -211,6 +212,26 @@ export function RunClient({
       cancelled = true;
     };
   }, [seed, capabilities, mercy, only]);
+
+  /*
+   * Tell the server how far this got, in case it never gets to the end.
+   *
+   * `run_events` are written only by `submit_run`, so before this a run that
+   * was abandoned recorded literally nothing — not even which level was on
+   * screen when the tab closed. That was 28 of the first 38 runs.
+   *
+   * The clock is read as the larger of the store's elapsed and what the HUD
+   * is counting down, because the two are updated on different schedules and
+   * the beacon fires between them.
+   */
+  useRunBeacon({
+    runId: run?.id ?? null,
+    runSecret: run?.secret ?? null,
+    arena: run?.arena ?? false,
+    events,
+    elapsedMs: Math.round(Math.max(elapsedMs, durationMs - remaining)),
+    live: phase !== "tally",
+  });
 
   /* One clock for the whole run. Started on mount, never paused — not for
      permission prompts, not for popups. */
