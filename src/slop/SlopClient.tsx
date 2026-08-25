@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { META_BY_ID } from "@/levels/catalog";
 import { SlopPreview } from "./SlopPreview";
-import { band, dealRound, HIGH, LOW, points, QUESTION, shareText, slopScore } from "./score";
+import { band, dealRound, HIGH, LOW, points, PRIOR_WEIGHT, QUESTION, shareText, slopScore } from "./score";
 import s from "./slop.module.css";
 
 interface Answer {
@@ -209,14 +209,17 @@ function Reveal({ answer, onNext, last }: { answer: Answer; onNext: () => void; 
         {b === "bullseye" ? "You read the room." : b === "close" ? "Close enough." : "Not even slightly."}
       </p>
       {/*
-        * The vote count, always. A number resting on four votes is mostly the
-        * tier prior wearing a crowd's clothes, and saying so is the difference
+        * The vote count, always — and while the crowd is still outweighed by
+        * our starting estimate, the fact that it is one. A number resting on
+        * four votes is mostly an opinion, and saying so is the difference
         * between a game and a claim.
         */}
       <p className={s.thin}>
         {answer.votes === 0
-          ? "you are the first vote on this one — the score is still our estimate"
-          : `${answer.votes} vote${answer.votes === 1 ? "" : "s"} before yours`}
+          ? "no crowd yet — that number is our estimate, and yours is the first vote"
+          : answer.votes < PRIOR_WEIGHT
+            ? `${answer.votes} vote${answer.votes === 1 ? "" : "s"} so far, still weighted toward our estimate`
+            : `${answer.votes} votes before yours`}
       </p>
       <button type="button" className={s.cta} onClick={onNext}>
         {last ? "See your result" : "Next"}

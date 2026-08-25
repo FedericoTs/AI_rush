@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  band, dealRound, points, POOL, PRIOR_WEIGHT, priorFor, ROUNDS, shareText, slopScore,
+  band, dealRound, NEUTRAL, points, POOL, PRIOR_WEIGHT, priorFor, ROUNDS, shareText, slopScore,
 } from "./score";
-import { CATALOG } from "@/levels/catalog";
+import { CATALOG, META_BY_ID } from "@/levels/catalog";
 
 describe("the round", () => {
   it("deals five distinct levels", () => {
@@ -34,9 +34,52 @@ describe("the round", () => {
 });
 
 describe("the score itself", () => {
-  it("is the prior when nobody has voted", () => {
+  it("is our estimate when nobody has voted", () => {
     const id = CATALOG[0]!.id;
     expect(slopScore(id, 0, 0)).toBe(priorFor(id));
+  });
+
+  it("has an estimate for every level in the catalogue", () => {
+    /* A level with no estimate silently falls back to a neutral 50, which is
+       indistinguishable on screen from a real opinion. Adding a level must
+       mean adding a number for it. */
+    const missing = CATALOG.filter((m) => priorFor(m.id) === NEUTRAL);
+    expect(missing.map((m) => m.id)).toEqual([]);
+  });
+
+  it("does not derive the estimate from tier", () => {
+    /*
+     * The bug this replaces. These were once derived from tier, on the
+     * reasoning that how far a level goes is inversely how likely it is to be
+     * real — and `LEVELS.md` says tier measures *cost*, not absurdity.
+     *
+     * It inverted on the flagship: L36 is an ordinary working login form and
+     * is `forbidden` tier because people hunt for a trap in it for a minute,
+     * so the most plausible screen in the game opened at 30. If tier ever
+     * becomes the source again, these two land on the same number.
+     */
+    expect(META_BY_ID.get("L36")!.tier).toBe(META_BY_ID.get("L33")!.tier);
+    expect(priorFor("L36")).toBeGreaterThan(priorFor("L33") + 50);
+  });
+
+  it("puts the honest login form at the top and the rotating page at the bottom", () => {
+    /* The two ends of the joke: L36 has no trick at all, and L33 rotates the
+       page six degrees a second. If either drifts, the axis has been lost. */
+    const ranked = [...CATALOG].sort((a, b) => priorFor(b.id) - priorFor(a.id));
+    expect(ranked[0]!.id).toBe("L36");
+    expect(ranked.at(-1)!.id).toBe("L33");
+  });
+
+  it("scores the dark-pattern levels above the physics levels", () => {
+    /*
+     * The whole point. Every level is equally a parody, but the ones built
+     * out of dark patterns are things that genuinely ship — a consent banner
+     * with 47 toggles is reporting, not exaggeration — and the ones built out
+     * of physics are not.
+     */
+    const real = ["L05", "L09", "L24", "L28", "L22"];
+    const invented = ["L11", "L25", "L31", "L33", "L38"];
+    expect(Math.min(...real.map(priorFor))).toBeGreaterThan(Math.max(...invented.map(priorFor)) + 40);
   });
 
   it("moves toward the crowd and eventually forgets the prior", () => {
@@ -69,10 +112,11 @@ describe("the score itself", () => {
   });
 
   it("has real spread across the catalogue, which is the whole game", () => {
-    /* If every level scored the same there would be nothing to guess. */
-    const priors = new Set(CATALOG.map((m) => priorFor(m.id)));
-    expect(priors.size).toBeGreaterThan(2);
-    expect(Math.max(...priors) - Math.min(...priors)).toBeGreaterThan(30);
+    /* If every level scored the same there would be nothing to guess. Four
+       tier buckets used to satisfy this; forty-nine opinions do it properly. */
+    const priors = CATALOG.map((m) => priorFor(m.id));
+    expect(new Set(priors).size).toBeGreaterThan(25);
+    expect(Math.max(...priors) - Math.min(...priors)).toBeGreaterThan(80);
   });
 });
 
