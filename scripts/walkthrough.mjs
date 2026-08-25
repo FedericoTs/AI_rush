@@ -33,19 +33,37 @@ const OUT = process.env.WALKTHROUGH_OUT ?? "walkthrough";
 const RAW = join(OUT, "raw");
 
 /*
- * Phone-shaped, and sized to what is actually on screen.
+ * The viewport IS the video, and the phone layout comes from `zoom`.
  *
- * The first cut used 540×960 and the level card occupied the top fifth of the
- * frame with a void under it — measured, the card is 538px tall from y=55, and
- * nothing is painted below about y=593 at any viewport height. Vertical video
- * that is four-fifths empty is not a clip anyone watches.
+ * ── The trap this exists to avoid ────────────────────────────────────────
  *
- * 432×768 is exactly 9:16, leaves the card filling three-quarters of the
- * height, and keeps the rest for the caption. A 2.5× device pixel ratio makes
- * the 1080×1920 recording native rather than upscaled.
+ * The obvious setup — a 432×768 viewport, `deviceScaleFactor: 2.5`, and
+ * `recordVideo.size` of 1080×1920 — silently produces a video whose content
+ * occupies the **top-left 40% of the frame** and nothing else. Playwright
+ * scales a page *down* to fit the requested size and never up, so asking for
+ * a size larger than the viewport pads it. 432/1080 = 0.4 exactly.
+ *
+ * That shipped once. It survived a contact sheet because the grey padding in
+ * the frames was indistinguishable from the grey padding the `tile` filter
+ * adds between thumbnails. The check that actually catches it is a `drawbox`
+ * border drawn at the frame's true edges, which no amount of tiling can fake.
+ *
+ * ── What works instead ───────────────────────────────────────────────────
+ *
+ * Make the viewport the video's real size and zoom the document. Layout then
+ * runs at 1080/2.5 = 432 effective CSS pixels — the phone width the game is
+ * designed for — while every pixel is rendered at full resolution. Measured
+ * against a native 432×768 recording, the composition is identical; it is
+ * simply 2.5× sharper and fills the frame.
+ *
+ * Everything in the overlay below is written in the same effective units and
+ * scales with it, including the mouse coordinates, because `zoom` moves the
+ * whole coordinate space together — so nothing else in this file changes.
  */
-const VIEW = { width: 432, height: 768 };
+const ZOOM = 2.5;
+const VIEW = { width: 1080, height: 1920 };
 const VIDEO = { width: 1080, height: 1920 };
+
 
 /* The chain. `?level=` takes a comma list and plays them in order, so this is
    one continuous practice run rather than six recordings stitched together. */
@@ -206,7 +224,7 @@ async function main() {
   });
   const ctx = await browser.newContext({
     viewport: VIEW,
-    deviceScaleFactor: 2.5,
+    deviceScaleFactor: 1,
     recordVideo: { dir: RAW, size: VIDEO },
     /* Cursor motion is scripted; a reduced-motion preference would also flatten
        the level animations the clip exists to show. */
@@ -223,6 +241,14 @@ async function main() {
          it instead — visible immediately, rather than a silent wrong take. */
     }
   });
+  await ctx.addInitScript((z) => {
+    /* Set on the root so layout, media queries and the overlay all agree.
+       Applied at DOMContentLoaded because `document.documentElement` has to
+       exist and the app must lay out with it already in force. */
+    const apply = () => { document.documentElement.style.zoom = String(z); };
+    if (document.documentElement) apply();
+    else addEventListener("DOMContentLoaded", apply);
+  }, ZOOM);
   await ctx.addInitScript(OVERLAY);
 
   const page = await ctx.newPage();
@@ -232,7 +258,7 @@ async function main() {
   /* Mouse motion a viewer can follow. Playwright's default is a teleport,
      which on video reads as a cut rather than a movement. */
   let mx = VIEW.width / 2;
-  let my = VIEW.height + 40;
+  let my = VIEW.height + 100;
   async function glide(x, y, steps = 26) {
     const fromX = mx;
     const fromY = my;
