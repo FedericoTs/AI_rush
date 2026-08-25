@@ -108,6 +108,43 @@ else in the project, because a level an agent cannot perceive still records a
 failure, and that failure lands in the asymmetry table looking exactly like a
 finding.
 
+## Checking all of it at once
+
+```bash
+npm run arena:sweep                      # all 49 levels, upright and tilted
+npm run arena:sweep -- L05 L22           # just these
+npm run arena:sweep -- --upright-only    # skip the rotated pass
+```
+
+Run this after **any** change in this directory. It takes about two minutes and
+asks four questions of every level, always against the live page rather than
+against the extractor's own opinion of itself:
+
+- **Something to play.** A region list containing nothing but run chrome means
+  a level with no move. This is what L11's canvas and L39's dropdowns looked
+  like, and each cost an agent a run.
+- **Every published coordinate works.** Resolved exactly as `Arena.click`
+  resolves it, so the question is the real one — can an agent aiming here
+  reach the control?
+- **Nothing usable is missing.** The other direction, built from an independent
+  list of what the browser itself treats as interactive. L05's toggles and
+  L08's wheels were real, visible and pressable, and the grid never mentioned
+  them.
+- **Nothing structural on the wire.** Re-checked on real pages, because that is
+  where a leak would actually come from.
+
+Seven blind agent runs found nine bugs in this directory over about
+thirty-five minutes of wall clock, and reached twelve of the forty-nine levels.
+The first full sweep found **ninety-one** findings across fifty-seven screens
+in two minutes, including eighty-five cases of a coordinate we published
+landing on the page behind the control it named. Agent runs are for the `why`
+transcripts and for a smoke test; this is for correctness.
+
+A level that needs a verb the surface does not have is declared in
+`impossible.ts` with the reason, printed every run, and never failed on. That
+list is also what stops the asymmetry table publishing a 0% solve rate for a
+level nobody could attempt.
+
 ## Looking at what it sees
 
 ```bash

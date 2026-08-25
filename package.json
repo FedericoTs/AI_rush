@@ -16,6 +16,7 @@
     "check": "npm run typecheck && npm run lint && npm run test",
     "arena": "tsx src/arena/server.ts",
     "arena:harness": "tsx src/arena/harness.ts",
+    "arena:sweep": "tsx src/arena/sweep.ts",
     "arena:probe": "tsx src/arena/probe.ts"
   },
   "dependencies": {

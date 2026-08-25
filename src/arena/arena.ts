@@ -3,6 +3,7 @@ import { COLS, ROWS, rasterize, render } from "./raster";
 import { extractBoxes } from "./extract";
 import { prepareContext } from "./page";
 import { arenaUrl, operatorFromEnv } from "./url";
+import { INTERACTIVE, resolvePoint } from "./reach";
 
 /**
  * One run of AI Rush, driven from outside, perceived as a character grid.
@@ -126,12 +127,29 @@ export class Arena {
     return this.turns;
   }
 
-  /** Grid cell → the pixel at its centre, which is where a click lands. */
+  /** Grid cell → the pixel at its centre. */
   toPixels(x: number, y: number): { px: number; py: number } {
     return {
       px: Math.round((x + 0.5) * (VIEWPORT.width / COLS)),
       py: Math.round((y + 0.5) * (VIEWPORT.height / ROWS)),
     };
+  }
+
+  /**
+   * Grid cell → the pixel the mouse actually goes to.
+   *
+   * A cell is 10×30px and a toggle switch is 19px tall, so the centre of the
+   * only cell there is can sit outside the control it names. `reach.ts` has
+   * the reasoning; the short version is that this is a fingertip, bounded to
+   * the cell the agent named, and it will not rescue a click aimed elsewhere.
+   */
+  private async aim(x: number, y: number): Promise<{ px: number; py: number }> {
+    const { px, py } = this.toPixels(x, y);
+    if (!this.page) return { px, py };
+    const [rx, ry] = await this.page.evaluate(resolvePoint, [
+      px, py, VIEWPORT.width / COLS, VIEWPORT.height / ROWS, INTERACTIVE,
+    ] as [number, number, number, number, string]);
+    return { px: rx, py: ry };
   }
 
   async look(): Promise<string> {
@@ -164,7 +182,7 @@ export class Arena {
 
   async click(x: number, y: number): Promise<string> {
     if (!this.page) return NO_RUN;
-    const { px, py } = this.toPixels(x, y);
+    const { px, py } = await this.aim(x, y);
     await this.page.mouse.click(px, py);
     return this.look();
   }
@@ -242,7 +260,11 @@ export class Arena {
 
   async drag(x1: number, y1: number, x2: number, y2: number): Promise<string> {
     if (!this.page) return NO_RUN;
-    const from = this.toPixels(x1, y1);
+    /* The grip resolves like a click — a drag that begins one pixel off the
+       wheel does nothing at all, which is exactly what a blind run spent three
+       turns concluding. The destination stays exactly where it was asked for:
+       where you let go is the whole of a flick. */
+    const from = await this.aim(x1, y1);
     const to = this.toPixels(x2, y2);
     await this.page.mouse.move(from.px, from.py);
     await this.page.mouse.down();
