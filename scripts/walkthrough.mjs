@@ -76,6 +76,43 @@ const OVERLAY = () => {
         background:linear-gradient(to top,rgba(0,0,0,.92) 55%,rgba(0,0,0,0));
         opacity:0;transition:opacity .28s ease}
       #__cap b{color:#ff4d3d}
+
+      /*
+       * A chapter band, because the frame cannot be filled by the card alone.
+       *
+       * Measured across the six: the cards are 408 wide by 265–519 tall, which
+       * is landscape-ish for most of them, and the card is already 94% of the
+       * viewport width so it cannot be scaled up — width is the binding
+       * constraint at ×1.02. Filling a 9:16 frame by zooming would crop the
+       * controls; shrinking the tall one to match the short one would halve its
+       * text. Neither is acceptable.
+       *
+       * So the space above and below stops being letterboxing and becomes
+       * composition: which level this is, how far through we are, and the line
+       * explaining the trap. The frame is then fully used at every moment, and
+       * the reader always knows where they are — which is what a short needs
+       * anyway.
+       */
+      #__top{position:fixed;left:0;right:0;top:0;height:104px;z-index:2147483644;
+        pointer-events:none;padding:14px 18px 0;
+        background:linear-gradient(to bottom,#0b0e13 62%,rgba(11,14,19,0));
+        display:flex;flex-direction:column;gap:9px;opacity:0;transition:opacity .3s ease}
+      #__bar{display:flex;gap:4px}
+      #__bar i{flex:1;height:3px;border-radius:2px;background:#262d38}
+      #__bar i.on{background:#ff4d3d}
+      #__num{font:700 11px/1 ui-monospace,monospace;letter-spacing:.18em;color:#69737f}
+      #__ttl{font:800 19px/1.15 ui-sans-serif,system-ui,sans-serif;color:#fff;
+        letter-spacing:-.01em}
+
+      #__hook{position:fixed;inset:0;z-index:2147483646;pointer-events:none;
+        display:flex;align-items:center;justify-content:center;padding:0 34px;
+        background:rgba(11,14,19,.86);opacity:0;transition:opacity .45s ease;
+        /* 40px overflowed "interfaces" at 432 wide and stranded the last word
+           on its own line. Sized to the frame, with the breaks written by hand
+           rather than left to the wrap. */
+        font:800 31px/1.18 ui-sans-serif,system-ui,sans-serif;color:#fff;text-align:center;
+        letter-spacing:-.02em;text-wrap:balance}
+      #__hook u{text-decoration:none;color:#ff4d3d}
       #__end{position:fixed;inset:0;z-index:2147483647;pointer-events:none;opacity:0;
         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
         background:#0b0e13;color:#fff;font:800 46px/1.1 ui-sans-serif,system-ui,sans-serif;
@@ -95,7 +132,8 @@ const OVERLAY = () => {
        * middle of the shot.
        */
       [data-level]{margin-top:auto!important;margin-bottom:auto!important}
-      main > div{justify-content:center!important;padding-bottom:120px!important}
+      main > div{justify-content:center!important;
+        padding-top:104px!important;padding-bottom:132px!important}
     `;
     document.head.append(style);
 
@@ -107,10 +145,15 @@ const OVERLAY = () => {
     cap.id = "__cap";
     const end = document.createElement("div");
     end.id = "__end";
+    const top = document.createElement("div");
+    top.id = "__top";
+    top.innerHTML = '<div id="__bar"></div><div id="__num"></div><div id="__ttl"></div>';
+    const hook = document.createElement("div");
+    hook.id = "__hook";
     const wrap = document.createElement("div");
     wrap.id = "__wt";
     wrap.style.cssText = "position:fixed;pointer-events:none";
-    document.body.append(wrap, ring, cur, cap, end);
+    document.body.append(wrap, top, hook, ring, cur, cap, end);
 
     const at = (el, x, y) => { el.style.transform = `translate(${x}px,${y}px)`; };
     /* Driven by the page's own events, so the ring is where the mouse really
@@ -131,7 +174,20 @@ const OVERLAY = () => {
         cap.style.opacity = "1";
       }, 180);
     };
+    window.__chapter = (n, total, title) => {
+      const bar = top.querySelector("#__bar");
+      bar.innerHTML = Array.from({ length: total }, (_, i) =>
+        `<i class="${i < n ? "on" : ""}"></i>`).join("");
+      top.querySelector("#__num").textContent = `LEVEL ${n} OF ${total}`;
+      top.querySelector("#__ttl").textContent = title;
+      top.style.opacity = "1";
+    };
+    window.__hook = (html) => {
+      hook.innerHTML = html ?? "";
+      hook.style.opacity = html ? "1" : "0";
+    };
     window.__end = (title, sub) => {
+      top.style.opacity = "0";
       end.innerHTML = `<div>${title}</div><span>${sub}</span>`;
       end.style.opacity = "1";
     };
@@ -208,11 +264,18 @@ async function main() {
 
   await page.goto(`${GAME}/play?level=${LEVELS.join(",")}`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("[data-level]", { timeout: 20_000 });
-  await sleep(350);
+  await sleep(250);
 
   // ── L01 ───────────────────────────────────────────────────────────────
+  /* The hook sits over the first level rather than before it, so the frame is
+     never a title card the viewer has to wait out. */
+  await page.evaluate(() =>
+    window.__hook?.('49 interfaces<br>built to make you <u>fail</u>.'));
+  await sleep(1700);
+  await page.evaluate(() => window.__hook?.(null));
+  await page.evaluate(() => window.__chapter?.(1, 6, "Continue To Your Account"));
   await say("Every button here is lying to you.");
-  await sleep(1900);
+  await sleep(1800);
   await say("Cancel is green. Continue has a <b>warning triangle</b>.");
   await sleep(2500);
   /*
@@ -230,6 +293,7 @@ async function main() {
 
   // ── L05 ───────────────────────────────────────────────────────────────
   await page.waitForSelector("text=We Value Your Privacy", { timeout: 10_000 });
+  await page.evaluate(() => window.__chapter?.(2, 6, "We Value Your Privacy"));
   await say("47 partners. There is a Reject All.");
   await sleep(2300);
   await press(page.getByRole("button", { name: "Reject All" }), 700);
@@ -245,6 +309,7 @@ async function main() {
 
   // ── L27 ───────────────────────────────────────────────────────────────
   await page.waitForSelector("text=Confirm Your Address", { timeout: 10_000 });
+  await page.evaluate(() => window.__chapter?.(3, 6, "Confirm Your Address"));
   await say("It shows you the address it wants.");
   await sleep(2200);
   const field = page.getByLabel("Address");
@@ -266,6 +331,7 @@ async function main() {
 
   // ── L22 ───────────────────────────────────────────────────────────────
   await page.waitForSelector("text=Loading Your Dashboard", { timeout: 10_000 });
+  await page.evaluate(() => window.__chapter?.(4, 6, "Loading Your Dashboard"));
   await say("Loading. It has been at 99% for a while.");
   await sleep(3200);
   await say("The real progress is in the corner. <b>Nine pixels tall.</b>");
@@ -299,6 +365,7 @@ async function main() {
 
   // ── L11 ───────────────────────────────────────────────────────────────
   await page.waitForSelector("text=Choose A Secure Password", { timeout: 10_000 });
+  await page.evaluate(() => window.__chapter?.(5, 6, "Choose A Secure Password"));
   await say("Your password is dispensed by a dinosaur.");
   await sleep(1400);
   for (let i = 0; i < 7; i++) {
@@ -311,6 +378,7 @@ async function main() {
 
   // ── L36 ───────────────────────────────────────────────────────────────
   await page.waitForSelector("text=Sign in", { timeout: 10_000 });
+  await page.evaluate(() => window.__chapter?.(6, 6, "Sign In"));
   await say("Last one. Find the trick.");
   await sleep(4200);
   await say("There isn't one. It is a completely normal login form.");
