@@ -52,7 +52,19 @@ export interface Box {
    * stepper — recognised by the cursor the browser paints over it, which is
    * the same affordance a person is reading.
    */
-  kind: "text" | "button" | "field" | "heading" | "drawing" | "dial";
+  kind: "text" | "button" | "field" | "heading" | "drawing" | "dial" | "panel";
+  /**
+   * A `panel` has content past its own edges, and this says which way.
+   *
+   * On screen a clipped list shows a cut-off row or a scrollbar, and a person
+   * reads "there is more of this" without thinking about it. The grid was
+   * silent: the extractor correctly withholds everything below the fold, and
+   * withholding it removed the only cue that it existed. A blind run lost
+   * L48 to exactly that — "there was no scrollbar glyph, no ellipsis, no cue
+   * of any kind that content existed below the fold" — and found the missing
+   * checkbox only by guessing a scroll at a coordinate.
+   */
+  more?: "above" | "below" | "both";
   /** Painted on top of what it overlaps. Higher wins a collision. */
   z?: number;
   /**
@@ -278,6 +290,10 @@ function paint(rows: string[][], claimed: boolean[][], box: Box, view: Viewport)
    * Only unclaimed cells, like everything else — a caption drawn over a canvas
    * was painted before this and keeps its characters.
    */
+  /* A panel is a note about an edge, not something drawn. Painting anything
+     for it would cover the very content it is telling you continues. */
+  if (box.kind === "panel") return;
+
   if (box.kind === "drawing") {
     for (let y = y0; y <= y1; y++) {
       const row = rows[y];
@@ -328,8 +344,26 @@ function paint(rows: string[][], claimed: boolean[][], box: Box, view: Viewport)
   const text = box.text.trim() ? box.text.replace(/\s+/g, " ").trim() : empty;
 
   if (text) {
-    const row = rows[y0]!;
-    const mark = claimed[y0]!;
+    /*
+     * The row the text is drawn on is the row the region points at.
+     *
+     * These used to differ: text went on the box's first row while the region
+     * advertised the middle one, so a select whose value read on row 10 was
+     * listed at (24,11) — a blank row on the grid. A blind run caught it and
+     * had to test the coordinate to find out which of the two to believe:
+     *
+     *   "the region list gives its coordinate as (24,11) — a blank row on the
+     *   grid. Clicking (24,11) did work, so the click target is correct and
+     *   the rendering is one row off"
+     *
+     * It is also the more faithful row on its own merits. Glyphs sit
+     * vertically centred in a control, not flush to its top edge, so for
+     * anything taller than one cell the middle is where the words actually
+     * are.
+     */
+    const ty = clamp(aimCell(box, view).y, y0, y1);
+    const row = rows[ty]!;
+    const mark = claimed[ty]!;
     for (let i = 0; i < text.length; i++) {
       const col = x0 + i;
       if (col >= COLS) break;
@@ -393,6 +427,7 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
           box.kind === "field" ||
           box.kind === "dial" ||
           box.kind === "drawing" ||
+          box.kind === "panel" ||
           isUnlabelledControl(box, view)),
     )
     /* Descending: higher z first, and within one z the later element, because
@@ -412,6 +447,7 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
           box.kind === "field" ||
           box.kind === "dial" ||
           box.kind === "drawing" ||
+          box.kind === "panel" ||
           isUnlabelledControl(box, view)),
     )
     .map(({ box }) => {
@@ -435,7 +471,9 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
         label:
           box.kind === "drawing"
             ? "something you cannot read"
-            : box.text.replace(/\s+/g, " ").trim().slice(0, 40) || "(empty)",
+            : box.kind === "panel"
+              ? `scrolls — more ${box.more ?? "below"}`
+              : box.text.replace(/\s+/g, " ").trim().slice(0, 40) || "(empty)",
       };
     })
     .sort((a, b) => a.y - b.y || a.x - b.x);

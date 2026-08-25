@@ -96,7 +96,7 @@ export function extractBoxes(): Extracted {
    * is a button to anybody looking at it, and the whole mode depends on the
    * agent seeing what is drawn rather than what is declared.
    */
-  const kindOf = (el: Element, style: CSSStyleDeclaration, rect: DOMRect): Box["kind"] => {
+  const kindOf = (el: Element, style: CSSStyleDeclaration): Box["kind"] => {
     const tag = el.tagName.toLowerCase();
     /*
      * Something is painted here and you cannot read it.
@@ -132,23 +132,32 @@ export function extractBoxes(): Extracted {
      * Reported as a place and a value, never as an instruction. How far a
      * flick travels, and that the momentum is non-linear, stays the level.
      *
-     * ── The size floor, which is not a detail ────────────────────────────
+     * ── A size floor was tried here, and it was a mistake ────────────────
      *
-     * The first version of this had none, and it immediately broke L22. That
-     * level's whole mechanic is a nine-pixel `0.00 %` you are supposed to
-     * *notice* next to a big friendly fake progress bar — and promoting it to
-     * a named region pointed straight at it. The README states the rule this
-     * violated: "the grid must not help. If L22's nine-pixel number arrives as
-     * prominent as the heading, the renderer has solved the level."
+     * The worry was L22: its mechanic is a nine-pixel `0.00 %` you are meant
+     * to *notice* beside a big friendly fake progress bar, and calling it a
+     * dial looked like pointing straight at it. So a floor was added to
+     * exclude anything too small to put a finger on.
      *
-     * A dial is something you could put a finger on. A nine-pixel readout is
-     * not, whatever cursor happens to sit over it.
+     * That was wrong on the facts. Checking against the previous commit showed
+     * the number was **already** in the region list, as a `button` — the floor
+     * never hid it, it only relabelled it. And `button` is a lie: the thing is
+     * draggable, dragging it is the entire solve, and the very next run read
+     * the tag, clicked it six times, and reported the level as having no
+     * working control at all.
+     *
+     * A wrong tag is worse than a revealing one. A person hovering that number
+     * gets `ns-resize` from the browser and learns the same fact; what stays
+     * hard is noticing it in the first place, and the resistance and decay
+     * once you have it.
      */
     const drag = style.cursor;
-    const grabbable =
+    if (
       drag === "ns-resize" || drag === "ew-resize" || drag === "row-resize" ||
-      drag === "col-resize" || drag === "grab" || drag === "grabbing" || drag === "move";
-    if (grabbable && rect.width >= 40 && rect.height >= 24) return "dial";
+      drag === "col-resize" || drag === "grab" || drag === "grabbing" || drag === "move"
+    ) {
+      return "dial";
+    }
     if (tag === "button" || tag === "a" || el.getAttribute("role") === "button") return "button";
     if (/^h[1-6]$/.test(tag)) return "heading";
 
@@ -214,6 +223,34 @@ export function extractBoxes(): Extracted {
     return z;
   };
 
+  /*
+   * A list that continues past its own edge.
+   *
+   * The hit test above is right to withhold everything below the fold — a
+   * player cannot read it either — but withholding it also removed the *cue*
+   * that it exists. On screen a clipped list has a cut-off row or a scrollbar
+   * and a person reads "there is more of this" instantly. A blind run lost L48
+   * to the silence: "no scrollbar glyph, no ellipsis, no cue of any kind that
+   * content existed below the fold", and only found the hidden checkbox by
+   * guessing a scroll coordinate.
+   *
+   * So the fact is reported and nothing else is: that this area scrolls, and
+   * which way there is more. Never how much, never what is in it.
+   */
+  const scrollNote = (
+    el: Element,
+    style: CSSStyleDeclaration,
+  ): "above" | "below" | "both" | null => {
+    const oy = style.overflowY;
+    if (oy !== "auto" && oy !== "scroll") return null;
+    const top = el.scrollTop > 2;
+    const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 2;
+    if (top && bottom) return "both";
+    if (top) return "above";
+    if (bottom) return "below";
+    return null;
+  };
+
   const seen = new Set<Element>();
 
   for (const el of Array.from(document.body.querySelectorAll<HTMLElement>("*"))) {
@@ -221,6 +258,25 @@ export function extractBoxes(): Extracted {
 
     const style = getComputedStyle(el);
     const rect = el.getBoundingClientRect();
+
+    /* Checked before `visible()`, because a scroll container is often an empty
+       frame whose own centre is covered by the rows inside it — it would fail
+       the hit test and take the cue down with it. The container is on screen
+       whether or not anything is painted at its exact middle. */
+    const more = scrollNote(el, style);
+    if (more && rect.width > 40 && rect.height > 40) {
+      boxes.push({
+        text: "",
+        x: Math.round(rect.left),
+        y: Math.round(rect.top),
+        w: Math.round(rect.width),
+        h: Math.round(rect.height),
+        kind: "panel",
+        more,
+        ...centreOf(rect),
+      });
+    }
+
     if (!visible(el, style, rect)) continue;
 
     const tag = el.tagName.toLowerCase();
@@ -242,7 +298,7 @@ export function extractBoxes(): Extracted {
         .trim();
     }
 
-    const kind = kindOf(el, style, rect);
+    const kind = kindOf(el, style);
     const opaque = isOpaque(style.backgroundColor);
 
     /* Keep it if it says something, if it is a solid panel that hides what is

@@ -511,3 +511,69 @@ describe("a dial", () => {
     }
   });
 });
+
+/**
+ * A list that continues past its own edge.
+ *
+ * A blind run on a fresh seed lost L48 to this. Its accordion clips content,
+ * the extractor correctly withholds everything below the fold — a player
+ * cannot read it either — but withholding it also removed the only cue that
+ * anything was down there:
+ *
+ *   "there was no scrollbar glyph, no ellipsis, no cue of any kind that
+ *   content existed below the fold... If you had not been told scrolling was
+ *   a tool, this level would be unsolvable from what is drawn."
+ *
+ * On screen there is a cut-off row and a scrollbar, and a person reads "more
+ * of this" instantly. So the fact is reported, and only the fact.
+ */
+describe("a panel with more in it", () => {
+  const panel: Box = { text: "", x: 30, y: 200, w: 420, h: 180, kind: "panel", more: "below" };
+
+  it("says which way there is more", () => {
+    const r = rasterize([panel], VIEW).regions[0]!;
+    expect(r.kind).toBe("panel");
+    expect(r.label).toContain("more below");
+  });
+
+  it("gives a coordinate inside itself, because that is where you scroll", () => {
+    const r = rasterize([panel], VIEW).regions[0]!;
+    const px = (r.x + 0.5) * (VIEW.width / COLS);
+    const py = (r.y + 0.5) * (VIEW.height / ROWS);
+    expect(px).toBeGreaterThanOrEqual(panel.x);
+    expect(px).toBeLessThanOrEqual(panel.x + panel.w);
+    expect(py).toBeGreaterThanOrEqual(panel.y);
+    expect(py).toBeLessThanOrEqual(panel.y + panel.h);
+  });
+
+  it("draws nothing at all", () => {
+    /* It is a note about an edge. Painting anything would cover the content it
+       is telling you continues. */
+    const withText: Box = { text: "Push notifications", x: 40, y: 240, w: 300, h: 30, kind: "text" };
+    expect(rasterize([panel, withText], VIEW).grid.join("\n")).toContain("Push notifications");
+    expect(rasterize([panel], VIEW).grid.join("").trim()).toBe("");
+  });
+
+  it("never says how much is hidden or what is in it", () => {
+    const serialised = JSON.stringify(rasterize([panel], VIEW)).toLowerCase();
+    for (const leak of ["scrollheight", "scrolltop", "rows", "items", "count"]) {
+      expect(serialised, `must not contain ${leak}`).not.toContain(leak);
+    }
+  });
+});
+
+/**
+ * Where the words are drawn and where the region points must agree.
+ *
+ * They used to differ by a row on tall controls, and a blind run had to click
+ * a blank grid row to find out which one to believe.
+ */
+describe("the grid and the region list", () => {
+  it("put a control's text on the row the region points at", () => {
+    /* A 44px select spanning two grid rows — the case that disagreed. */
+    const select: Box = { text: "Select…", x: 30, y: 310, w: 400, h: 44, kind: "field" };
+    const look = rasterize([select], VIEW);
+    const r = look.regions[0]!;
+    expect(look.grid[r.y]).toContain("Select…");
+  });
+});
