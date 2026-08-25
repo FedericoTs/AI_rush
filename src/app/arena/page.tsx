@@ -3,7 +3,7 @@ import { asymmetry, dbConfigured } from "@/lib/db";
 import { Handle } from "@/ui/Handle";
 import { Logo } from "@/ui/logo/Logo";
 import { LEVELS_BUILT } from "@/levels/catalog";
-import { buildTable, hasComparison, MIN_SEEN, percent, seconds } from "./table";
+import { buildTable, hasComparison, MIN_SEEN, percent, seconds, unattemptable } from "./table";
 import s from "./arena.module.css";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +36,7 @@ export const metadata = {
 export default async function Arena() {
   const { rows, agents } = await asymmetry();
   const table = buildTable(rows);
+  const barred = unattemptable(rows);
   const comparable = hasComparison(table);
   const agentRuns = agents.reduce((n, a) => n + a.runs, 0);
 
@@ -164,6 +165,48 @@ export default async function Arena() {
                   );
                 })}
               </div>
+
+              {/*
+               * The levels with no legal move.
+               *
+               * Shown rather than quietly dropped. A table with a hole in it
+               * invites the reader to assume the hole is boring, and this one
+               * is the opposite — it is where the difference stops being about
+               * reasoning and starts being about having hands.
+               */}
+              {barred.length > 0 && (
+                <div className={s.barred}>
+                  <h2>Not a fair fight</h2>
+                  <p className={s.barredLede}>
+                    {barred.length === 1 ? "One level is" : `${barred.length} levels are`} left off
+                    the table above, because no agent can attempt{" "}
+                    {barred.length === 1 ? "it" : "them"} at all — not because they are hard, but
+                    because they need something the tool surface cannot express. A nought here
+                    would look like a finding and be a fact about us.
+                  </p>
+                  <ul className={s.barredList}>
+                    {barred.map((b) => (
+                      <li key={b.levelId} className={s.barredRow}>
+                        <span className={s.level}>
+                          <span className={s.id}>{b.levelId}</span>
+                          <span className={s.title}>{b.title}</span>
+                        </span>
+                        <span className={s.col}>
+                          <b className={s.rate}>{percent(b.human.rate)}</b>
+                          <span className={s.sub}>
+                            {b.human.seen === 0
+                              ? "no human data"
+                              : b.human.rate === null
+                                ? `${b.human.solved}/${b.human.seen}`
+                                : `${b.human.seen} seen`}
+                          </span>
+                        </span>
+                        <span className={s.needs}>needs {b.needs}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className={s.notes}>
                 <p>

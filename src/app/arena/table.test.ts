@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTable, hasComparison, MIN_SEEN, percent, seconds } from "./table";
+import { buildTable, hasComparison, MIN_SEEN, percent, seconds, unattemptable } from "./table";
 import { CATALOG } from "@/levels/catalog";
 import type { AsymmetryRow } from "@/lib/db";
 
@@ -96,5 +96,49 @@ describe("formatting", () => {
     expect(seconds(2400)).toBe("2.4s");
     expect(seconds(41_600)).toBe("42s");
     expect(seconds(null)).toBe("—");
+  });
+});
+
+/**
+ * Levels no agent can attempt.
+ *
+ * The sweep found one: L20 wants a held left click, a right click and a held
+ * space bar at once, and the tool surface cannot express any of that. It is
+ * not a hard level for an agent, it is a level with no legal move.
+ *
+ * The danger is entirely in what a comparison row would look like. A real
+ * human rate beside a nought reads as a finding about agents, and every run
+ * that piles on makes the wrong number look more authoritative. So it comes
+ * out of the table and is shown on its own, with the reason.
+ */
+describe("a level with no legal move", () => {
+  it("never appears as a comparison", () => {
+    const table = buildTable([
+      row({ level_id: "L20", human_seen: 400, human_solved: 240, agent_seen: 40, agent_solved: 0 }),
+      row({ level_id: L[0]!, human_seen: 40, human_solved: 20, agent_seen: 40, agent_solved: 10 }),
+    ]);
+    expect(table.map((r) => r.levelId)).not.toContain("L20");
+    /* And the level beside it is untouched — this removes a row, it does not
+       quietly change the arithmetic of the others. */
+    expect(table[0]!.gap).toBeCloseTo(0.25);
+  });
+
+  it("is listed on its own, with the human number kept", () => {
+    const [only] = unattemptable([
+      row({ level_id: "L20", human_seen: 400, human_solved: 240 }),
+    ]);
+    expect(only!.levelId).toBe("L20");
+    expect(only!.human.rate).toBeCloseTo(0.6);
+    expect(only!.needs).toMatch(/held|right/);
+  });
+
+  it("is listed even when nobody at all has played it", () => {
+    /* A table with a hole in it invites the reader to assume the hole is
+       uninteresting. The list is the whole point, so it does not depend on
+       there being data. */
+    const [only] = unattemptable([]);
+    expect(only!.levelId).toBe("L20");
+    expect(only!.human.seen).toBe(0);
+    expect(only!.human.rate).toBeNull();
   });
 });

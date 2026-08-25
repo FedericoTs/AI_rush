@@ -1,6 +1,7 @@
 import type { AsymmetryRow } from "@/lib/db";
 import { CATALOG } from "@/levels/catalog";
 import type { Tier } from "@/engine/types";
+import { isUnplayable, UNPLAYABLE } from "@/arena/impossible";
 
 /**
  * The asymmetry table's arithmetic, kept away from the markup so it can be
@@ -83,6 +84,13 @@ export function buildTable(rows: readonly AsymmetryRow[]): TableRow[] {
          reader could go and play. Dropped rather than shown as "L99". */
       if (!meta) return null;
 
+      /* A level needing a verb the agent's tool surface does not have is not
+         evidence about agents, and a comparison row is the one place it must
+         never appear: 0% against a real human number reads as a finding, and
+         gets more authoritative with every run that piles onto it. It is
+         listed separately, with the reason. */
+      if (isUnplayable(meta.id)) return null;
+
       const human = cell(r.human_seen, r.human_solved, r.human_skipped, r.human_median_ms);
       const agent = cell(r.agent_seen, r.agent_solved, r.agent_skipped, r.agent_median_ms);
 
@@ -117,4 +125,42 @@ export function percent(rate: number | null): string {
 export function seconds(ms: number | null): string {
   if (ms === null) return "—";
   return ms >= 10_000 ? `${Math.round(ms / 1000)}s` : `${(ms / 1000).toFixed(1)}s`;
+}
+
+
+/**
+ * The levels no agent can attempt, and the human number for each.
+ *
+ * Shown rather than quietly dropped, because a table with a hole in it invites
+ * the reader to assume the hole is uninteresting. It is the opposite: these
+ * are the places where the difference between a person and a language model
+ * stops being about reasoning and becomes about having hands.
+ *
+ * The human column is real data and stays. The agent column is not a zero —
+ * it is a sentence saying which verb is missing, which is a fact about our
+ * tool surface rather than about anybody's ability.
+ */
+export interface UnattemptableRow {
+  levelId: string;
+  title: string;
+  needs: string;
+  human: Cell;
+}
+
+const NO_DATA: Cell = { seen: 0, solved: 0, skipped: 0, medianMs: null, rate: null };
+
+export function unattemptable(rows: readonly AsymmetryRow[]): UnattemptableRow[] {
+  return UNPLAYABLE.map((u) => {
+    const meta = CATALOG.find((m) => m.id === u.levelId);
+    if (!meta) return null;
+    const r = rows.find((x) => x.level_id === u.levelId);
+    return {
+      levelId: meta.id,
+      title: meta.title,
+      needs: u.needs,
+      human: r
+        ? cell(r.human_seen, r.human_solved, r.human_skipped, r.human_median_ms)
+        : NO_DATA,
+    };
+  }).filter((r): r is UnattemptableRow => r !== null);
 }

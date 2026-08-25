@@ -111,3 +111,30 @@
   .title { font-size: 0.76rem; }
   .sub { font-size: 0.5rem; }
 }
+
+/* ─── the levels with no legal move ──────────────────────────────────── */
+.barred {
+  border: 1px dashed var(--chrome-line); border-radius: 12px;
+  padding: 0.8rem; display: flex; flex-direction: column; gap: 0.55rem;
+}
+.barred h2 {
+  margin: 0; font-size: 0.68rem; font-family: var(--font-mono);
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--chrome-dim);
+  font-weight: 500;
+}
+.barredLede { margin: 0; font-size: 0.74rem; color: var(--chrome-dim); line-height: 1.65; }
+.barredList { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+.barredRow {
+  display: grid; grid-template-columns: 1fr 4.6rem; gap: 0.4rem 0.5rem; align-items: center;
+}
+/* The reason runs the full width underneath, because it is a sentence rather
+   than a number and squeezing it into a column would make it unreadable. */
+.needs {
+  grid-column: 1 / -1;
+  font-size: 0.68rem; color: #63707e; line-height: 1.5;
+  border-left: 2px solid var(--chrome-line); padding-left: 0.5rem;
+}
+
+@media (max-width: 460px) {
+  .barredRow { grid-template-columns: 1fr 3.9rem; }
+}
