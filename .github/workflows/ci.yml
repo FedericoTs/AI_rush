@@ -56,3 +56,61 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # Every level, as an agent perceives it — upright and tilted fifteen degrees.
+  #
+  # Seven blind agent runs found nine bugs in `src/arena/**` and reached twelve
+  # of the forty-nine levels in about thirty-five minutes. The first sweep found
+  # ninety-one findings across fifty-seven screens in under a minute, so this is
+  # the check and the runs are for the transcripts.
+  #
+  # It is a gate rather than a report because of what an unfixed finding costs:
+  # a level an agent cannot perceive still records a failure, and that failure
+  # lands on /arena as a level agents cannot beat. Wrong numbers there are the
+  # most damaging thing this project could publish, and they do not look wrong.
+  arena:
+    name: arena sweep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+
+      # Server and sweep in one step, so the background process cannot outlive
+      # the thing that needs it or be left running by a failure.
+      #
+      # No Supabase credentials here on purpose: off Vercel the game runs
+      # unscored, so a sweep can never write a row onto a real player's board.
+      - name: sweep
+        env:
+          ARENA_URL: http://127.0.0.1:3000
+        run: |
+          # Its own log, not the step's stdout. A background process that keeps
+          # the step's pipe open outlives the thing reading it, and the server
+          # chattering into the middle of the sweep's report helps nobody.
+          npm run start > server.log 2>&1 &
+          SERVER=$!
+
+          up=""
+          for _ in $(seq 1 60); do
+            if curl -sf -o /dev/null http://127.0.0.1:3000/; then up=yes; break; fi
+            sleep 1
+          done
+          if [ -z "$up" ]; then
+            echo "the server never came up:" >&2
+            cat server.log >&2
+            kill "$SERVER" 2>/dev/null || true
+            exit 1
+          fi
+
+          # `|| status=$?` because the step runs under `bash -e`, and the sweep
+          # exiting non-zero is the whole point of having it here.
+          status=0
+          npm run arena:sweep || status=$?
+          kill "$SERVER" 2>/dev/null || true
+          exit "$status"

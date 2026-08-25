@@ -116,8 +116,8 @@ npm run arena:sweep -- L05 L22           # just these
 npm run arena:sweep -- --upright-only    # skip the rotated pass
 ```
 
-Run this after **any** change in this directory. It takes about two minutes and
-asks four questions of every level, always against the live page rather than
+Run this after **any** change in this directory. It takes about forty seconds
+for all forty-nine, both ways, and asks four questions of every level, always against the live page rather than
 against the extractor's own opinion of itself:
 
 - **Something to play.** A region list containing nothing but run chrome means
@@ -136,14 +136,23 @@ against the extractor's own opinion of itself:
 Seven blind agent runs found nine bugs in this directory over about
 thirty-five minutes of wall clock, and reached twelve of the forty-nine levels.
 The first full sweep found **ninety-one** findings across fifty-seven screens
-in two minutes, including eighty-five cases of a coordinate we published
+in under a minute, including eighty-five cases of a coordinate we published
 landing on the page behind the control it named. Agent runs are for the `why`
 transcripts and for a smoke test; this is for correctness.
 
 A level that needs a verb the surface does not have is declared in
 `impossible.ts` with the reason, printed every run, and never failed on. That
 list is also what stops the asymmetry table publishing a 0% solve rate for a
-level nobody could attempt.
+level nobody could attempt, and it is rendered on `/arena` rather than quietly
+dropped.
+
+It runs on every pull request, as a gate rather than a report. That is a
+deliberate choice about cost: an unfixed finding does not merely annoy an
+agent, it files a level as one agents cannot beat, and a wrong number there
+does not look wrong. Anything that fails is checked a second time before it is
+reported — levels animate, and a frame caught mid-countdown should not turn CI
+red — but what settled is still printed, because a level that keeps settling is
+worth knowing about.
 
 ## Looking at what it sees
 

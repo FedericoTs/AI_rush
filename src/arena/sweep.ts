@@ -25,7 +25,7 @@ import { isUnplayable, reasonFor } from "./impossible";
  * run that went somewhere new found a severe bug within a minute of arriving.
  *
  * So the runs are not the tool. This is: the same checks, over the whole
- * catalogue, in about a minute, every time. Six of the nine bugs would have
+ * catalogue, in about forty seconds, every time. Six of the nine bugs would have
  * been caught here — the invisible canvas, the invisible dropdowns, the
  * unclickable off-by-one, the unclickable rotation, the dropped toggles and
  * the missing wheels — and unlike a run, it keeps catching them.
@@ -255,6 +255,39 @@ async function checkLevel(page: Page, level: string, tilted: boolean): Promise<F
   return found;
 }
 
+/**
+ * A finding, checked twice.
+ *
+ * Levels animate — a progress bar climbs, an interstitial counts down, a card
+ * settles into place — so a single frame caught at the wrong moment can look
+ * like a missing control. In CI that would be a red build nobody trusts, and
+ * an untrusted check is worse than no check because it teaches people to
+ * ignore it.
+ *
+ * So anything that fails is looked at a second time, and only what survives is
+ * reported. What did *not* survive is still printed rather than swallowed: a
+ * level that keeps settling is a level worth knowing about, and quietly
+ * discarding it is how a real intermittent bug hides for a month.
+ *
+ * Only failures pay for this. A clean sweep costs one pass.
+ */
+async function confirmed(
+  page: Page,
+  level: string,
+  tilted: boolean,
+  settled: string[],
+): Promise<Finding[]> {
+  const first = await checkLevel(page, level, tilted);
+  if (first.length === 0) return first;
+
+  const second = await checkLevel(page, level, tilted);
+  const real = second.filter((f) => f.check !== "known-unplayable");
+  if (real.length === 0 && first.some((f) => f.check !== "known-unplayable")) {
+    settled.push(`${level}${tilted ? " (tilted)" : ""}`);
+  }
+  return second;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const only = args.filter((a) => !a.startsWith("-"));
@@ -274,6 +307,7 @@ async function main() {
 
   const queue = [...levels];
   const findings: Finding[] = [];
+  const settled: string[] = [];
   let done = 0;
 
   await Promise.all(
@@ -286,8 +320,8 @@ async function main() {
           continue;
         }
         try {
-          findings.push(...(await checkLevel(page, level, false)));
-          if (bothWays) findings.push(...(await checkLevel(page, level, true)));
+          findings.push(...(await confirmed(page, level, false, settled)));
+          if (bothWays) findings.push(...(await confirmed(page, level, true, settled)));
         } catch (err) {
           findings.push({ level, check: "threw", detail: String(err).slice(0, 120) });
         }
@@ -312,6 +346,12 @@ async function main() {
     console.log();
   }
 
+  if (settled.length) {
+    console.log(`── settled on a second look · ${settled.length} ──`);
+    console.log(`  ${settled.join(", ")}`);
+    console.log("  (a frame caught mid-animation, not a defect — worth watching if it recurs)\n");
+  }
+
   /* A declared unplayable level is printed, never failed on: it is a fact
      about the tool surface that somebody has already checked and written
      down, and a sweep that stays red forever is a sweep nobody runs. */
@@ -320,7 +360,9 @@ async function main() {
   console.log(
     defects.length === 0
       ? `${levels.length} levels${bothWays ? ", upright and tilted" : ""}, nothing to report.`
-      : `${defects.length} findings across ${new Set(defects.map((f) => f.level)).size} screens.`,
+      : `${defects.length} finding${defects.length === 1 ? "" : "s"} across ` +
+        `${new Set(defects.map((f) => f.level)).size} screen` +
+        `${new Set(defects.map((f) => f.level)).size === 1 ? "" : "s"}.`,
   );
 
   await browser.close();
