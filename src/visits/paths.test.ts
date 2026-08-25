@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalisePath, OTHER, refHost } from "./paths";
+import { isArrival, isInternal, normalisePath, OTHER, refHost } from "./paths";
 
 describe("the path a visit reports", () => {
   it("keeps the routes that exist", () => {
@@ -62,5 +62,52 @@ describe("where they came from", () => {
   it("survives a referrer that is not a URL", () => {
     expect(refHost("garbage", "ai-rush.lol")).toBeNull();
     expect(refHost("javascript:alert(1)", "ai-rush.lol")).toBeNull();
+  });
+});
+
+describe("what counts as an arrival", () => {
+  const SELF = "ai-rush.lol";
+
+  it("counts a fresh load from somewhere else", () => {
+    expect(isArrival(true, "https://x.com/someone/status/1", SELF)).toBe(true);
+  });
+
+  it("counts a fresh load with no referrer at all", () => {
+    /* Typed, bookmarked, or a client that strips the header. Still an arrival,
+       just an unattributable one. */
+    expect(isArrival(true, "", SELF)).toBe(true);
+    expect(isArrival(true, null, SELF)).toBe(true);
+  });
+
+  it("does not count a client-side navigation", () => {
+    /* `document.referrer` never changes on one of these, so without the
+       in-document flag whoever linked to the first page would be credited
+       with every click after it. */
+    expect(isArrival(false, "https://x.com/someone/status/1", SELF)).toBe(false);
+  });
+
+  it("does not count a full-load navigation between our own pages", () => {
+    /*
+     * The bug this exists for, found on a real phone before launch.
+     *
+     * `/play` 307s to add a seed, so pressing START is a full document load.
+     * The in-document flag resets and the visit reported itself as new; the
+     * referrer was our own host so it was dropped as internal, and the phantom
+     * landed in `(direct)`. Real traffic would have split between its true
+     * source and direct, and arrivals inflated by everyone who started a run.
+     */
+    expect(isArrival(true, "https://ai-rush.lol/", SELF)).toBe(false);
+    expect(isArrival(true, "https://www.ai-rush.lol/play?seed=ABC", SELF)).toBe(false);
+    expect(isArrival(true, "http://localhost:3000/", SELF)).toBe(false);
+    expect(isArrival(true, "https://ai-rush-git-main.vercel.app/", SELF)).toBe(false);
+  });
+
+  it("tells a direct visit apart from an internal one", () => {
+    /* `refHost` returns null for both, which is why the arrival test cannot
+       be built out of it alone. */
+    expect(isInternal("", SELF)).toBe(false);
+    expect(isInternal("https://ai-rush.lol/x", SELF)).toBe(true);
+    expect(refHost("", SELF)).toBeNull();
+    expect(refHost("https://ai-rush.lol/x", SELF)).toBeNull();
   });
 });

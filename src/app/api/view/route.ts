@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConfigured, ipHash, rpc } from "@/lib/db";
 import { siteHost } from "@/lib/site";
-import { normalisePath, refHost } from "@/visits/paths";
+import { isArrival, normalisePath, refHost } from "@/visits/paths";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +21,19 @@ export async function POST(req: Request) {
   try {
     if (!dbConfigured) return NextResponse.json({ ok: true, offline: true });
 
-    const body = (await req.json()) as { path?: unknown; ref?: unknown; entry?: unknown };
+    const body = (await req.json()) as { path?: unknown; ref?: unknown; first?: unknown };
     const path = normalisePath(String(body.path ?? ""));
-    const entry = body.entry === true;
-    /* Only an arrival carries a source. On a client-side navigation
-       `document.referrer` still holds whoever linked to the *first* page, so
-       counting it again would credit them with every internal click. */
-    const ref = entry ? refHost(String(body.ref ?? ""), siteHost()) : null;
+    const referrer = String(body.ref ?? "");
+    const self = siteHost();
+
+    /* Both conditions, for the two different ways a view can fail to be an
+       arrival: a client-side navigation (not first in this document) and a
+       full-load navigation between our own pages, which a redirect like
+       `/play`'s seed causes. See `isArrival`. */
+    const entry = isArrival(body.first === true, referrer, self);
+    /* Only an arrival carries a source — otherwise whoever linked to the
+       first page gets credited with every click after it. */
+    const ref = entry ? refHost(referrer, self) : null;
 
     await rpc("record_view", {
       p_path: path,

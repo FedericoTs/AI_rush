@@ -20,9 +20,9 @@ export function Pageview() {
   const path = usePathname();
   /*
    * Module-scope would be wrong and a ref is right: this has to survive route
-   * changes within one page load, and reset on a real one. `entry` marks the
-   * first view after a full load — the arrival — because that is the only
-   * view whose referrer means anything.
+   * changes within one page load, and reset on a real one. That makes it
+   * "first view in this document", which is *not* the same as an arrival — a
+   * redirect between our own pages resets it too. `isArrival` settles it.
    */
   const sent = useRef<string | null>(null);
   const arrived = useRef(false);
@@ -31,14 +31,16 @@ export function Pageview() {
     if (!path || sent.current === path) return;
     sent.current = path;
 
-    const entry = !arrived.current;
+    const first = !arrived.current;
     arrived.current = true;
 
-    const body = JSON.stringify({
-      path,
-      ref: entry ? document.referrer : "",
-      entry,
-    });
+    /*
+     * The referrer goes every time, and whether this counts as an arrival is
+     * decided on the server — because it takes both this flag and the
+     * referrer's host to tell the difference, and only one place should know
+     * the rule. See `isArrival`.
+     */
+    const body = JSON.stringify({ path, ref: document.referrer, first });
     try {
       const blob = new Blob([body], { type: "application/json" });
       if (navigator.sendBeacon?.("/api/view", blob)) return;
