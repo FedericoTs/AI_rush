@@ -1,0 +1,111 @@
+.shell {
+  width: 100%; max-width: 620px; flex: 1; display: flex; flex-direction: column; gap: 0.9rem;
+  padding: calc(1rem + env(safe-area-inset-top)) 0.75rem 3rem;
+}
+
+.head { display: flex; align-items: center; gap: 0.5rem; }
+.head h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; }
+.head h1 i { font-style: normal; color: var(--hazard); }
+.sp { flex: 1; }
+.back {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--chrome-dim); text-decoration: none;
+  border: 1px solid var(--chrome-line); border-radius: 4px; padding: 0.35rem 0.6rem;
+}
+.back:hover { color: var(--chrome-ink); border-color: var(--chrome-dim); }
+
+.lede { margin: 0; font-size: 0.8rem; color: var(--chrome-dim); line-height: 1.6; }
+.lede b { color: var(--chrome-ink); font-weight: 600; }
+
+.pips { display: flex; gap: 4px; }
+.pips i { flex: 1; height: 3px; border-radius: 2px; background: var(--chrome-line); }
+.pips i.on { background: var(--hazard); }
+.pips i.done { background: var(--good); }
+
+/* ─── the interface under the microscope ─────────────────────────────── */
+/*
+ * A real level, scaled to fit and unable to do anything.
+ *
+ * `pointer-events: none` backs up the `inert` attribute for browsers that do
+ * not have it yet, and the fixed height stops a tall level (L05 runs to 519px)
+ * shoving the slider off a phone screen. Overflow is hidden rather than
+ * scrolled: being able to scroll a preview invites trying to play it.
+ */
+.stage {
+  border: 1px solid var(--chrome-line); border-radius: 14px; overflow: hidden;
+  background: var(--chrome-2); position: relative; height: 340px;
+}
+.preview {
+  pointer-events: none; user-select: none;
+  transform: scale(0.82); transform-origin: top center;
+  width: 122%; margin-left: -11%;
+  padding: 0.6rem 0.5rem;
+}
+/* The bottom of a clipped card should look cut off, not finished. */
+.stage::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46px;
+  background: linear-gradient(to top, var(--chrome-2), transparent); pointer-events: none;
+}
+
+/* ─── the guess ──────────────────────────────────────────────────────── */
+.ask { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+.ends {
+  display: flex; justify-content: space-between; font-family: var(--font-mono);
+  font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--chrome-dim);
+}
+.slider { width: 100%; accent-color: var(--hazard); height: 34px; }
+.readout {
+  font-family: var(--font-mono); font-size: 2.1rem; font-weight: 700; text-align: center;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.04em;
+}
+.cta {
+  width: 100%; border: none; border-radius: 12px; padding: 0.85rem;
+  background: var(--hazard); color: #fff; font-weight: 800; font-size: 0.95rem;
+  cursor: pointer; font-family: inherit;
+}
+.cta:disabled { opacity: 0.45; cursor: default; }
+
+/* ─── the reveal ─────────────────────────────────────────────────────── */
+.reveal {
+  border: 1px solid var(--chrome-line); border-radius: 12px; padding: 0.8rem;
+  display: flex; flex-direction: column; gap: 0.55rem;
+}
+.bar { position: relative; height: 8px; border-radius: 5px; background: var(--chrome-line); }
+.crowd { position: absolute; top: -4px; width: 3px; height: 16px; border-radius: 2px; background: var(--good); }
+.mine { position: absolute; top: -4px; width: 3px; height: 16px; border-radius: 2px; background: var(--hazard); }
+.legend {
+  display: flex; gap: 0.9rem; font-family: var(--font-mono); font-size: 0.66rem;
+  color: var(--chrome-dim); flex-wrap: wrap;
+}
+.legend b { font-variant-numeric: tabular-nums; }
+.legend .g { color: var(--good); }
+.legend .h { color: var(--hazard); }
+.verdict { margin: 0; font-size: 0.86rem; line-height: 1.55; }
+.verdict b { color: var(--chrome-ink); }
+.thin { font-family: var(--font-mono); font-size: 0.62rem; color: var(--chrome-dim); }
+
+/* ─── the end ────────────────────────────────────────────────────────── */
+.grid { font-size: 1.6rem; letter-spacing: 0.12em; text-align: center; }
+.total {
+  font-family: var(--font-mono); font-size: 1.1rem; text-align: center;
+  font-variant-numeric: tabular-nums; color: var(--chrome-dim);
+}
+.total b { color: var(--chrome-ink); font-size: 1.5rem; }
+.row { display: flex; gap: 0.5rem; }
+.row > * { flex: 1; }
+.ghost {
+  border: 1px solid var(--chrome-line); border-radius: 12px; padding: 0.85rem;
+  background: transparent; color: var(--chrome-ink); font-weight: 700; font-size: 0.9rem;
+  cursor: pointer; font-family: inherit; text-align: center; text-decoration: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.ghost:hover { border-color: var(--chrome-dim); }
+
+.tally { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.tallyRow {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem;
+  padding: 0.3rem 0; border-bottom: 1px solid var(--chrome-line);
+}
+.tallyRow:last-child { border-bottom: none; }
+.tallyTitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tallyNums { font-family: var(--font-mono); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
