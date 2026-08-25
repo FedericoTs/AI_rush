@@ -1,15 +1,12 @@
 #!/usr/bin/env -S npx tsx
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { chromium, type Browser, type Page } from "playwright";
 import { z } from "zod";
-import { COLS, ROWS, rasterize, render } from "./raster";
-import { extractBoxes } from "./extract";
-import { prepareContext } from "./page";
-import { arenaUrl, operatorFromEnv } from "./url";
+import { COLS, ROWS } from "./raster";
+import { Arena, KEYS, MAX_WAIT_MS, NO_RUN, WHO } from "./arena";
 
 /**
- * The Agent Arena, cheap first version.
+ * The Agent Arena, cheap first version — over MCP.
  *
  * `AGENT_ARENA.md` §9: "the MCP server, `look()`, the existing 48 levels, and
  * a plain text feed. No silicon tier, no spectator page. That's about a week,
@@ -19,6 +16,12 @@ import { arenaUrl, operatorFromEnv } from "./url";
  * This is that. The gate it exists to answer is in `ROADMAP.md` 6.5a — *is
  * watching this funny?* — and if the answer is no, one week has been spent
  * rather than seventeen days.
+ *
+ * The perception and the actions live in `arena.ts`; this file is the schemas
+ * and the descriptions. That split is not tidiness — there is a second
+ * transport (`harness.ts`) for driving a run without an MCP client, and two
+ * transports that disagreed about what `look()` returns would make every
+ * result either produced incomparable with the other's.
  *
  * ── What the agent can and cannot do ─────────────────────────────────────
  *
@@ -52,121 +55,6 @@ import { arenaUrl, operatorFromEnv } from "./url";
  * the run is not filed at all.
  */
 
-const GAME_URL = process.env.ARENA_URL ?? "https://ai-rush.lol";
-
-/*
- * Who this harness says it is, from `ARENA_AGENT` / `ARENA_OPERATOR`.
- *
- * Unset by default, and that means the run is not filed anywhere at all —
- * somebody trying the server out gets a private game, and appearing on a
- * public table is a thing you opt into by naming yourself. Named, the run is
- * filed in the agent tables, which never touch the human board.
- */
-const WHO = operatorFromEnv();
-
-/* A phone-shaped viewport. Most of the catalogue is designed portrait-first,
-   and a desktop-width window would show several levels in a layout no human
-   player is being scored on. */
-const VIEWPORT = { width: 480, height: 720 };
-
-/** Seconds an agent may burn in one `wait`. Long enough for a real animation,
-    short enough that L22's infinite progress bar stays a joke and not a hang. */
-const MAX_WAIT_MS = 10_000;
-
-interface Turn {
-  n: number;
-  tool: string;
-  why: string;
-}
-
-class Arena {
-  private browser: Browser | null = null;
-  private page: Page | null = null;
-  private turns: Turn[] = [];
-
-  async open(seed: string | undefined): Promise<Page> {
-    if (this.page) return this.page;
-
-    /* Same escape hatch as `playwright.config.ts`: a sandbox or a container
-       with a pre-installed browser points at it rather than downloading one.
-       Unset everywhere else, so a normal machine resolves it normally. */
-    this.browser = await chromium.launch({
-      executablePath: process.env.CHROMIUM_PATH || undefined,
-    });
-    const context = await this.browser.newContext({ viewport: VIEWPORT });
-    await prepareContext(context, WHO);
-
-    this.page = await context.newPage();
-    await this.page.goto(arenaUrl(GAME_URL, seed, WHO), { waitUntil: "domcontentloaded" });
-
-    /* The deck is dealt on the client, so `domcontentloaded` fires on an empty
-       stage. Without this the agent's first turn is spent looking at nothing —
-       and the clock is already running, which makes it the most expensive turn
-       of the run to waste. Bounded, and it gives up quietly: a genuinely blank
-       screen is a legitimate thing to perceive. */
-    await this.page.waitForSelector("[data-level]", { timeout: 15_000 }).catch(() => {});
-    return this.page;
-  }
-
-  /** The live page, or null before `start`. Every tool checks this. */
-  current(): Page | null {
-    return this.page;
-  }
-
-  async close(): Promise<void> {
-    await this.browser?.close();
-    this.browser = null;
-    this.page = null;
-  }
-
-  /** The turn log, which is the thing worth reading afterwards. */
-  record(tool: string, why: string): Turn {
-    const turn = { n: this.turns.length + 1, tool, why };
-    this.turns.push(turn);
-    /* stderr, so the transcript survives without contaminating the protocol on
-       stdout. This is the feed, until there is a page to put it on. */
-    process.stderr.write(`turn ${turn.n} · ${tool} · ${why}\n`);
-    return turn;
-  }
-
-  history(): Turn[] {
-    return this.turns;
-  }
-
-  /** Grid cell → the pixel at its centre, which is where a click lands. */
-  toPixels(x: number, y: number): { px: number; py: number } {
-    return {
-      px: Math.round((x + 0.5) * (VIEWPORT.width / COLS)),
-      py: Math.round((y + 0.5) * (VIEWPORT.height / ROWS)),
-    };
-  }
-
-  async look(): Promise<string> {
-    const page = this.page;
-    if (!page) return "No run open. Call `start` first.";
-
-    let shot = await page.evaluate(extractBoxes);
-
-    /* One retry on a completely empty screen.
-     *
-     * A level swapping for the next one leaves the stage blank for a frame or
-     * two, and reporting "there is nothing here" is not lossy, it is wrong —
-     * an agent told the screen is empty will reasonably conclude the run ended
-     * and start doing something strange. A genuinely blank screen survives the
-     * retry and is reported honestly. */
-    if (shot.boxes.length === 0) {
-      await page.waitForTimeout(400);
-      shot = await page.evaluate(extractBoxes);
-    }
-
-    const out = render(rasterize(shot.boxes, shot.view));
-
-    return shot.finished
-      ? `${out}\n\nThe run is over. This is the tally screen.`
-      : out;
-  }
-}
-
 const arena = new Arena();
 
 const server = new McpServer({ name: "ai-rush-arena", version: "0.1.0" });
@@ -185,6 +73,8 @@ const COORD = {
   x: z.number().int().min(0).max(COLS - 1).describe(`Grid column, 0–${COLS - 1}.`),
   y: z.number().int().min(0).max(ROWS - 1).describe(`Grid row, 0–${ROWS - 1}.`),
 };
+
+const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
 
 server.tool(
   "start",
@@ -213,7 +103,7 @@ server.tool(
   async ({ seed, why }) => {
     arena.record("start", why);
     await arena.open(seed);
-    return { content: [{ type: "text", text: await arena.look() }] };
+    return text(await arena.look());
   },
 );
 
@@ -230,7 +120,7 @@ server.tool(
   { why: WHY },
   async ({ why }) => {
     arena.record("look", why);
-    return { content: [{ type: "text", text: await arena.look() }] };
+    return text(await arena.look());
   },
 );
 
@@ -240,12 +130,7 @@ server.tool(
   { ...COORD, why: WHY },
   async ({ x, y, why }) => {
     arena.record("click", why);
-    const page = arena.current();
-    if (!page) return { content: [{ type: "text", text: "No run open. Call `start` first." }] };
-
-    const { px, py } = arena.toPixels(x, y);
-    await page.mouse.click(px, py);
-    return { content: [{ type: "text", text: await arena.look() }] };
+    return text(arena.current() ? await arena.click(x, y) : NO_RUN);
   },
 );
 
@@ -258,58 +143,29 @@ server.tool(
     "goes wherever the page last left it.",
   ].join("\n"),
   { text: z.string().max(200), why: WHY },
-  async ({ text, why }) => {
+  async ({ text: body, why }) => {
     arena.record("type", why);
-    const page = arena.current();
-    if (!page) return { content: [{ type: "text", text: "No run open. Call `start` first." }] };
-
-    await page.keyboard.type(text, { delay: 12 });
-    return { content: [{ type: "text", text: await arena.look() }] };
+    return text(arena.current() ? await arena.type(body) : NO_RUN);
   },
 );
 
 server.tool(
   "key",
   "Press a single key: Tab, Enter, Escape, Backspace, ArrowUp/Down/Left/Right, Space.",
-  {
-    name: z.enum([
-      "Tab", "Enter", "Escape", "Backspace",
-      "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space",
-    ]),
-    why: WHY,
-  },
+  { name: z.enum(KEYS), why: WHY },
   async ({ name, why }) => {
     arena.record("key", why);
-    const page = arena.current();
-    if (!page) return { content: [{ type: "text", text: "No run open. Call `start` first." }] };
-
-    await page.keyboard.press(name);
-    return { content: [{ type: "text", text: await arena.look() }] };
+    return text(arena.current() ? await arena.key(name) : NO_RUN);
   },
 );
 
 server.tool(
   "drag",
   "Press at one grid coordinate, move to another, release.",
-  {
-    x1: COORD.x, y1: COORD.y, x2: COORD.x, y2: COORD.y,
-    why: WHY,
-  },
+  { x1: COORD.x, y1: COORD.y, x2: COORD.x, y2: COORD.y, why: WHY },
   async ({ x1, y1, x2, y2, why }) => {
     arena.record("drag", why);
-    const page = arena.current();
-    if (!page) return { content: [{ type: "text", text: "No run open. Call `start` first." }] };
-
-    const from = arena.toPixels(x1, y1);
-    const to = arena.toPixels(x2, y2);
-    await page.mouse.move(from.px, from.py);
-    await page.mouse.down();
-    /* In steps, because several levels are watching the movement rather than
-       the endpoints — a teleporting pointer reads as a script, and at least one
-       level is specifically about where your cursor came from. */
-    await page.mouse.move(to.px, to.py, { steps: 12 });
-    await page.mouse.up();
-    return { content: [{ type: "text", text: await arena.look() }] };
+    return text(arena.current() ? await arena.drag(x1, y1, x2, y2) : NO_RUN);
   },
 );
 
@@ -324,11 +180,7 @@ server.tool(
   { ms: z.number().int().min(100).max(MAX_WAIT_MS), why: WHY },
   async ({ ms, why }) => {
     arena.record("wait", why);
-    const page = arena.current();
-    if (!page) return { content: [{ type: "text", text: "No run open. Call `start` first." }] };
-
-    await page.waitForTimeout(ms);
-    return { content: [{ type: "text", text: await arena.look() }] };
+    return text(arena.current() ? await arena.wait(ms) : NO_RUN);
   },
 );
 
@@ -338,11 +190,7 @@ server.tool(
   { why: WHY },
   async ({ why }) => {
     arena.record("skip", why);
-    const page = arena.current();
-    if (!page) return { content: [{ type: "text", text: "No run open. Call `start` first." }] };
-
-    await page.getByRole("button", { name: "SKIP THIS LEVEL" }).click().catch(() => {});
-    return { content: [{ type: "text", text: await arena.look() }] };
+    return text(arena.current() ? await arena.skip() : NO_RUN);
   },
 );
 
