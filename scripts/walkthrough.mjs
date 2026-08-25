@@ -19,6 +19,11 @@
  *   has not seen it yet, and every reveal needs a beat after or they have not
  *   understood it. Real playing is much faster than watchable playing.
  *
+ *   A poster on the first frame. Most platforms take frame zero as the
+ *   thumbnail, and frame zero of a browser recording is a blank white page.
+ *
+ * Writes `ai-rush-walkthrough.mp4`, the raw `.webm`, and `thumbnail.png`.
+ *
  *   npm i --no-save ffmpeg-static      # for the mp4; the webm needs nothing
  *   node scripts/walkthrough.mjs
  *   ARENA_URL=http://127.0.0.1:3000 node scripts/walkthrough.mjs
@@ -75,6 +80,19 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
    Injected before the app loads and never touched again: `pointer-events:
    none` throughout, so nothing here can absorb a click meant for the game. */
 const OVERLAY = () => {
+  /* Before anything else, and deliberately not inside `paint`.
+     The poster cannot exist until there is a `<body>` to append it to, and
+     the frames between navigation and that moment are white. The root
+     element does exist by the time an init script runs, and its background
+     is what fills the viewport until the app paints its own. Handed back in
+     `__poster("off")`. */
+  try {
+    document.documentElement.style.background = "#0b0e13";
+  } catch {
+    /* No document yet — the poster below still covers everything from
+       DOMContentLoaded on, and the encode trims the head of the recording. */
+  }
+
   const paint = () => {
     if (document.getElementById("__wt")) return;
 
@@ -83,7 +101,11 @@ const OVERLAY = () => {
       #__cur{position:fixed;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;
         border-radius:50%;border:2px solid rgba(255,255,255,.95);
         box-shadow:0 0 0 2px rgba(0,0,0,.55),0 2px 10px rgba(0,0,0,.5);
-        z-index:2147483647;pointer-events:none;transition:transform .04s linear}
+        z-index:2147483647;pointer-events:none;transition:transform .04s linear;
+        /* Parked off-screen until the first pointermove. Untransformed it
+           sits at the origin, and a quarter of a white ring in the top-left
+           corner is the first thing the viewer sees after the poster lifts. */
+        transform:translate(-200px,-200px)}
       #__cur::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
       #__ring{position:fixed;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;
         border-radius:50%;border:2px solid #ff4d3d;opacity:0;z-index:2147483646;pointer-events:none}
@@ -122,15 +144,53 @@ const OVERLAY = () => {
       #__ttl{font:800 19px/1.15 ui-sans-serif,system-ui,sans-serif;color:#fff;
         letter-spacing:-.01em}
 
-      #__hook{position:fixed;inset:0;z-index:2147483646;pointer-events:none;
-        display:flex;align-items:center;justify-content:center;padding:0 34px;
-        background:rgba(11,14,19,.86);opacity:0;transition:opacity .45s ease;
-        /* 40px overflowed "interfaces" at 432 wide and stranded the last word
-           on its own line. Sized to the frame, with the breaks written by hand
-           rather than left to the wrap. */
-        font:800 31px/1.18 ui-sans-serif,system-ui,sans-serif;color:#fff;text-align:center;
-        letter-spacing:-.02em;text-wrap:balance}
-      #__hook u{text-decoration:none;color:#ff4d3d}
+      /*
+       * The poster — the first frame, and therefore the thumbnail.
+       *
+       * Every platform that does not let you upload a custom thumbnail uses
+       * frame zero, and frame zero of a Playwright recording is the blank
+       * document before the app has painted anything: pure white. A white
+       * still is the worst possible advertisement for a game about screens.
+       *
+       * So this is opaque from the first script that runs on the page, and
+       * then *lifts* rather than disappearing: the cover fades and leaves two
+       * bands, with the real L01 card showing through the gap between them —
+       * a green Cancel beside a red ⚠ Continue. That composition asks the
+       * viewer a question they answer in their head before they have decided
+       * whether to watch, which is the entire job of a thumbnail.
+       *
+       * Nothing here is a mock-up. It is the game, with a headline over it.
+       *
+       * The bands are also why the middle is a transparent window rather than
+       * a hole punched at fixed pixels: the card is centred by the rules
+       * further down, so the window only has to be wider than the tallest
+       * card the poster is ever held over.
+       */
+      #__poster{position:fixed;inset:0;z-index:2147483647;pointer-events:none;
+        display:flex;flex-direction:column;justify-content:space-between;
+        padding:40px 24px 34px;text-align:center;opacity:1;
+        transition:opacity .45s ease;
+        background:linear-gradient(to bottom,
+          #0b0e13 0%,#0b0e13 23%,rgba(11,14,19,0) 30%,
+          rgba(11,14,19,0) 70%,#0b0e13 77%,#0b0e13 100%)}
+      /* The cover proper: what is up before the level has painted. Separate
+         from the gradient so lifting it is one opacity transition and the
+         bands survive it. */
+      #__poster::before{content:"";position:absolute;inset:0;background:#0b0e13;
+        transition:opacity .55s ease}
+      #__poster.lift::before{opacity:0}
+      /* Positioned, so they paint above the absolutely-positioned cover
+         instead of underneath it. */
+      #__poster > div{position:relative}
+      #__poster .k{font:700 12px/1 ui-monospace,monospace;letter-spacing:.26em;
+        color:#ff4d3d;margin-bottom:13px}
+      #__poster .h{font:800 40px/1.06 ui-sans-serif,system-ui,sans-serif;color:#fff;
+        letter-spacing:-.03em}
+      #__poster .h u{text-decoration:none;color:#ff4d3d}
+      #__poster .s{font:600 18px/1.4 ui-sans-serif,system-ui,sans-serif;color:#9aa6b4}
+      #__poster .s em{display:block;font-style:normal;font-weight:800;font-size:22px;
+        color:#ff4d3d;margin-top:9px;letter-spacing:-.01em}
+
       #__end{position:fixed;inset:0;z-index:2147483647;pointer-events:none;opacity:0;
         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
         background:#0b0e13;color:#fff;font:800 46px/1.1 ui-sans-serif,system-ui,sans-serif;
@@ -166,12 +226,16 @@ const OVERLAY = () => {
     const top = document.createElement("div");
     top.id = "__top";
     top.innerHTML = '<div id="__bar"></div><div id="__num"></div><div id="__ttl"></div>';
-    const hook = document.createElement("div");
-    hook.id = "__hook";
+    const poster = document.createElement("div");
+    poster.id = "__poster";
+    poster.innerHTML =
+      '<div><div class="k">LEVEL 1 OF 49</div>' +
+      '<div class="h">WHICH ONE<br><u>CONTINUES</u>?</div></div>' +
+      '<div class="s">49 interfaces built to make you fail.<em>ai-rush.lol</em></div>';
     const wrap = document.createElement("div");
     wrap.id = "__wt";
     wrap.style.cssText = "position:fixed;pointer-events:none";
-    document.body.append(wrap, top, hook, ring, cur, cap, end);
+    document.body.append(wrap, top, ring, cur, cap, poster, end);
 
     const at = (el, x, y) => { el.style.transform = `translate(${x}px,${y}px)`; };
     /* Driven by the page's own events, so the ring is where the mouse really
@@ -200,9 +264,14 @@ const OVERLAY = () => {
       top.querySelector("#__ttl").textContent = title;
       top.style.opacity = "1";
     };
-    window.__hook = (html) => {
-      hook.innerHTML = html ?? "";
-      hook.style.opacity = html ? "1" : "0";
+    /* "lift" fades the cover and leaves the bands; "off" takes the whole
+       thing away and hands the document background back to the game. */
+    window.__poster = (state) => {
+      if (state === "lift") poster.classList.add("lift");
+      else {
+        poster.style.opacity = "0";
+        document.documentElement.style.background = "";
+      }
     };
     window.__end = (title, sub) => {
       top.style.opacity = "0";
@@ -251,7 +320,10 @@ async function main() {
   }, ZOOM);
   await ctx.addInitScript(OVERLAY);
 
+  /* The recording's clock starts here, at the page rather than the context.
+     Held so the encode can trim everything before the poster is up. */
   const page = await ctx.newPage();
+  const openedAt = Date.now();
 
   const say = (html) => page.evaluate((h) => window.__say?.(h), html);
 
@@ -290,16 +362,30 @@ async function main() {
 
   await page.goto(`${GAME}/play?level=${LEVELS.join(",")}`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("[data-level]", { timeout: 20_000 });
-  await sleep(250);
+  /* Long enough for the card's own entrance to finish. The poster is held
+     over a settled level, not over one still animating in. */
+  await sleep(600);
+
+  // ── the poster ────────────────────────────────────────────────────────
+  await page.evaluate(() => window.__poster?.("lift"));
+  await sleep(750);
+  /* Frame zero of the finished mp4 is this instant. Everything before it is
+     the white blank page and the cover fading, and the encode drops it. */
+  const posterAt = Date.now();
+  /* Also written out on its own, at full resolution, for the platforms that
+     do accept an uploaded thumbnail. */
+  await page.screenshot({ path: join(OUT, "thumbnail.png") });
+  await sleep(1800);
 
   // ── L01 ───────────────────────────────────────────────────────────────
-  /* The hook sits over the first level rather than before it, so the frame is
-     never a title card the viewer has to wait out. */
-  await page.evaluate(() =>
-    window.__hook?.('49 interfaces<br>built to make you <u>fail</u>.'));
-  await sleep(1700);
-  await page.evaluate(() => window.__hook?.(null));
+  /* The chapter band goes up *behind* the poster and is given its own fade to
+     finish before the poster leaves. Taking the poster off first left the
+     game's own HUD — logo, PRACTICE 1/6, the clock — uncovered for the better
+     part of a second, which reads as a mistake rather than a transition. */
   await page.evaluate(() => window.__chapter?.(1, 6, "Continue To Your Account"));
+  await sleep(360);
+  await page.evaluate(() => window.__poster?.("off"));
+  await sleep(520);
   await say("Every button here is lying to you.");
   await sleep(1800);
   await say("Cancel is green. Continue has a <b>warning triangle</b>.");
@@ -455,15 +541,39 @@ async function main() {
   try {
     ({ default: ffmpeg } = await import("ffmpeg-static"));
   } catch {
-    console.log(`\n${webmOut}\n\nFor an mp4: npm i --no-save ffmpeg-static, then run this again.`);
+    /* The webm still has the white head on it — trimming that is the mp4
+       pass's job — so the separate thumbnail matters more on this path. */
+    console.log(
+      `\n${webmOut}\n${join(OUT, "thumbnail.png")}` +
+        `\n\nFor an mp4: npm i --no-save ffmpeg-static, then run this again.`,
+    );
     rmSync(RAW, { recursive: true, force: true });
     return;
   }
+
+  /*
+   * Trim the head, so frame zero is the poster.
+   *
+   * Measured rather than guessed: `posterAt - openedAt` is how long the page
+   * existed — and therefore how much video was recorded — before the poster
+   * was fully up. A quarter-second is left on to absorb drift between the
+   * wall clock and the recorder's own timeline, which is comfortably inside
+   * the fade's own margin at one end and the poster's 1.8s hold at the other.
+   *
+   * `-ss` goes *after* `-i` on purpose: an input-side seek lands on the
+   * nearest keyframe, and "nearest" is exactly the thing that would put a
+   * white frame back at the front.
+   *
+   * The webm keeps its head. It is the raw record and the fallback for a
+   * machine with no encoder; the mp4 is the thing anybody posts.
+   */
+  const trim = Math.max(0, (posterAt - openedAt) / 1000 - 0.25);
 
   /* H.264 high profile, yuv420p, +faststart: the combination every social
      uploader accepts without re-encoding it into mush. */
   execFileSync(ffmpeg, [
     "-y", "-i", webmOut,
+    ...(trim > 0.05 ? ["-ss", trim.toFixed(3)] : []),
     "-c:v", "libx264", "-preset", "slow", "-crf", "20",
     "-profile:v", "high", "-pix_fmt", "yuv420p",
     "-vf", `scale=${VIDEO.width}:${VIDEO.height}:flags=lanczos,fps=30`,
@@ -473,7 +583,7 @@ async function main() {
   ], { stdio: "inherit" });
 
   rmSync(RAW, { recursive: true, force: true });
-  console.log(`\n${mp4}`);
+  console.log(`\n${mp4}\n${join(OUT, "thumbnail.png")}`);
 }
 
 await main();
