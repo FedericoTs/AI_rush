@@ -160,7 +160,12 @@ async function main() {
   await ctx.addInitScript(() => {
     /* Answer the calibration screen the way a machine honestly would, so the
        clip starts on a level rather than on a permissions prompt. */
-    try { window.localStorage.setItem("ai-rush:sensors", "declined"); } catch {}
+    try {
+      window.localStorage.setItem("ai-rush:sensors", "declined");
+    } catch {
+      /* Storage blocked. The calibration screen appears and the clip opens on
+         it instead — visible immediately, rather than a silent wrong take. */
+    }
   });
   await ctx.addInitScript(OVERLAY);
 
