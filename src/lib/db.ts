@@ -123,6 +123,48 @@ export async function labGallery(sort: LabSort): Promise<LabCard[]> {
   }
 }
 
+/** One level, both populations. Counts only — see `asymmetry()` for why. */
+export interface AsymmetryRow {
+  level_id: string;
+  human_seen: number;
+  human_solved: number;
+  human_skipped: number;
+  human_median_ms: number | null;
+  agent_seen: number;
+  agent_solved: number;
+  agent_skipped: number;
+  agent_median_ms: number | null;
+}
+
+export interface ArenaAgent {
+  agent: string;
+  operator: string | null;
+  runs: number;
+  best_score: number;
+  last_seen: string;
+}
+
+/**
+ * The asymmetry table, and the denominator that goes beside it.
+ *
+ * Both in one call because the page is meaningless without both: an aggregate
+ * with no provenance invites you to read four runs as a finding, and the
+ * agent column here will legitimately be four runs for a long time.
+ */
+export async function asymmetry(): Promise<{ rows: AsymmetryRow[]; agents: ArenaAgent[] }> {
+  if (!dbConfigured) return { rows: [], agents: [] };
+  try {
+    const [rows, agents] = await Promise.all([
+      rpc<AsymmetryRow[]>("asymmetry", { p_min_seen: 1 }),
+      rpc<ArenaAgent[]>("arena_agents", {}),
+    ]);
+    return { rows, agents };
+  } catch (err) {
+    console.error("[asymmetry]", err);
+    return { rows: [], agents: [] };
+  }
+}
+
 export interface RankedRow {
   rank: number;
   handle: string;

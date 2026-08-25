@@ -40,6 +40,7 @@ click(x, y, why)      → click at grid coordinates
 type(text, why)       → types into whatever has focus
 key(name, why)        → Tab, Enter, Escape, arrows, Backspace, Space
 drag(x1,y1,x2,y2,why) → press, move, release
+scroll(x,y,rows,why)  → scrolls what is under (x,y); negative is up
 wait(ms, why)         → up to ten seconds
 skip(why)             → ten seconds and the combo, same as a human pays
 ```
@@ -70,6 +71,88 @@ out, and those sentences are the entire reason anybody would watch.
 
 If any of that leaks, an agent stops needing to perceive anything and there is
 nothing left to watch.
+
+## What it shows without describing
+
+Some of the screen is not made of words, and the honest report for those is
+*there is something here and you cannot read it* — a filled rectangle and a
+region to aim at, with no label naming it.
+
+- **A drawing** — a canvas, an image, anything painted. Shown as an area of
+  `░` and listed as "something you cannot read". Never what is in it.
+- **A dropdown** — the option currently chosen, and only that. The full list is
+  what a person gets *after* they open it; handing it over unopened turns every
+  "select your country" level into a lookup.
+- **An unlabelled control** — a switch or a bare icon button, drawn as `[--]`
+  and listed with no label. Position only: never which way it is thrown.
+- **A control that looks unavailable** — marked `(greyed out)` in the region
+  list, measured off how it is painted rather than off any attribute.
+- **A dial** — a wheel, slider or stepper, recognised by the drag cursor the
+  browser paints over it. A place and a value, never how it responds: that a
+  flick has momentum, and that a tap stops a spinning one, stays the level.
+- **A panel with more in it** — a list clipped by its own edge, reported as
+  "scrolls — more below/above/both" with a coordinate to scroll at. The fact,
+  never how much is hidden or what is in it.
+
+All four were missing, and blind runs found them the expensive way: L11's runner game arrived as five blank rows under the caption "tap /
+space to jump", and L39's three cascading dropdowns arrived as three blank rows
+with no clickable region anywhere near them. L05's consent toggles were
+buttons whose only child is the knob, so all six were dropped. And a third run
+solved L05 outright — "Object to all" on the Legitimate Interest tab switches
+off all forty-seven partners and lights up Accept All — then reported that the
+button "produces no state change at all", because a greyed CTA turning solid
+was invisible in a grid made of characters. It had won and could not tell.
+
+None of those levels was hard for those agents; all of them were unplayable. That distinction matters more here than anywhere
+else in the project, because a level an agent cannot perceive still records a
+failure, and that failure lands in the asymmetry table looking exactly like a
+finding.
+
+## Checking all of it at once
+
+```bash
+npm run arena:sweep                      # all 49 levels, upright and tilted
+npm run arena:sweep -- L05 L22           # just these
+npm run arena:sweep -- --upright-only    # skip the rotated pass
+```
+
+Run this after **any** change in this directory. It takes about forty seconds
+for all forty-nine, both ways, and asks four questions of every level, always against the live page rather than
+against the extractor's own opinion of itself:
+
+- **Something to play.** A region list containing nothing but run chrome means
+  a level with no move. This is what L11's canvas and L39's dropdowns looked
+  like, and each cost an agent a run.
+- **Every published coordinate works.** Resolved exactly as `Arena.click`
+  resolves it, so the question is the real one — can an agent aiming here
+  reach the control?
+- **Nothing usable is missing.** The other direction, built from an independent
+  list of what the browser itself treats as interactive. L05's toggles and
+  L08's wheels were real, visible and pressable, and the grid never mentioned
+  them.
+- **Nothing structural on the wire.** Re-checked on real pages, because that is
+  where a leak would actually come from.
+
+Seven blind agent runs found nine bugs in this directory over about
+thirty-five minutes of wall clock, and reached twelve of the forty-nine levels.
+The first full sweep found **ninety-one** findings across fifty-seven screens
+in under a minute, including eighty-five cases of a coordinate we published
+landing on the page behind the control it named. Agent runs are for the `why`
+transcripts and for a smoke test; this is for correctness.
+
+A level that needs a verb the surface does not have is declared in
+`impossible.ts` with the reason, printed every run, and never failed on. That
+list is also what stops the asymmetry table publishing a 0% solve rate for a
+level nobody could attempt, and it is rendered on `/arena` rather than quietly
+dropped.
+
+It runs on every pull request, as a gate rather than a report. That is a
+deliberate choice about cost: an unfixed finding does not merely annoy an
+agent, it files a level as one agents cannot beat, and a wrong number there
+does not look wrong. Anything that fails is checked a second time before it is
+reported — levels animate, and a frame caught mid-countdown should not turn CI
+red — but what settled is still printed, because a level that keeps settling is
+worth knowing about.
 
 ## Looking at what it sees
 

@@ -26,6 +26,7 @@ import { REGISTRY } from "@/levels/registry";
 import { ObserverBar, ObserverExport } from "./Observer";
 import { FakeNotice } from "./FakeNotice";
 import { useWakeLock } from "@/ui/useWakeLock";
+import { agentIdentity } from "@/lib/agent";
 import {
   downloadSession, sessionFilename,
   type Mark, type MarkKind, type PlaytestSession,
@@ -121,7 +122,7 @@ export function RunClient({
   const [muted, setMuted] = useState(false);
   const [flash, setFlash] = useState(0);
   const [foundSecret, setFoundSecret] = useState(false);
-  const [run, setRun] = useState<{ id: string; secret: string } | null>(null);
+  const [run, setRun] = useState<{ id: string; secret: string; arena: boolean } | null>(null);
   const clock = useRef<GameClock | null>(null);
   const events = useRun((r) => r.events);
   const elapsedMs = useRun((r) => r.elapsedMs);
@@ -194,11 +195,16 @@ export function RunClient({
         seed: encodeSeed(seed, capabilityMarks(capabilities)),
         caps: capabilityMarks(capabilities).join(""),
         mercy,
+        /* Null for every person who ever plays this. Set only by the Arena
+           harness, and only so the run is filed away from the human board. */
+        agent: agentIdentity(),
       }),
     })
       .then((r) => r.json())
-      .then((r: { runId?: string; runSecret?: string }) => {
-        if (!cancelled && r.runId && r.runSecret) setRun({ id: r.runId, secret: r.runSecret });
+      .then((r: { runId?: string; runSecret?: string; arena?: boolean }) => {
+        if (!cancelled && r.runId && r.runSecret) {
+          setRun({ id: r.runId, secret: r.runSecret, arena: Boolean(r.arena) });
+        }
       })
       .catch(() => {});
     return () => {
@@ -384,6 +390,7 @@ export function RunClient({
           events={events}
           runId={run?.id ?? null}
           runSecret={run?.secret ?? null}
+          arena={run?.arena ?? false}
           challenge={challenge}
           unlocks={unlocks}
           ref={ref}

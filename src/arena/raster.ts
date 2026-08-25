@@ -47,8 +47,24 @@ export interface Box {
    * that responds to a click; the agent is not told the tag name, and a `div`
    * dressed as a button is reported as a button because that is what a person
    * would call it.
+   *
+   * `dial` is something you drag to change a value — a wheel, a slider, a
+   * stepper — recognised by the cursor the browser paints over it, which is
+   * the same affordance a person is reading.
    */
-  kind: "text" | "button" | "field" | "heading";
+  kind: "text" | "button" | "field" | "heading" | "drawing" | "dial" | "panel";
+  /**
+   * A `panel` has content past its own edges, and this says which way.
+   *
+   * On screen a clipped list shows a cut-off row or a scrollbar, and a person
+   * reads "there is more of this" without thinking about it. The grid was
+   * silent: the extractor correctly withholds everything below the fold, and
+   * withholding it removed the only cue that it existed. A blind run lost
+   * L48 to exactly that — "there was no scrollbar glyph, no ellipsis, no cue
+   * of any kind that content existed below the fold" — and found the missing
+   * checkbox only by guessing a scroll at a coordinate.
+   */
+  more?: "above" | "below" | "both";
   /** Painted on top of what it overlaps. Higher wins a collision. */
   z?: number;
   /**
@@ -61,6 +77,32 @@ export interface Box {
    * was visible is a bug.
    */
   opaque?: boolean;
+  /**
+   * Drawn faded — the way an unavailable control looks.
+   *
+   * Read off how it is painted, not off any attribute: this game greys a
+   * disabled button to `opacity: 0.4`, and a person sees that instantly and
+   * knows not to bother. Withholding it made the agent strictly worse off
+   * than a human for no design reason, and it cost a whole level. See
+   * `Region.dim`.
+   */
+  dim?: boolean;
+  /**
+   * A point known to be on the thing itself, in pixels.
+   *
+   * `x`/`y`/`w`/`h` are an *axis-aligned* box, and for anything the page has
+   * rotated that box is bigger than the shape inside it and its corners are
+   * empty. The `Rotate` modifier tilts a card fifteen degrees, which turns a
+   * 400×44 input into a 326×120 bounding box whose top-left is nowhere near
+   * the field — so every coordinate published from that corner missed, and any
+   * level dealt that modifier became unclickable.
+   *
+   * The extractor already hit-tests each element's centre to decide it is
+   * visible at all. This is that same point, carried through, so the region
+   * list can advertise somewhere the mouse actually lands.
+   */
+  cx?: number;
+  cy?: number;
 }
 
 export interface Viewport {
@@ -69,7 +111,15 @@ export interface Viewport {
 }
 
 export interface Region {
-  /** Grid coordinates, inclusive. Where to aim a click. */
+  /**
+   * Where to click. Not the corner — the spot.
+   *
+   * It used to be the top-left cell of the bounding box, on the theory that
+   * any cell of a box is as good as any other. That holds only while nothing
+   * is rotated: under the `Rotate` modifier the bounding box is a tilted
+   * rectangle's shadow, its corners are empty space, and a click aimed there
+   * hits the page behind. `w`/`h` still give the extent; this gives the point.
+   */
   x: number;
   y: number;
   w: number;
@@ -77,6 +127,27 @@ export interface Region {
   kind: Box["kind"];
   /** Trimmed to something a line of reasoning can refer to. */
   label: string;
+  /**
+   * It looks greyed out.
+   *
+   * Present only when true, and it is appearance rather than structure — the
+   * agent is told a control is *drawn* faded, exactly as a person sees it, and
+   * not that some attribute is set.
+   *
+   * A blind run lost L05 to the absence of this. The level's honest solve is
+   * the Legitimate Interest tab, whose "Object to all" switches off all
+   * forty-seven partners and lights up Accept All. The agent found the tab,
+   * pressed the button, saw a screen with identical characters on it, and
+   * concluded the control was inert:
+   *
+   *   "Object to all on the Legitimate Interest pane produces no state change
+   *   at all"
+   *
+   * It had just solved the level and could not see that it had. A greyed
+   * button turning solid is the single most common state change in this whole
+   * catalogue, and the grid was silent about all of it.
+   */
+  dim?: boolean;
 }
 
 export interface Look {
@@ -89,22 +160,96 @@ export interface Look {
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /**
- * Where a pixel rectangle lands on the grid.
+ * A button with no words on it — a switch, a stepper, a bare icon.
  *
- * Rounded outward — a box that covers any part of a cell owns that cell —
- * because the agent clicks at grid coordinates, and a control rounded *in* to
- * nothing is a control it can see and cannot press.
+ * Worth reporting, because a person sees one and can press it: L05's six
+ * consent toggles are exactly this, and dropping them left the agent reading
+ * six category names with no control anywhere near them.
+ *
+ * The size ceiling is the whole subtlety. A modal backdrop is also a textless
+ * clickable rectangle, and it is emphatically *not* something to aim at —
+ * announcing it would have the agent clicking the dark area behind a dialog
+ * because we called it a button. A control is a thing the size of a thumb; at
+ * a quarter of the screen it has stopped being one.
  */
-function toCells(box: Box, view: Viewport) {
+function isUnlabelledControl(box: Box, view: Viewport): boolean {
+  return (
+    box.kind === "button" &&
+    !box.text.trim() &&
+    box.w * box.h < view.width * view.height * 0.25
+  );
+}
+
+/**
+ * The cell to aim a click at.
+ *
+ * `Arena.toPixels` turns a grid coordinate back into the pixel at that cell's
+ * centre, so the useful answer is the cell whose centre sits closest to a point
+ * we know is on the element — never a corner, which under any rotation is
+ * empty space.
+ *
+ * Falls back to the bounding box's own centre when the extractor did not
+ * supply a hit point. That is the right default anyway: the middle of a
+ * control is where a person puts their finger.
+ */
+function aimCell(box: Box, view: Viewport): { x: number; y: number } {
   const cw = view.width / COLS;
   const ch = view.height / ROWS;
+  const px = box.cx ?? box.x + box.w / 2;
+  const py = box.cy ?? box.y + box.h / 2;
+  /* Nearest cell centre, not the containing cell: it halves the worst-case
+     distance between where we aim and the point we actually meant. */
+  return {
+    x: clamp(Math.round(px / cw - 0.5), 0, COLS - 1),
+    y: clamp(Math.round(py / ch - 0.5), 0, ROWS - 1),
+  };
+}
 
-  const x0 = clamp(Math.floor(box.x / cw), 0, COLS - 1);
-  const y0 = clamp(Math.floor(box.y / ch), 0, ROWS - 1);
-  const x1 = clamp(Math.ceil((box.x + box.w) / cw) - 1, x0, COLS - 1);
-  const y1 = clamp(Math.ceil((box.y + box.h) / ch) - 1, y0, ROWS - 1);
+/**
+ * Where a pixel rectangle lands on the grid.
+ *
+ * The invariant, and it is the whole reason this function is not two lines of
+ * `Math.floor`: **a cell this returns must be a cell you can click.** The
+ * agent is handed grid coordinates and the harness turns each one back into
+ * the pixel at that cell's *centre*, so a cell whose centre falls outside the
+ * box is a coordinate we advertised and the mouse then misses.
+ *
+ * Rounding outward gets that wrong, and a blind run found it the expensive
+ * way. L27's address input spans y 239–284; its top edge sits one pixel inside
+ * the row that spans 210–240, so the old `floor` advertised row 7 — whose
+ * centre is 225px, fourteen pixels above the field. Every click landed on the
+ * page body, focus never moved, and the agent spent four minutes concluding
+ * that typing was broken in this game:
+ *
+ *   turn 51 · "type has never worked once this whole run, so I suspect clicks
+ *   are not actually setting keyboard focus"
+ *
+ * It was right, and it was our fault. Any control whose top edge happened to
+ * fall in the lower half of a row was unclickable, which is a coin flip per
+ * field on every text level in the catalogue.
+ *
+ * So a box owns the cells whose centres it actually contains. The fallback
+ * matters as much as the rule: something thinner than a cell that straddles a
+ * boundary contains no centre at all, and the honest answer for it is the cell
+ * holding its own middle. That is what keeps L22's nine-pixel number — one
+ * cell, and the entire mechanic of the level — on the grid at all.
+ */
+function toCells(box: Box, view: Viewport) {
+  const span = (start: number, size: number, cell: number, max: number) => {
+    let a = Math.ceil(start / cell - 0.5);
+    let b = Math.floor((start + size) / cell - 0.5);
+    /* No cell centre inside it: too small to contain one. Use the cell its own
+       centre lands in, which is where a person would point at it. */
+    if (b < a) a = b = Math.floor((start + size / 2) / cell);
+    a = clamp(a, 0, max);
+    b = clamp(b, 0, max);
+    return { lo: a, hi: Math.max(a, b) };
+  };
 
-  return { x0, y0, x1, y1 };
+  const x = span(box.x, box.w, view.width / COLS, COLS - 1);
+  const y = span(box.y, box.h, view.height / ROWS, ROWS - 1);
+
+  return { x0: x.lo, y0: y.lo, x1: x.hi, y1: y.hi };
 }
 
 /**
@@ -134,6 +279,36 @@ function paint(rows: string[][], claimed: boolean[][], box: Box, view: Viewport)
   if (x1 < x0) return;
 
   /*
+   * A drawing is an area, not a sentence.
+   *
+   * Filled with one character across its whole rectangle, so the agent
+   * perceives *that something occupies this space* and can aim at it, and
+   * learns nothing at all about what is in it. A canvas game stays exactly as
+   * unreadable as it is to a squinting person watching it move too fast to
+   * follow; it simply stops being invisible.
+   *
+   * Only unclaimed cells, like everything else — a caption drawn over a canvas
+   * was painted before this and keeps its characters.
+   */
+  /* A panel is a note about an edge, not something drawn. Painting anything
+     for it would cover the very content it is telling you continues. */
+  if (box.kind === "panel") return;
+
+  if (box.kind === "drawing") {
+    for (let y = y0; y <= y1; y++) {
+      const row = rows[y];
+      const mark = claimed[y];
+      if (!row || !mark) continue;
+      for (let x = x0; x <= x1; x++) {
+        if (x >= COLS || mark[x]) continue;
+        row[x] = "░";
+        mark[x] = true;
+      }
+    }
+    return;
+  }
+
+  /*
    * An empty field is still a rectangle.
    *
    * A person looking at a sign-in form sees a labelled box waiting for a
@@ -143,14 +318,52 @@ function paint(rows: string[][], claimed: boolean[][], box: Box, view: Viewport)
    * broken channel. Underscores are the character-cell way to draw a field and
    * are instantly legible.
    */
-  const text =
-    box.kind === "field" && !box.text.trim()
-      ? "_".repeat(Math.max(1, x1 - x0 + 1))
-      : box.text.replace(/\s+/g, " ").trim();
+  const width = Math.max(1, x1 - x0 + 1);
+
+  /*
+   * An unlabelled button is drawn as one, for the same reason an empty field
+   * is drawn as underscores: a person sees a switch there, and reporting a
+   * blank leaves an agent reading a category name with nothing to press.
+   *
+   * Brackets rather than a fill, so it reads as a control rather than as the
+   * `░` of something unreadable. What it does NOT say is which way the switch
+   * is thrown — that is state, it is legible on screen, and inferring it from
+   * a knob's offset would be us reading the DOM on the agent's behalf. L05
+   * prints "46 of 47 partners enabled" in plain text; working out which one is
+   * the odd one is the level.
+   */
+  const empty =
+    box.kind === "field"
+      ? "_".repeat(width)
+      : isUnlabelledControl(box, view)
+        ? width >= 3
+          ? `[${"-".repeat(width - 2)}]`
+          : "[]".slice(0, width)
+        : "";
+
+  const text = box.text.trim() ? box.text.replace(/\s+/g, " ").trim() : empty;
 
   if (text) {
-    const row = rows[y0]!;
-    const mark = claimed[y0]!;
+    /*
+     * The row the text is drawn on is the row the region points at.
+     *
+     * These used to differ: text went on the box's first row while the region
+     * advertised the middle one, so a select whose value read on row 10 was
+     * listed at (24,11) — a blank row on the grid. A blind run caught it and
+     * had to test the coordinate to find out which of the two to believe:
+     *
+     *   "the region list gives its coordinate as (24,11) — a blank row on the
+     *   grid. Clicking (24,11) did work, so the click target is correct and
+     *   the rendering is one row off"
+     *
+     * It is also the more faithful row on its own merits. Glyphs sit
+     * vertically centred in a control, not flush to its top edge, so for
+     * anything taller than one cell the middle is where the words actually
+     * are.
+     */
+    const ty = clamp(aimCell(box, view).y, y0, y1);
+    const row = rows[ty]!;
+    const mark = claimed[ty]!;
     for (let i = 0; i < text.length; i++) {
       const col = x0 + i;
       if (col >= COLS) break;
@@ -199,15 +412,23 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
 
   const ordered = boxes
     .map((box, i) => ({ box, i }))
-    /* Two things with no text still matter: an opaque panel, which hides what
-       is behind it, and an empty field, which is a rectangle somebody can see
-       and click. Everything else with nothing to say is layout, and the agent
-       never hears of it. */
+    /* Three things with no text still matter: an opaque panel, which hides
+       what is behind it; an empty field, which is a rectangle somebody can see
+       and click; an unlabelled button, which is a switch somebody can see and
+       press; and a drawing, which is a thing on the screen that happens
+       not to be made of words. Everything else with nothing to say is layout,
+       and the agent never hears of it. */
     .filter(
       ({ box }) =>
         box.w > 0 &&
         box.h > 0 &&
-        (box.text.trim().length > 0 || box.opaque === true || box.kind === "field"),
+        (box.text.trim().length > 0 ||
+          box.opaque === true ||
+          box.kind === "field" ||
+          box.kind === "dial" ||
+          box.kind === "drawing" ||
+          box.kind === "panel" ||
+          isUnlabelledControl(box, view)),
     )
     /* Descending: higher z first, and within one z the later element, because
        later in the document is what sits on top when nothing says otherwise. */
@@ -219,16 +440,40 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
      in — an agent scanning for a button should find them the way a person
      would, down the screen and then across it. */
   const regions: Region[] = ordered
-    .filter(({ box }) => box.kind !== "text" && (box.text.trim().length > 0 || box.kind === "field"))
+    .filter(
+      ({ box }) =>
+        box.kind !== "text" &&
+        (box.text.trim().length > 0 ||
+          box.kind === "field" ||
+          box.kind === "dial" ||
+          box.kind === "drawing" ||
+          box.kind === "panel" ||
+          isUnlabelledControl(box, view)),
+    )
     .map(({ box }) => {
       const { x0, y0, x1, y1 } = toCells(box, view);
+      const aim = aimCell(box, view);
       return {
-        x: x0,
-        y: y0,
+        /* The point, clamped into the box's own cells so a region never
+           advertises a coordinate outside its stated extent. */
+        x: clamp(aim.x, x0, x1),
+        y: clamp(aim.y, y0, y1),
         w: x1 - x0 + 1,
         h: y1 - y0 + 1,
         kind: box.kind,
-        label: box.text.replace(/\s+/g, " ").trim().slice(0, 40) || "(empty)",
+        /* Only when true, so a region carries the note exactly when a person
+           would see the fade. */
+        ...(box.dim ? { dim: true as const } : {}),
+        /* Deliberately content-free for a drawing, and deliberately not
+           "image" or "canvas" either — those are tag names, and the agent is
+           never told a tag name. What a person gets is: there is something
+           here, it is not words, look at it. */
+        label:
+          box.kind === "drawing"
+            ? "something you cannot read"
+            : box.kind === "panel"
+              ? `scrolls — more ${box.more ?? "below"}`
+              : box.text.replace(/\s+/g, " ").trim().slice(0, 40) || "(empty)",
       };
     })
     .sort((a, b) => a.y - b.y || a.x - b.x);
@@ -252,7 +497,7 @@ export function render(look: Look): string {
 
   const regions = look.regions.length
     ? look.regions
-        .map((r) => `  (${r.x},${r.y}) ${r.kind.padEnd(7)} ${r.label}`)
+        .map((r) => `  (${r.x},${r.y}) ${r.kind.padEnd(7)} ${r.label}${r.dim ? "  (greyed out)" : ""}`)
         .join("\n")
     : "  (none)";
 
@@ -263,7 +508,9 @@ export function render(look: Look): string {
     body,
     `  └${"─".repeat(COLS)}┘`,
     "",
-    "Distinct regions (click at any coordinate inside one):",
+    /* The coordinate is the spot, not a corner to explore from — under a
+       rotation the corners of a region are empty space. */
+    "Distinct regions (the coordinate is where to click):",
     regions,
   ].join("\n");
 }
