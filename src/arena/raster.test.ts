@@ -193,7 +193,10 @@ describe("the rendered view", () => {
        game is not meant to be unfair about counting. */
     expect(out).toContain("0123456789");
     expect(out).toContain("Continue");
-    expect(out).toContain("(30,6) button");
+    /* The middle of the button, not its left edge: the coordinate a region
+       publishes is the spot to click, and under a rotation a corner of the
+       bounding box is empty space. `at()` makes an 8-cell-wide box. */
+    expect(out).toContain("(34,6) button");
   });
 
   it("says so plainly when there is nothing to click", () => {
@@ -249,10 +252,13 @@ describe("a drawing", () => {
     expect(look.grid[13]!.trim()).toBe("");
   });
 
-  it("is listed as a region, so there is somewhere to aim", () => {
+  it("is listed as a region, aimed at its middle", () => {
     const region = rasterize([canvas], VIEW).regions.find((r) => r.kind === "drawing");
     expect(region).toBeTruthy();
-    expect(region!.y).toBe(8);
+    /* Rows 8–12; the coordinate is the spot to click, so it is the middle
+       one rather than the top edge. */
+    expect(region!.y).toBe(10);
+    expect(region!.h).toBe(5);
   });
 
   it("says nothing whatsoever about what is drawn in it", () => {
@@ -419,5 +425,58 @@ describe("a control drawn faded", () => {
        perfectly well, and the whole reason to press it is knowing what it
        claims to do. */
     expect(rasterize([cta(true)], VIEW).grid.join("\n")).toContain("Accept All");
+  });
+});
+
+/**
+ * Anything the page has rotated.
+ *
+ * A fourth blind run reported that clicks never focused the address field and
+ * only `Tab` worked. Measured directly afterwards: the `Rotate` modifier tilts
+ * the card fifteen degrees, which turns a 400×44 input into a **326×120**
+ * axis-aligned bounding box. Its top-left corner is empty space — a click
+ * there hits the page behind — while its centre lands on the field every time.
+ *
+ * So any level dealt `Rotate` or `Mirror` was unclickable through the
+ * coordinates we published, and the whole run read as "this control is inert".
+ * The fix is not a bigger box, it is publishing the spot instead of a corner.
+ */
+describe("the coordinate a region publishes", () => {
+  it("is the middle of the thing, not its corner", () => {
+    const wide: Box = { text: "Continue", x: 40, y: 242, w: 400, h: 44, kind: "button" };
+    const r = rasterize([wide], VIEW).regions[0]!;
+    /* Columns 4..43, so the corner is 4 and the spot is around 24. */
+    expect(r.x).toBeGreaterThan(20);
+    expect(r.x).toBeLessThan(28);
+  });
+
+  it("uses the point the extractor proved was on the element", () => {
+    /* The real geometry measured under Rotate: a tilted input whose bounding
+       box is far larger than it is, and whose corner is not on it. */
+    const tilted: Box = {
+      text: "", x: 64, y: 191, w: 326, h: 120, kind: "field",
+      cx: 227, cy: 251,
+    };
+    const r = rasterize([tilted], VIEW).regions[0]!;
+    const px = (r.x + 0.5) * (VIEW.width / COLS);
+    const py = (r.y + 0.5) * (VIEW.height / ROWS);
+
+    /* Within half a cell of the point known to hit the element — which is the
+       best a grid can do, and is the difference between a level being hard and
+       a level being impossible. */
+    expect(Math.abs(px - 227)).toBeLessThanOrEqual(VIEW.width / COLS / 2);
+    expect(Math.abs(py - 251)).toBeLessThanOrEqual(VIEW.height / ROWS / 2);
+  });
+
+  it("never points outside the extent it reports", () => {
+    /* A hit point is inside the box by construction, but a clamp is cheap and
+       a region that advertised a coordinate outside its own w/h would be
+       incoherent to read. */
+    const odd: Box = { text: "x", x: 120, y: 120, w: 200, h: 200, kind: "button", cx: 0, cy: 0 };
+    const r = rasterize([odd], VIEW).regions[0]!;
+    /* The hit point is nonsense here, so the clamp has to pull it back into
+       the cells the region says it occupies. */
+    expect(r.x).toBeGreaterThanOrEqual(Math.floor(120 / (VIEW.width / COLS)));
+    expect(r.y).toBeGreaterThanOrEqual(Math.floor(120 / (VIEW.height / ROWS)));
   });
 });

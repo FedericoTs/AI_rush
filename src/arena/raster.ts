@@ -71,6 +71,22 @@ export interface Box {
    * `Region.dim`.
    */
   dim?: boolean;
+  /**
+   * A point known to be on the thing itself, in pixels.
+   *
+   * `x`/`y`/`w`/`h` are an *axis-aligned* box, and for anything the page has
+   * rotated that box is bigger than the shape inside it and its corners are
+   * empty. The `Rotate` modifier tilts a card fifteen degrees, which turns a
+   * 400×44 input into a 326×120 bounding box whose top-left is nowhere near
+   * the field — so every coordinate published from that corner missed, and any
+   * level dealt that modifier became unclickable.
+   *
+   * The extractor already hit-tests each element's centre to decide it is
+   * visible at all. This is that same point, carried through, so the region
+   * list can advertise somewhere the mouse actually lands.
+   */
+  cx?: number;
+  cy?: number;
 }
 
 export interface Viewport {
@@ -79,7 +95,15 @@ export interface Viewport {
 }
 
 export interface Region {
-  /** Grid coordinates, inclusive. Where to aim a click. */
+  /**
+   * Where to click. Not the corner — the spot.
+   *
+   * It used to be the top-left cell of the bounding box, on the theory that
+   * any cell of a box is as good as any other. That holds only while nothing
+   * is rotated: under the `Rotate` modifier the bounding box is a tilted
+   * rectangle's shadow, its corners are empty space, and a click aimed there
+   * hits the page behind. `w`/`h` still give the extent; this gives the point.
+   */
   x: number;
   y: number;
   w: number;
@@ -138,6 +162,31 @@ function isUnlabelledControl(box: Box, view: Viewport): boolean {
     !box.text.trim() &&
     box.w * box.h < view.width * view.height * 0.25
   );
+}
+
+/**
+ * The cell to aim a click at.
+ *
+ * `Arena.toPixels` turns a grid coordinate back into the pixel at that cell's
+ * centre, so the useful answer is the cell whose centre sits closest to a point
+ * we know is on the element — never a corner, which under any rotation is
+ * empty space.
+ *
+ * Falls back to the bounding box's own centre when the extractor did not
+ * supply a hit point. That is the right default anyway: the middle of a
+ * control is where a person puts their finger.
+ */
+function aimCell(box: Box, view: Viewport): { x: number; y: number } {
+  const cw = view.width / COLS;
+  const ch = view.height / ROWS;
+  const px = box.cx ?? box.x + box.w / 2;
+  const py = box.cy ?? box.y + box.h / 2;
+  /* Nearest cell centre, not the containing cell: it halves the worst-case
+     distance between where we aim and the point we actually meant. */
+  return {
+    x: clamp(Math.round(px / cw - 0.5), 0, COLS - 1),
+    y: clamp(Math.round(py / ch - 0.5), 0, ROWS - 1),
+  };
 }
 
 /**
@@ -361,9 +410,12 @@ export function rasterize(boxes: readonly Box[], view: Viewport): Look {
     )
     .map(({ box }) => {
       const { x0, y0, x1, y1 } = toCells(box, view);
+      const aim = aimCell(box, view);
       return {
-        x: x0,
-        y: y0,
+        /* The point, clamped into the box's own cells so a region never
+           advertises a coordinate outside its stated extent. */
+        x: clamp(aim.x, x0, x1),
+        y: clamp(aim.y, y0, y1),
         w: x1 - x0 + 1,
         h: y1 - y0 + 1,
         kind: box.kind,
@@ -412,7 +464,9 @@ export function render(look: Look): string {
     body,
     `  └${"─".repeat(COLS)}┘`,
     "",
-    "Distinct regions (click at any coordinate inside one):",
+    /* The coordinate is the spot, not a corner to explore from — under a
+       rotation the corners of a region are empty space. */
+    "Distinct regions (the coordinate is where to click):",
     regions,
   ].join("\n");
 }

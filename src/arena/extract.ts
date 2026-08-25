@@ -65,9 +65,13 @@ export function extractBoxes(): Extracted {
    * accepts precisely the rows this is meant to reject. The first attempt did
    * exactly that and the probe still showed eleven invisible partners.
    */
+  const centreOf = (rect: DOMRect) => ({
+    cx: Math.min(view.width - 1, Math.max(0, rect.left + rect.width / 2)),
+    cy: Math.min(view.height - 1, Math.max(0, rect.top + rect.height / 2)),
+  });
+
   const hitTested = (el: Element, rect: DOMRect): boolean => {
-    const cx = Math.min(view.width - 1, Math.max(0, rect.left + rect.width / 2));
-    const cy = Math.min(view.height - 1, Math.max(0, rect.top + rect.height / 2));
+    const { cx, cy } = centreOf(rect);
     const hit = document.elementFromPoint(cx, cy);
     return hit !== null && (hit === el || el.contains(hit));
   };
@@ -286,6 +290,18 @@ export function extractBoxes(): Extracted {
        * the slop kit greys an unavailable CTA to 0.4.
        */
       ...(Number(style.opacity) < 0.6 ? { dim: true } : {}),
+      /*
+       * The point we already proved is on this element.
+       *
+       * `visible()` hit-tested exactly here to decide the thing is on screen
+       * at all, so it is the one coordinate in the box that is *known* to
+       * belong to it. That matters for anything the page has rotated: under
+       * the `Rotate` modifier a 400×44 input reports a 326×120 bounding box
+       * whose corners are empty, and a click aimed at the corner hits the page
+       * behind it. Carrying this through is what lets the region list publish
+       * somewhere the mouse actually lands.
+       */
+      ...centreOf(rect),
     });
   }
 
