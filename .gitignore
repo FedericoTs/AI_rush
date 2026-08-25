@@ -12,3 +12,6 @@ next-env.d.ts
 .env*.local
 .DS_Store
 .vercel
+
+# Promo clips from scripts/walkthrough.mjs.
+walkthrough/
