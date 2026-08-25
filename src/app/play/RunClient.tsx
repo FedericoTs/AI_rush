@@ -126,6 +126,8 @@ export function RunClient({
   const [run, setRun] = useState<{ id: string; secret: string; arena: boolean } | null>(null);
   const clock = useRef<GameClock | null>(null);
   const events = useRun((r) => r.events);
+  /* The token that makes `solve`/`skip` idempotent across an advance. */
+  const entries = useRun((r) => r.entries);
   const elapsedMs = useRun((r) => r.elapsedMs);
 
   /* Held for exactly as long as the clock is running. Several levels have long
@@ -286,11 +288,19 @@ export function RunClient({
     if (now !== undefined) setRemaining(now);
   }, [setRemaining]);
 
+  /*
+   * `entries` is captured here so it travels with the callback the level was
+   * handed, which is what makes a repeat identifiable after the run has moved
+   * on. See `solve()` in the store: without it, a second `onSolve()` from a
+   * level that has already been left scores the next level in the deck for
+   * free, and that is not hypothetical — it happened in four of the first ten
+   * finished runs.
+   */
   const handleSolve = useCallback(() => {
     sfx.solve();
     stamp();
-    solve();
-  }, [sfx, solve, stamp]);
+    solve(entries);
+  }, [sfx, solve, stamp, entries]);
 
   const handleFail = useCallback(
     (reason?: string) => {
@@ -309,9 +319,9 @@ export function RunClient({
   const handleSkip = useCallback(() => {
     sfx.skip();
     stamp();
-    skip();
+    skip(entries);
     if (!only) clock.current?.penalize(SKIP_PENALTY_MS);
-  }, [sfx, skip, only, stamp]);
+  }, [sfx, skip, only, stamp, entries]);
 
   const handleToggleMute = useCallback(() => {
     setMuted((m) => {

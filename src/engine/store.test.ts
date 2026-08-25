@@ -255,3 +255,92 @@ describe("a practice run", () => {
     expect(useRun.getState().practice).toBe(false);
   });
 });
+
+/**
+ * A repeat that arrives after the run has moved on.
+ *
+ * `LevelProps.onSolve` promises repeats are ignored. The guard written for
+ * that promise could never fire: `solve` set `resolvedEntry` to the entry it
+ * was resolving and then called `enterLevel`, which incremented `entries`, so
+ * the two were always one apart and the check was open forever. A second
+ * `onSolve()` therefore scored the *next* level in the deck, instantly, for
+ * nothing.
+ *
+ * It reached production. Four of the first ten finished runs contain a solve
+ * of 0 or 1ms, every one of them immediately after a solve of L18, whose drag
+ * handler read a stale high-water mark and fired twice.
+ */
+describe("a level that resolves itself twice", () => {
+  beforeEach(() => useRun.getState().reset());
+
+  it("does not hand the next level in the deck a free solve", () => {
+    start();
+    const entry = useRun.getState().entries;
+    const first = useRun.getState().deck[0]!.module.meta.id;
+
+    elapse(4000);
+    useRun.getState().solve(entry);
+    /* The stale repeat: same token, because it comes from the same level. */
+    useRun.getState().solve(entry);
+
+    const s = useRun.getState();
+    expect(s.solved).toBe(1);
+    expect(s.index).toBe(1);
+    expect(s.breakdown.map((b) => b.id)).toEqual([first]);
+    expect(s.events.filter((e) => e.kind === "solve")).toHaveLength(1);
+  });
+
+  it("still lets the next level be solved on its own token", () => {
+    start();
+    useRun.getState().solve(useRun.getState().entries);
+    useRun.getState().solve(useRun.getState().entries);
+
+    const s = useRun.getState();
+    expect(s.solved).toBe(2);
+    expect(s.breakdown).toHaveLength(2);
+  });
+
+  it("refuses a repeated skip, which used to cost two levels and twenty seconds", () => {
+    start();
+    const entry = useRun.getState().entries;
+    useRun.getState().skip(entry);
+    useRun.getState().skip(entry);
+
+    const s = useRun.getState();
+    expect(s.skipped).toBe(1);
+    expect(s.index).toBe(1);
+    expect(s.events.filter((e) => e.kind === "skip")).toHaveLength(1);
+  });
+
+  it("keeps refusing at the end of the deck, where the token still matches", () => {
+    /* `enterLevel` finds nothing to enter, so `entries` stops moving and the
+       token alone would let a repeat through. `resolvedEntry` covers it. */
+    start();
+    const size = useRun.getState().deck.length;
+    for (let i = 0; i < size; i++) useRun.getState().solve(useRun.getState().entries);
+
+    const solved = useRun.getState().solved;
+    useRun.getState().solve(useRun.getState().entries);
+    expect(useRun.getState().solved).toBe(solved);
+  });
+
+  it("produces no solve fast enough for the server to throw the run out", () => {
+    /* The real cost of the bug. A free solve lands at 0ms, `validateRun`
+       counts implausible solves, and enough of them reject the whole run —
+       so this cost points and risked costing everything. */
+    start();
+    for (let i = 0; i < 6; i++) {
+      elapse(6000);
+      /* Captured once: a stale repeat carries the token the level was given,
+         not whatever the store has moved on to. Re-reading it here would be
+         an honest solve of the next level and would prove nothing. */
+      const entry = useRun.getState().entries;
+      useRun.getState().solve(entry);
+      useRun.getState().solve(entry);
+    }
+    const s = useRun.getState();
+    const fast = s.events.filter((e) => e.kind === "solve" && (e.solveMs ?? 0) < 2);
+    expect(fast).toEqual([]);
+    expect(validateRun(s.events, deckEntries(), RUN_DURATION_MS - s.remainingMs)).toBeNull();
+  });
+});

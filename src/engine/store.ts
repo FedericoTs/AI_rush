@@ -43,8 +43,12 @@ export interface RunState {
 
   /**
    * How many levels have been entered, and which entry has already been
-   * resolved. Together they make `onSolve` idempotent within one level —
-   * see `solve()`.
+   * resolved.
+   *
+   * `entries` is also the token a caller passes back to `solve` and `skip` to
+   * say which level it thinks it is resolving. That is what makes them
+   * idempotent — see `solve()`, and read the whole comment before touching
+   * either, because the obvious guard here does not work.
    */
   entries: number;
   resolvedEntry: number;
@@ -66,9 +70,9 @@ export interface RunState {
     unlocks?: UnlockState;
   }): void;
   enterLevel(): void;
-  solve(): void;
+  solve(entry?: number): void;
   fail(reason?: string): void;
-  skip(): void;
+  skip(entry?: number): void;
   setRemaining(ms: number): void;
   finish(timedOut: boolean): void;
   reset(): void;
@@ -138,18 +142,33 @@ export const useRun = create<RunState>((set, get) => ({
   /**
    * Resolve the current level.
    *
-   * `LevelProps.onSolve` has always promised that repeats are ignored, and
-   * until a level actually sent one that promise was untested and untrue: a
-   * second call scored the *next* level in the deck for free. Levels that run
-   * their mechanic on a timer really do send repeats — several ticks can queue
-   * inside one React batch, all of them seeing a stale "already finished"
-   * flag — so the guard belongs here, where it can be exact, rather than in
-   * every level that might need it.
+   * `LevelProps.onSolve` promises that repeats are ignored. The guard written
+   * for that promise — "refuse if this entry is already resolved" — could
+   * never fire, and four of the first ten finished runs paid for it.
+   *
+   * The reason is two lines apart. `solve` sets `resolvedEntry` to the entry
+   * it is resolving and then calls `enterLevel`, which increments `entries`.
+   * So the moment a solve completes, `resolvedEntry` is behind `entries` by
+   * exactly one, and the guard is open again — forever. A second `onSolve()`
+   * sailed through it and scored **the next level in the deck**, instantly,
+   * for nothing. In production that reads as a solve of 0 or 1ms, and every
+   * one of them followed a solve of L18.
+   *
+   * No counter fixes this on its own, because after the advance a stale
+   * repeat and a real solve of the next level are the same call. The caller
+   * has to say which level it means, so `entry` is the value of `entries`
+   * that was current when the level was rendered. A repeat from a level that
+   * has already been left carries that level's token and is dropped.
+   *
+   * `resolvedEntry` still earns its place at the end of a deck, where
+   * `enterLevel` finds nothing to enter, leaves `entries` alone, and the
+   * token therefore still matches.
    */
-  solve() {
+  solve(entry) {
     const s = get();
     const current = s.deck[s.index];
     if (!current) return;
+    if (entry !== undefined && entry !== s.entries) return;
     if (s.resolvedEntry === s.entries) return;
 
     const solveMs = Math.round(Math.max(0, s.elapsedMs - s.levelStartMs));
@@ -202,10 +221,13 @@ export const useRun = create<RunState>((set, get) => ({
    * The ten seconds are charged to the GameClock by the caller, not here:
    * one owner for time, or the two drift apart and solveMs starts lying.
    */
-  skip() {
+  skip(entry) {
     const s = get();
     const current = s.deck[s.index];
     if (!current) return;
+    /* Same token, same reason as `solve`. Without it a double-tap on SKIP
+       skipped two levels and charged twenty seconds for it. */
+    if (entry !== undefined && entry !== s.entries) return;
     if (s.resolvedEntry === s.entries) return;
     set({
       resolvedEntry: s.entries,

@@ -36,11 +36,24 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
   const [sub] = useState(() => slopSubhead(rng));
   const boxRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  /*
+   * How far along the path we are, as a ref rather than as state.
+   *
+   * `reached` is state, so it is stale for every pointermove that lands
+   * before React re-renders — and a drag delivers several per frame. Two of
+   * them arriving on the last cell both saw the old value, both passed the
+   * `here > reached` test, and both called `onSolve()`. The store used to
+   * award the second one to the *next* level in the deck; it no longer does,
+   * but the honest fix is not to send it. Every 0ms and 1ms solve in
+   * production followed a solve of this level.
+   */
+  const far = useRef(0);
 
   const cellW = 100 / COLS;
   const cellH = 100 / ROWS;
 
   const reset = () => {
+    far.current = 0;
     setReached(0);
     setSlipped(true);
     dragging.current = false;
@@ -49,6 +62,8 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
   };
 
   const advanceTo = (index: number) => {
+    if (index <= far.current) return;
+    far.current = index;
     setSlipped(false);
     setReached(index);
     if (index === PATH.length - 1) {
@@ -72,16 +87,23 @@ function Component({ onSolve, onFail, rng, sfx }: LevelProps) {
     if (here === -1) return reset();
 
     /* No teleporting across the maze where the path doubles back on itself. */
-    if (Math.abs(here - reached) > 1) return;
-    if (here > reached) advanceTo(here);
+    if (Math.abs(here - far.current) > 1) return;
+    if (here > far.current) advanceTo(here);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
     e.preventDefault();
-    const next = reached + (e.key === "ArrowRight" ? 1 : -1);
+    const next = far.current + (e.key === "ArrowRight" ? 1 : -1);
     if (next < 0 || next >= PATH.length) return;
     sfx.click();
+    /* Backwards is a legal move on the keyboard and `advanceTo` only ever goes
+       forwards, so stepping back is its own small update. */
+    if (next < far.current) {
+      far.current = next;
+      setReached(next);
+      return;
+    }
     advanceTo(next);
   };
 
