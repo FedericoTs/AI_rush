@@ -1,8 +1,19 @@
 name: CI
 
+# Every push, not just one named branch.
+#
+# This said `branches: [main]`, and there is no `main` — the trunk here is the
+# branch this file lives on, which is also the repository's default branch and
+# the one Vercel deploys. Between that and there never having been a pull
+# request, the count of times this workflow had run was zero: the typecheck,
+# the lint, the 383 tests and the end-to-end suite had only ever run on
+# somebody's laptop, for the entire life of the project.
+#
+# Unfiltered is the honest trigger for a repository with one branch. If a
+# review flow starts later, a pull request will run this too, and paying for
+# one duplicate run is a much better failure than silently checking nothing.
 on:
   push:
-    branches: [main]
   pull_request:
 
 concurrency:
