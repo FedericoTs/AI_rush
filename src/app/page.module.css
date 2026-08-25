@@ -333,6 +333,33 @@
 .labLink:hover .labBig { color: var(--good); }
 .labSmall { font-size: 0.72rem; color: var(--chrome-dim); line-height: 1.5; }
 
+/* ─── the short way in ───────────────────────────────────── */
+/*
+ * Sits under the dialog and must lose to it.
+ *
+ * START is the thesis and the page is built around getting your hands wrong
+ * on it; a second call to action of equal weight underneath would be two
+ * front doors and no argument. So this is a rule and a line of mono — the
+ * same register as the level index link — with the hazard colour reserved
+ * for the button it is standing next to.
+ */
+.warmup {
+  display: flex; align-items: baseline; gap: 0.55rem; flex-wrap: wrap;
+  text-decoration: none; color: inherit;
+  border-top: 1px solid var(--chrome-line); padding-top: 0.7rem;
+}
+.warmupTag {
+  font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--chrome); background: var(--good);
+  padding: 0.1rem 0.32rem; border-radius: 2px; white-space: nowrap;
+}
+.warmupBig { font-size: 0.85rem; font-weight: 600; }
+.warmup:hover .warmupBig { color: var(--good); }
+.warmupSmall {
+  font-family: var(--font-mono); font-size: 0.66rem; color: var(--chrome-dim);
+  flex-basis: 100%; line-height: 1.5;
+}
+
 /* ─── foot ───────────────────────────────────────────────── */
 .foot {
   display: flex; flex-direction: column; gap: 0.3rem;

@@ -148,3 +148,28 @@ test("the landing page puts START on the right, in red", async ({ page }) => {
   const mercyBox = await mercy.boundingBox();
   expect(startBox!.x).toBeGreaterThan(mercyBox!.x);
 });
+
+test("the ten-second way in is offered, and offered second", async ({ page }) => {
+  /*
+   * Five minutes is a lot to hand somebody who has just tapped a link — ten
+   * of the first thirty-eight runs reached the end — so the short version is
+   * offered where a visitor is already deciding whether to commit.
+   *
+   * Second, though. START being the wrong-coloured button on the wrong side
+   * is the argument this whole page makes, and a rival call to action of
+   * equal weight underneath would blunt it. So: below, and not a filled
+   * button.
+   */
+  await page.goto("/");
+  const warmup = page.getByRole("link", { name: /Not ready for five minutes/ });
+  await expect(warmup).toBeVisible();
+
+  const start = page.getByRole("link", { name: "⚠ START" });
+  const startBox = (await start.boundingBox())!;
+  const warmBox = (await warmup.boundingBox())!;
+  expect(warmBox.y).toBeGreaterThan(startBox.y + startBox.height);
+  await expect(warmup).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+
+  await warmup.click();
+  await expect(page.getByRole("slider", { name: /Would a real product/ })).toBeVisible();
+});

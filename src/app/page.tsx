@@ -121,6 +121,29 @@ export default async function Home() {
         </div>
 
         {/*
+          * The smaller ask, immediately after the larger one.
+          *
+          * Five minutes is a lot to hand somebody who has just tapped a link,
+          * and the funnel says so: of the first thirty-eight runs, ten reached
+          * the end and three put a name on the board. Everything shareable
+          * here sits behind those five minutes.
+          *
+          * So the alternative is offered in the one place a visitor is already
+          * deciding whether to commit — and offered as second, quietly, in
+          * mono. It cannot look like a competing front door: START being the
+          * wrong-coloured button on the wrong side is the whole argument of
+          * this page, and two equal calls to action would blunt it.
+          */}
+        <Link className={s.warmup} href="/slop">
+          <span className={s.warmupTag}>10 sec</span>
+          <span className={s.warmupBig}>Not ready for five minutes?</span>
+          <span className={s.warmupSmall}>
+            Five of these interfaces. Guess how many people think a real product actually shipped
+            them →
+          </span>
+        </Link>
+
+        {/*
           * The sheet.
           *
           * A run deals fourteen of these in an order nobody chooses, so the
