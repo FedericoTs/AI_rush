@@ -16,6 +16,10 @@ import s from "./livedot.module.css";
  * the time — a counter whose job is to say the place is alive, reporting that
  * it is not. A total cannot do that: three stats, one live and two cumulative,
  * and none of them decay overnight.
+ *
+ * "Runs played" means played, not opened: a run counts once it reaches the end
+ * or leaves mid-run and says so. A row exists from the moment the play page
+ * loads, and counting those would make a bounce look like a game.
  */
 export function LiveDot({
   playingNow,

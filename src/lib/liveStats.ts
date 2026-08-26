@@ -7,7 +7,7 @@
  */
 export interface LiveStats {
   playingNow: number;
-  /** Every run ever started. Cumulative — see `0010_live_stats_cumulative.sql`. */
+  /** Runs that reached the end or left mid-run and said so — `0011_runs_played.sql`. */
   runs: number;
   players: number;
   topScore: number;
