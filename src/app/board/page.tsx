@@ -31,7 +31,7 @@ export default async function Board({
         </div>
       </div>
 
-      <LiveDot playingNow={stats.playingNow} runsToday={stats.runsToday} players={stats.players} />
+      <LiveDot playingNow={stats.playingNow} runs={stats.runs} players={stats.players} />
 
       <p className={s.lede}>
         {isMercy

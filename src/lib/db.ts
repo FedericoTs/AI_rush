@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
+import { NO_STATS, toLiveStats, type LiveStats } from "./liveStats";
 
 /**
  * Supabase, over plain fetch.
@@ -70,19 +71,12 @@ export async function boardTop(mercy: boolean, limit: number): Promise<RankedRow
   }
 }
 
-export interface LiveStats {
-  playingNow: number;
-  runsToday: number;
-  players: number;
-  topScore: number;
-}
-
-const NO_STATS: LiveStats = { playingNow: 0, runsToday: 0, players: 0, topScore: 0 };
+export type { LiveStats } from "./liveStats";
 
 export async function liveStats(): Promise<LiveStats> {
   if (!dbConfigured) return NO_STATS;
   try {
-    return await rpc<LiveStats>("live_stats", {});
+    return toLiveStats(await rpc<unknown>("live_stats", {}));
   } catch (err) {
     console.error("[liveStats]", err);
     return NO_STATS;

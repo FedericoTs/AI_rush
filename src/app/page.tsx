@@ -70,7 +70,7 @@ export default async function Home() {
           skip — the clock does not stop either way.
         </p>
 
-        <LiveDot playingNow={stats.playingNow} runsToday={stats.runsToday} players={stats.players} />
+        <LiveDot playingNow={stats.playingNow} runs={stats.runs} players={stats.players} />
 
         {/*
           * A strip of the actual microcopy from inside the levels.
